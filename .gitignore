@@ -1,0 +1,13 @@
+.DS_Store
+_build/
+.mooncakes/
+.moonagent/
+.history/
+log*
+*.log
+.venv/
+.repos/
+.claude/
+.vscode/
+__pycache__/
+*.pyc
