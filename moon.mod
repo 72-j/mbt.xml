@@ -1,8 +1,7 @@
 // MoonBit module manifest — mbt.xml
-// 定位：XML 底座仓——M0 探针役先定底座（Milky2018/xml 0.2.0 事件式 /
-//       moonbit-community/XMLParser 0.2.5 组合子式 / 自建 moonttl 级），
-//       探针报告拍板后立算法/模型层役。仓位裁定与分层评估见
-//       主仓 moonmat/requirements.md §二 与会话裁定（2026-10-10）。
+// 定位：XML 底座仓——M0 探针已拍板（R-X1）：底座 = Milky2018/xml@0.6.0
+//       （StAX 式拉取 + NamespaceReader + Writer）；下一役 M1 = Node 适配层。
+//       仓位裁定与分层评估见主仓 moonmat/requirements.md §二（2026-10-10）。
 
 name = "thy1016/moonxml"
 
@@ -17,3 +16,9 @@ keywords = [ "xml", "parser", "dom" ]
 source = "src"
 
 readme = "README.md"
+
+import {
+  "moonbit-community/XMLParser@0.2.6",
+  "Milky2018/xml@0.6.0",
+  "moonbitlang/async@0.22.4",
+}

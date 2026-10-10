@@ -13,8 +13,8 @@ RDF/XML 映射、化学标记语言（CML）、通用结构化数据均可依赖
 
 | 役 | 内容 | 状态 |
 |---|---|---|
-| M0 | 底座探针：`Milky2018/xml` 0.2.0（事件式 Reader）vs
-  `moonbit-community/XMLParser` 0.2.5（解析组合子）vs 自建语法层（moonttl 级） | 未开工 |
+| M0 | 底座探针：`Milky2018/xml` 0.6.0（事件式 Reader）vs
+  `moonbit-community/XMLParser` 0.2.6（解析组合子）vs 自建语法层（moonttl 级） | **已关**：拍板 Milky@0.6.0（R-X1） |
 | M1+ | XML 数据模型（DOM 树，树递归纯函数架构）+ well-formedness 门 | 待 M0 拍板 |
 | 应用语义层 | RDF/XML 映射、CML 等——独立战线另立仓或归口，仓位随消费端拍 | 未立项 |
 

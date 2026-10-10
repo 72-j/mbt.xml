@@ -1,0 +1,35 @@
+[m0-milky] case=basic ok=true events=7
+[m0-milky] case=decl-doctype-entity ok=true events=5
+[m0-milky] case=ns ok=true events=3
+[m0-milky] case=cdata ok=true events=3
+[m0-milky] case=comment-pi ok=true events=4
+[m0-milky] case=unicode ok=true events=3
+[m0-milky] case=deep ok=true events=101
+[m0-milky] case=big-attrs ok=true events=5
+[m0-subtotal] milky_wf=8/8
+[m0-milky-err] case=unclosed rejected=true
+[m0-milky-err] case=mismatched rejected=true
+[m0-milky-err] case=bad-entity rejected=true
+[m0-milky-err] case=stray-lt rejected=true
+[m0-milky-err] case=empty-doc rejected=true
+[m0-subtotal] milky_err=5/5
+[m0-fidelity] entity-expanded=true
+[m0-fidelity] dtd-entity=true
+[m0-fidelity] cdata-typed=true
+[m0-fidelity] comment-kept=true
+[m0-fidelity] pi-split=true
+[m0-fidelity] ns-resolved=true
+[m0-fidelity] pass=6/6
+[m0-roundtrip] ok=true 
+[m0-xmlparser] case=basic ok=true
+[m0-xmlparser] case=decl-doctype-entity ok=true
+[m0-xmlparser] case=ns ok=true
+[m0-xmlparser] case=cdata ok=true
+[m0-xmlparser] case=comment-pi ok=true
+[m0-xmlparser] case=unicode ok=true
+[m0-xmlparser] case=deep ok=true
+[m0-xmlparser] case=big-attrs ok=true
+[m0-subtotal] xmlparser_wf=8/8
+[m0-perf] sanity=true bytes=1000029
+[m0-perf] base=milky bytes=1000029 median=133ms k=5 runs=[132,133,133,134,134]
+[m0-perf] base=xmlparser bytes=1000029 median=1131ms k=5 runs=[1099,1129,1131,1138,1181]
