@@ -15,3 +15,5 @@ license = "Apache-2.0"
 keywords = [ "xml", "parser", "dom" ]
 
 source = "src"
+
+readme = "README.md"
