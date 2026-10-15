@@ -36,7 +36,36 @@
 - **月台遗留**：`src/xml.mbt` 占位件待 M1 换成真面；`@async` 依赖为探针计时引入，
   M1 后如无他用可撤。
 
-## 2. 换机迁移清单
+## 2. 役M1:Node 适配层 + 数据模型(2026-10-15,已关)
+
+- **落地面**:`src/node.mbt`(模型)/ `parse.mbt`(适配折叠)/ `translate.mbt`
+  (错误/位置翻译)/ `serialize.mbt`(发射器);占位件 `xml.mbt` 退役。
+  门:`roundtrip_test.mbt`(6)+ `contract_test.mbt`(8)= **14/14 绿**。
+- **R-M1a [定案] 模型全自有规范型**:XmlName/XmlDecl/Attribute/Element/Node/
+  Document/SourceSpan/XmlError* 全为本包 `pub(all)`——底座型零泄露,
+  R-G2"依赖面 = @moonxml.Node + XmlError"兑现(换底座只改适配层)。
+- **R-M1b [定案] xmlns 并回属性面**:底座把 xmlns 声明与普通属性分离
+  (`namespace_declarations`),适配层并回队尾统一按属性发——序列化→再解析
+  字符串定点成立(普通属性在前,xmlns 按底座序随后)。
+- **R-M1c [定案] 序列化 = 自有发射器**(`Document::to_xml`,纯函数无 raise):
+  底座 Writer 是事件形,且 Event/SourceSpan 底座侧 `pub`(只读)不可跨包
+  构造,合成事件此路不通;树形发射自控保真(声明/DOCTYPE/PI 原形发,
+  文本与属性值 `@xml.escape` 复用底座;无子元素自闭合 = 规范形)。
+- **事实记账(底座行为,消费方须知道)**:
+  1. 树节点不带 span——往返等价(Eq)比较才成立;span 只走错误面
+     (契约三=XmlError.At 透传行列,钉 col=7 实报形)。
+  2. **实报勘误**:错配闭标/未闭合/空文档,底座实报 **InvalidSyntax**
+     (带行列);`UnmatchedTag`/`UnexpectedEof` 词表在但此形不走——
+     错误分型测试钉实报形,不钉词表许愿形。
+  3. DocType 只保**名字**(底座事件面只暴露名);内部子集在解析期展开,
+     往返在展开文本上等价(实体语料 14 门内已钉)。
+  4. Text 相邻拼接(契约一),CDATA 不并入文本(分型保留,保真钉)。
+  5. 缺省命名空间作用于声明所在元素自身(root 吃默认 ns——测试前提
+     曾写反,实测定谳拨正)。
+- **月台**:根槽/根前/根后三区由(根槽长 + 栈深)推导,无阶段枚举;
+  `probe/pkg.generated.mbti` 为探针包接口再生,随 M0 探针件留仓。
+
+## 3. 换机迁移清单
 
 纯 MoonBit 仓（无 C stub）：clone 后 `moon install && moon test` 即可；
 依赖版本以 `moon.mod` import 钉为准（Milky2018/xml@0.6.0 等）。

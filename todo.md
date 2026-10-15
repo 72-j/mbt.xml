@@ -8,21 +8,26 @@
 
 ## 1. 待役
 
-- **役M1：Node 适配层 + 数据模型**。底座事件（Milky Reader/NamespaceReader）
-  → `@moonxml.Node` 树 + `XmlError` 错误面（spec.md 卷一 R-G2 的依赖面）。
-  完成门：`Node` 往返（parse→Node→serialize→re-parse 等价）+ ctx.md §1 三条
-  消费方契约各有用例钉住（Text 拼接 / Empty 臂 / span 透传）。
-- **役G1：gen 三件套施工**（spec.md 卷一；与 M1 可并行——纯字符串进出）。
+- **役G1：gen 三件套施工**（spec.md 卷一）。
   skelgen 方言 `xmlschema_toml_gen.mbt` + 试点表（catalog 例）+ 双门 +
-  `cmd/regen`。完成门：试点表黄金门绿 + Node 联调往返（待 M1）。
+  `cmd/regen`。完成门：试点表黄金门绿 + Node 联调往返（M1 树已就位，
+  联调条件已熟）。
 
 ## 2. 已关战役
 
 - **M0 底座探针（2026-10-10）**：两底座实探，拍板 R-X1 = Milky2018/xml@0.6.0。
   账见 `ctx.md` §1。
+- **M1 Node 适配层 + 数据模型（2026-10-15）**：自有规范型树面 + parse +
+  to_xml；14/14 绿（往返 6 + 契约/模型 8）。定案 R-M1a/b/c 与底座实报
+  勘误账见 `ctx.md` §2。
 
 ## 执行记录（滚动追加）
 
 - 2026-10-10：M0 探针役关闭——Milky WF 8/8、畸形拒 5/5、保真 6/6、往返 ok、
   1MB/134ms（XMLParser 8.2× 慢不采用；自建否决）。教训两件入 ctx §1：
   Text 事件按实体边界切分、自闭合根是 Empty 事件（探针首测假阴性根因）。
+- 2026-10-15：M1 关役——模型/解析/序列化三件落位（`node/parse/translate/
+  serialize.mbt`），占位件退役。门 14/14：字符串定点 + 树等价双判往返
+  （定点抓不住系统性丢节点,树等价补判）；三契约钉全咬合。新知入 ctx §2：
+  底座错配/未闭合实报 InvalidSyntax（钉实报形）；根元素吃自身声明的缺省 ns
+  （测试前提曾写反,实测定谳）；树不带 span 是 Eq 前提,span 只走错误面。
