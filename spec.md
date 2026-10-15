@@ -35,7 +35,7 @@ M0 换底座只改**树适配层**（底座事件/树 → `Node`），gen 面零
 ```toml
 schema_version = "1.0"
 generator = "xmlschema_toml_gen"
-target_package = "example/catalog"
+target_package = "moonxml/src/example/catalog"
 
 [xml]
 root = "doc"                          # 根元素 id（必填，validator 查存在）
@@ -67,7 +67,14 @@ children = [
 [[xml.elements]]
 id = "title"
 kind = "leaf"                         # 纯文本叶
-text_type = "String"                  # 基元词表：String | Int | Double | Bool | Raw
+text_type = "String"                  # 基元词表：String | Int | Double | Bool
+                                      #（G1 落地勘误：Raw 除名——无消费端不进词表；
+                                      #   validate 钉封闭词表，Raw 入表即红）
+
+[[xml.elements]]
+id = "author"
+kind = "leaf"                         # G1 落地勘误：原表样漏 author 行（book.ref 悬空
+text_type = "String"                  # = validator 红）；试点表已补，表样同笔对齐
 
 [[xml.elements]]
 id = "meta"
@@ -99,29 +106,35 @@ fn emit_xmlschema_skeleton(XmlSchemaDef) -> String           // 产 MoonBit 源�
 **产物形态**（`<target_package>/schema_gen.mbt`，DO NOT EDIT 头）：
 
 ```moonbit
-// 树递归结构体（occurrence → 类型）
-pub struct Doc {
+// 树递归结构体（occurrence → 类型）；pub(all) 供门面测试跨包构造
+pub(all) struct Doc {
   version : String
   lang : Option[String]
+  book : Array[Book]      // 字段名 = children[].ref（id 原文），非复数自创
   meta : Option[Meta]
-  books : Array[Book]
-}
-// 递归下降解析骨架：按表逐 attr/child 消费 @moonxml.Node
-pub fn Doc::from_tree(node : @moonxml.Node) -> Result[Doc, @moonxml.XmlError]
-// 递归上升序列化骨架
-pub fn Doc::to_tree(self : Doc) -> @moonxml.Node
+} derive(Eq)
+// 递归下降解析骨架：按表逐 attr/child 消费 @moonxml.Element
+//（G1 勘误：入参 = Element 非 Node；错型 = String 锚点非 XmlError——
+//   R-M1 无 span 语义,先收 String 锚点,span 化是后续战役）
+pub fn doc_from_tree(element : @moonxml.Element) -> Result[Doc, String]
+// 递归上升序列化骨架（canonical 序 = 表序）
+pub fn Doc::to_tree(self : Doc) -> @moonxml.Element
 ```
 
-**双门**（对位 moonrdb 黄金门 + scope 门，同目录 `*_gate_test.mbt`）：
+**双门**（G1 落地勘误：门随生成器走不随产物走——
+`skelgen/schema/xmlschema_toml_gen_test.mbt`,仓根跑读 `./moonxml/...` 径,
+jelly/bm25 金门先例;门钉的是生成器不是产物,消费仓不放门的复印件）：
 
 | 门 | 判据 |
 |---|---|
 | 黄金门 | 重生成 ≡ 入库件**逐字节**（`assert_eq(regenerated, committed)`） |
-| scope 门 | 本表只许 `[xml]` 节；混入越界节即红 |
+| scope 门 | 本表只许体例键三件 + `[xml]` 节；混入越界节即红 |
 | validator 查（emit 前置） | 树递归五查，错误字面为稳定 grep 锚点 |
 
-**再生入口**：`moonxml/cmd/regen`（对位 moonrdb `jelly/cmd` 八表齐发）；
-确定性核验沿 `regen.sh` 三查（两次重生成互等 / 重生成 ≡ 入库件 / 上游锚点在位）。
+**再生入口**（G1 勘误：`moonxml/cmd/regen` 不立——moonxml 是消费仓无 cmd 面；
+regen 可执行包住生成器仓）：
+`moon run skelgen/xmlregen`（仓根起跑;读试点表 → parse/validate/emit →
+落盘 `<target_package>/schema_gen.mbt`;改表 → 再生 → 金门对拍）。
 
 ### 1.4 不进表清单（进表四问否决记录）
 
@@ -133,8 +146,17 @@ pub fn Doc::to_tree(self : Doc) -> @moonxml.Node
 | 流式事件形 | jsonld 同款：`[立案] 不排期`，双触发器 |
 | XPath / 查询 | 独立战线，无消费端不立 |
 
-### 1.5 施工序（预告，路线归 todo 卷）
+### 1.5 施工序（G1 讫：①②④ 一步全收，③ = 底座 @moonxml 本身已先行）
 
 gen 层与 M0 **可并行**：① skelgen 方言三件套 + 单测（纯字符串进出，无底座依赖）
 → ② 试点表（catalog 例，即本卷 1.2 原表）+ 黄金门/scope 门 → ③ `Node` 适配层
 （待 M0）→ ④ from_tree/to_tree 联调（试点表跑通真 XML 往返）。
+
+**G1 落地实录**（2026-10-15）：① `skelgen/schema/xmlschema_toml_gen.mbt`
+（parse/validate/emit 三件套 + 4 负例钉）→ ② 试点表
+`moonxml/src/example/catalog/catalog_schema.toml` + 双门
+（`skelgen/schema/xmlschema_toml_gen_test.mbt`，40/40）→ ④ 联调门
+（`catalog_contract_test.mbt`：真 XML 值级往返 Eq + 字符串定点，15/15）。
+**发射器铁律兑现**：fmt 规范形五则（裸臂 / shorthand+尾逗号 / 80 列宽行判据 /
+缩进随宿主语境 / helper 签名宽行化）——再生件 `moon fmt` 幂等（fmt-diff = 0),
+黄金门穿过 fmt 稳定。

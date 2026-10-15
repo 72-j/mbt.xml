@@ -1,0 +1,37 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "thy1016/moonxml/example/catalog"
+
+import {
+  "thy1016/moonxml",
+}
+
+// Values
+pub fn book_from_tree(@moonxml.Element) -> Result[Book, String]
+
+pub fn doc_from_tree(@moonxml.Element) -> Result[Doc, String]
+
+// Errors
+
+// Types and methods
+pub(all) struct Book {
+  isbn : String
+  title : String
+  author : Array[String]
+} derive(Eq)
+pub fn Book::equal(Self, Self) -> Bool
+pub fn Book::not_equal(Self, Self) -> Bool
+pub fn Book::to_tree(Self) -> @moonxml.Element
+
+pub(all) struct Doc {
+  version : String
+  lang : String?
+  book : Array[Book]
+  meta : @moonxml.Node?
+} derive(Eq)
+pub fn Doc::equal(Self, Self) -> Bool
+pub fn Doc::not_equal(Self, Self) -> Bool
+pub fn Doc::to_tree(Self) -> @moonxml.Element
+
+// Type aliases
+
+// Traits

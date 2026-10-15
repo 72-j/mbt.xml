@@ -65,7 +65,41 @@
 - **月台**:根槽/根前/根后三区由(根槽长 + 栈深)推导,无阶段枚举;
   `probe/pkg.generated.mbti` 为探针包接口再生,随 M0 探针件留仓。
 
-## 3. 换机迁移清单
+## 3. 役G1:xmlschema 方言三件套 + 试点联调(2026-10-15,已关)
+
+- **落地面**(生成器侧住根仓 `skelgen/`,消费件住本仓):表
+  `src/example/catalog/catalog_schema.toml`(spec §1.2 原表 + author 叶行补齐);
+  生成器 `skelgen/schema/xmlschema_toml_gen.mbt`(parse/validate/emit 三件套,
+  `toml_gen_base.mbt` 零改动——"新方言 = 新数据"照题兑现);再生命令
+  `moon run skelgen/xmlregen`(根仓可执行包);产物
+  `src/example/catalog/schema_gen.mbt`;联调门
+  `src/example/catalog/catalog_contract_test.mbt`。
+- **门**:双门 + 负例住生成器仓 `skelgen/schema/xmlschema_toml_gen_test.mbt`
+  (金门逐字节 + scope 门 + validate 负例四钉,**40/40**);本仓
+  `moon test` **15/15**(M1 14 + G1 联调 1)。
+- **R-G1a [定案] 发射器铁律兑现**(moonxt 先例跨线复用):再生件必须
+  `moon fmt` 幂等(再生成 → fmt → diff = 0),否则黄金门在 fmt 一跑即碎。
+  fmt 规范形五则(本次 fmt 残差实测归纳):裸臂(单语句臂块折叠为表达式体)/
+  结构体字面量 shorthand+尾逗号/80 列宽行判据(≤80 单行,超长括号续行)/
+  缩进随宿主语境(顶层 2 空格,循环体 4 空格)/helper 签名 ≤80 收单行。
+  签名宽行决策按**实宽**不按参数个数(make_attribute 单行 82 字符 → fmt
+  保持展开;attr_find 79 字符 → 收单行)。
+- **R-G1b [定案] 门随生成器走**:双门 + 负例住生成器仓(读 `./moonxml/...`
+  径,jelly/bm25 金门先例),钉的是生成器不是产物;消费仓不放门的复印件,
+  消费仓只放联调门(真 XML 往返:值级 Eq + 字符串定点)。
+- **R-G1c [定案] 词表封闭收口**:kind 词表 node|leaf|any;基元词表
+  String|Int|Double|Bool(spec 表样的 Raw 除名——无消费端不进词表,validate
+  红 `unknown text_type`/`unknown type`);ref 键 → 字段 `ref_id`(ref 保留字)。
+- **R-G1d [定案] 产物面**:pub(all) 结构体(门面测试跨包构造)+ derive(Eq)
+  + 显式 `pub extend`(derive 隐式晋升 [0079] 弃用面);from_tree 收
+  `@moonxml.Element` 返 `Result[T,String]`(R-M1 无 span,错型先收 String
+  锚点);to_tree 返 Element(canonical 序 = 表序);helper 按用量条件发射
+  (消费包 unused 警告面归零)。
+- **月台**:spec §1.2/§1.3 勘误已同笔(target_package 真径/表样补 author 行/
+  Raw 除名/产物形实态/门与再生入口归位);`skelgen/` 树内先期迁移态
+  (散件→子目录)系未提交在途件,本役未动——提交时须整树同笔或分笔,待拍。
+
+## 4. 换机迁移清单
 
 纯 MoonBit 仓（无 C stub）：clone 后 `moon install && moon test` 即可；
 依赖版本以 `moon.mod` import 钉为准（Milky2018/xml@0.6.0 等）。

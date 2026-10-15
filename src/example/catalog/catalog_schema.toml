@@ -1,0 +1,54 @@
+# catalog_schema.toml —— XML 方言形状表(spec 卷一 §1.2 试点样例;人维护面)。
+#
+# 面界(scope 门钉死,gate 面核):本表顶层只许 [xml](含 [[xml.elements]])节。
+# 收形状不收策略:值域校验/业务规则一律不进表(stubs 手写,语义不生成)。
+# 树递归核心:elements 以 id 互引(递归经引用不经嵌套);纯 required 环 = 红。
+# 词表(封闭,validate 把关):kind = node | leaf | any;text_type/attrs.type
+#   = String | Int | Double | Bool(卷面 Raw 词删——树模型无 raw 节点型,§1.2 勘误)。
+# 绑定器:skelgen/schema/xmlschema_toml_gen.mbt(parse/validate/emit 三件套);
+# 再生:moonx moonxml/regen.mbtx(仓根起跑);黄金门 = skelgen/schema
+# xmlschema_toml_gen_test.mbt 逐字节对拍;联调门 = 本包 contract 测试。
+# 表头三件 = gen 体例键,非协议字段。
+
+schema_version = "1.0"
+generator = "xmlschema_toml_gen"
+target_package = "moonxml/src/example/catalog"
+
+[xml]
+root = "doc"
+
+[[xml.elements]]
+id = "doc"                            # MoonBit 类型名 = Pascal(id) = Doc
+xml_name = "catalog"                  # 标签名(缺省 = id);试点钉名实分立
+kind = "node"
+attrs = [
+  { name = "version", xml_name = "version", type = "String", required = true },
+  { name = "lang", xml_name = "xml:lang", type = "String", required = false },
+]
+children = [
+  { ref = "book", repeated = true },  # 0..n
+  { ref = "meta", optional = true },  # 0..1;缺省 = 恰一
+]
+
+[[xml.elements]]
+id = "book"
+kind = "node"
+attrs = [{ name = "isbn", type = "String", required = true }]
+children = [
+  { ref = "title" },                  # 恰一
+  { ref = "author", repeated = true }, # 0..n
+]
+
+[[xml.elements]]
+id = "title"
+kind = "leaf"                         # 纯文本叶
+text_type = "String"                  # 基元词表:String | Int | Double | Bool
+
+[[xml.elements]]
+id = "author"
+kind = "leaf"                         # 卷面样例漏行——book 引用它,缺行即红,试点补齐
+text_type = "String"
+
+[[xml.elements]]
+id = "meta"
+kind = "any"                          # 通配子树(保留原始 Node)——逃生门

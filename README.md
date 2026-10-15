@@ -9,6 +9,10 @@ RDF/XML 映射、化学标记语言（CML）、通用结构化数据均可依赖
 底座已定（M0 探针拍板 Milky2018/xml@0.6.0），**M1 树面已落**：自有规范型
 数据模型 + parse（命名空间已解析、实体已展开）+ `Document::to_xml`
 规范化序列化，往返门与三契约钉 14/14 绿（账见 `ctx.md`）。
+**役G1 已落**：TOML 形状表 → 类型化骨架三件套（parse/validate/emit）——
+试点 catalog 表经 `moon run skelgen/xmlregen`（根仓）再生成
+`src/example/catalog/schema_gen.mbt`，真 XML 值级往返联调绿；再生件
+fmt 幂等（黄金门穿 fmt 稳定）。
 
 ### 路线（里程碑）
 
@@ -17,7 +21,7 @@ RDF/XML 映射、化学标记语言（CML）、通用结构化数据均可依赖
 | M0 | 底座探针：`Milky2018/xml` 0.6.0（事件式 Reader）vs
   `moonbit-community/XMLParser` 0.2.6（解析组合子）vs 自建语法层（moonttl 级） | **已关**：拍板 Milky@0.6.0（R-X1） |
 | M1 | Node 适配层 + 数据模型（自有规范型 DOM 树 + 往返门 + 三契约钉） | **已关**（2026-10-15，14/14） |
-| G1 | gen 三件套：XML 方言形状表 → 类型化骨架（spec 卷一） | 待役 |
+| G1 | gen 三件套：XML 方言形状表 → 类型化骨架（spec 卷一） | **已关**（2026-10-15，40+15 双仓绿，R-G1a/b/c/d） |
 | 应用语义层 | RDF/XML 映射、CML 等——独立战线另立仓或归口，仓位随消费端拍 | 未立项 |
 
 ### 分层裁决预立
@@ -43,9 +47,10 @@ RDF/XML 映射、化学标记语言（CML）、通用结构化数据均可依赖
 ## 测试与验证
 
 ```bash
-moon check   # 0 errors 0 warnings
-moon test    # 14/14（M1 往返 6 + 契约/模型 8）
+moon test    # 15/15（M1 往返 6 + 契约/模型 8 + G1 catalog 联调往返 1）
 ```
+黄金门/负例住生成器仓（根仓 `skelgen/schema`,40/40）:
+再生对拍 = `moon run skelgen/xmlregen` 后逐字节比对。
 
 oracle 规划：语法层对标 W3C XML Conformance Suite（xmlconf）锁版接入；
 若走 RDF/XML 面，复用 W3C rdf-tests 的 rdf-xml 套件与 jsonld 仓的
