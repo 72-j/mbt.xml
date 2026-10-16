@@ -76,7 +76,7 @@ fn main {
 
 ///|
 /// Milky：拉全部事件，返回事件数；任何 XmlError → Err（span 化错误串）。
-fn pull_milky(s : String) -> Result[Int, String] {
+fn pull_milky(s : String) -> Result[Int32, String] {
   try {
     let reader = @xml.Reader::from_string(s)
     let mut n = 0
@@ -212,7 +212,7 @@ fn run_xmlparser(s : String) -> Result[Unit, String] {
 }
 
 ///|
-fn gen_deep(depth : Int) -> String {
+fn gen_deep(depth : Int32) -> String {
   let b = StringBuilder()
   for _ in 0..<depth {
     b.write_string("<l>")
@@ -225,7 +225,7 @@ fn gen_deep(depth : Int) -> String {
 }
 
 ///|
-fn gen_big(size_hint : Int) -> String {
+fn gen_big(size_hint : Int32) -> String {
   let b = StringBuilder()
   b.write_string("<log>")
   let mut n = 0
@@ -263,9 +263,9 @@ fn perf_smoke() -> Unit {
 
 ///|
 /// 计时轮：warmup 1 + k 次取中位数（jsonld 役P1 同款）。
-fn time_median(k : Int, f : () -> Unit) -> (Int, String) {
+fn time_median(k : Int32, f : () -> Unit) -> (Int32, String) {
   f()
-  let runs : Array[Int] = []
+  let runs : Array[Int32] = []
   for _ in 0..<k {
     let t0 = @async.now()
     f()

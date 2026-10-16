@@ -106,9 +106,9 @@ pub extend XmlError with Eq::{equal, not_equal}
 ///|
 /// 源位置(错误报告用;字段对位底座,翻译在适配层)。
 pub(all) struct SourcePosition {
-  offset : Int
-  line : Int
-  column : Int
+  offset : Int32
+  line : Int32
+  column : Int32
 } derive(Eq)
 
 ///|
