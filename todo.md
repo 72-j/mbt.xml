@@ -24,6 +24,15 @@
   R-G1a/b/c/d（发射器 fmt 规范形五则/门随生成器走/词表封闭收口/产物面）
   账见 `ctx.md` §3。余量三分类:配置类 = 无;外部依赖类 = 无;
   新能力类 = 词表扩容(attrs 默认值/leaf Raw 型/ns 全语义)随消费端立项。
+- **役M2 xmlconf oracle 层（2026-10-16）**：W3C XML Conformance Suite
+  （xmlts20130923）锁版随仓 `.xmlconf/`（SHA256SUMS + 扁平清单 TSV）+
+  扁平器 `src/cmd/xmlconf_flatten/`（dogfood @moonxml）+ file-by-file
+  双桶套件门。读数 **2068 passed / 517 deferred / 2585 total**，TSV 再生
+  逐字节稳定。定案 R-M2a/b（oracle 形态对齐 jsonld 先例 / invalid-error
+  归 plain 桶）与五族分诊（A 编码 29 / B 外挂 61 / C PE·条件段 39 /
+  D XML 1.1 68 / E 名字段 320）账见 `ctx.md` §4。余量三分类:配置类 = 无;
+  外部依赖类 = 无;新能力类 = 五族五项(编码层/外部实体解析器/PE·条件段/
+  XML 1.1 面/1.0 名字全表)单独立项候拍。
 
 ## 执行记录（滚动追加）
 
@@ -39,3 +48,9 @@
   skelgen、产物再生入消费仓）。fmt 残差五则实测归纳入 R-G1a:发射器不
   fmt 规范形,金门在 fmt 一跑即碎——**再生字节稳定性 = fmt 幂等**,此铁律
   从 moonxt 单线升格为跨方言通则。门 40+15 双仓绿。
+- 2026-10-16：役M2 关役——xmlconf oracle 层落位:锁版 3386 文件随仓,
+  扁平器 dogfood 自解析 21 分册(sun/ibm 裸片段须剥声明+包合成根),
+  套件门双桶三钉。517 败逐案分诊五族全归位(UNCLASSIFIED=0),
+  E 族 320 案定谳「1.1 紧凑区间 vs 1.0 全表」双向偏差——漏拒(300 PITarget
+  案)与错拒(p04/p05pass1)同根。新知:套件坏 UTF-8 必须 decode_lossy;
+  moonxml 模块 wasm 下 async fs 必炸,门一律 --target native。

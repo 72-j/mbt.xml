@@ -99,7 +99,52 @@
   Raw 除名/产物形实态/门与再生入口归位);`skelgen/` 树内先期迁移态
   (散件→子目录)系未提交在途件,本役未动——提交时须整树同笔或分笔,待拍。
 
-## 4. 换机迁移清单
+## 4. 役M2:xmlconf oracle 层(2026-10-16,已关)
+
+- **落地面**:套件锁版 `.xmlconf/`(xmlconf/ 树 3386 文件 + SHA256SUMS +
+  扁平清单 TSV);扁平器 `src/cmd/xmlconf_flatten/`(dogfood @moonxml 自解析
+  21 本分册);套件门 `src/xmlconf_suite_test.mbt`(file-by-file 双桶钉);
+  `src/moon.pkg` 补 test 导入(async/fs + utf8)。
+- **门**:`moon test` **16/16**(M1 14 + G1 1 + M2 1);套件读数
+  **2068 passed / 517 deferred / 2585 total**。TSV 再生逐字节稳定
+  (md5 前后同);SHA256SUMS 在 `.xmlconf/` 内 `sha256sum -c` 可验。
+- **R-M2a [定案] oracle 形态对齐 jsonld 先例**:锁版随仓(不 download)+
+  扁平清单为桶表真源 + plain 桶 hard verdicts + deferred 桶逐条可辩护 +
+  桶闭三钉(failed==0 ∧ deferred 全消费 ∧ passed+deferred==total)。
+- **R-M2b [定案] invalid/error 归 plain 桶**:invalid = DTD 有效性违例,
+  非良构层职责 → 必解析;error = XML 1.0 可恢复违例 → 按引擎实际行为钉
+  (本引擎全拒,即 error 案全走必拒判)。
+- **五族分诊定谳**(517 案逐条入 deferred 桶,家族↔样张校准后机械分类,
+  UNCLASSIFIED=0):
+  - **A 编码面(29)**:UTF-16/japanese 双字节(euc-jp/shift_jis/iso-2022-jp)/
+    BOM 冲突/裸坏字节——String 域判据外;等编码层战役。
+  - **B 外挂 DTD/实体(61)**:SYSTEM 外部子集/外部实体内容,引擎不取外挂——
+    判据外。官方聚合清单 xmlconf.xml 本身即外部参数实体聚合体,不可直解,
+    扁平器以「组→分册」映射绕行。
+  - **C PE 展开/条件段(39)**:内部子集 PE 间接展开(`%xx;`→`&#37;zz;` 形)
+    与 INCLUDE/IGNORE 条件段——新能力单独立项。
+  - **D XML 1.1 语义(68)**:版本门+1.1 字符策略+NS 1.1 前缀解绑
+    (`xmlns:a=""`)——新能力单独立项。
+  - **E 名字/字符域(320)**:引擎名字符用 1.1 紧凑区间,套件 1.0 面要求
+    1.0 全表——**双向偏差**:PITarget 300 案(1.1 区间放行 1.0 非法字符,
+    漏拒)+ oasis p04/p05pass1(1.0 合法组合字符/中点被拒,错拒)同根。
+    新能力单独立项(1.0/1.1 双表策略)。
+- **事实记账**:
+  1. 分册 sun×4/ibm×6 是裸 TEST/TESTCASES 片段(多顶层素)——扁平器
+     剥前置声明 + 包合成根再解析;xmltest.xml 带声明,剥声明是前置条件。
+  2. 套件文件有非法 UTF-8——harness 走 `@utf8.decode_lossy(binary())`,
+     `.text()` 会在坏字节档整门炸。
+  3. moonxml 模块默认 target wasm,async fs 必炸(`unreachable`)——
+     套件门/扁平器一律 `--target native`(与域定门表 moonxml 行一致)。
+  4. not-wf 的 BOM 档案"碰绿"(decode_lossy 坏字节→拒,verdict 观测面
+     正确但机制非编码判据)——记账不拔钉,编码层立项时一并正判。
+  5. deferred 桶表错字会静默漏判(条目不消费,桶闭仍可过)——
+     `assert_eq(deferred_count, deferred.length())` 桶表闭钉防漂移。
+- **月台/余账三分类**:配置类 = 无;外部依赖类 = 无;新能力类 = 五族
+  deferred 对应五项(A 编码层/B 外部实体解析器+catalog/C PE·条件段/
+  D XML 1.1 面/E 1.0 名字全表),均单独立项候拍。
+
+## 5. 换机迁移清单
 
 纯 MoonBit 仓（无 C stub）：clone 后 `moon install && moon test` 即可；
 依赖版本以 `moon.mod` import 钉为准（Milky2018/xml@0.6.0 等）。

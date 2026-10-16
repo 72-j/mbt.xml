@@ -13,6 +13,10 @@ RDF/XML 映射、化学标记语言（CML）、通用结构化数据均可依赖
 试点 catalog 表经 `moon run skelgen/xmlregen`（根仓）再生成
 `src/example/catalog/schema_gen.mbt`，真 XML 值级往返联调绿；再生件
 fmt 幂等（黄金门穿 fmt 稳定）。
+**役M2 已落**：W3C XML Conformance Suite（xmlts20130923）锁版随仓
+（`.xmlconf/`，SHA256SUMS 可验），file-by-file 双桶套件门
+**2068 passed / 517 deferred / 2585 total**（deferred 五族逐条可辩护，
+账见 `ctx.md` §4）。
 
 ### 路线（里程碑）
 
@@ -22,6 +26,7 @@ fmt 幂等（黄金门穿 fmt 稳定）。
   `moonbit-community/XMLParser` 0.2.6（解析组合子）vs 自建语法层（moonttl 级） | **已关**：拍板 Milky@0.6.0（R-X1） |
 | M1 | Node 适配层 + 数据模型（自有规范型 DOM 树 + 往返门 + 三契约钉） | **已关**（2026-10-15，14/14） |
 | G1 | gen 三件套：XML 方言形状表 → 类型化骨架（spec 卷一） | **已关**（2026-10-15，40+15 双仓绿，R-G1a/b/c/d） |
+| M2 | xmlconf oracle 层：套件锁版随仓 + file-by-file 双桶门 | **已关**（2026-10-16，2068/517/2585，R-M2a/b） |
 | 应用语义层 | RDF/XML 映射、CML 等——独立战线另立仓或归口，仓位随消费端拍 | 未立项 |
 
 ### 分层裁决预立
@@ -47,12 +52,14 @@ fmt 幂等（黄金门穿 fmt 稳定）。
 ## 测试与验证
 
 ```bash
-moon test    # 15/15（M1 往返 6 + 契约/模型 8 + G1 catalog 联调往返 1）
+moon test --target native    # 16/16（M1 往返 6 + 契约/模型 8 + G1 联调 1 + M2 套件门 1）
 ```
 黄金门/负例住生成器仓（根仓 `skelgen/schema`,40/40）:
 再生对拍 = `moon run skelgen/xmlregen` 后逐字节比对。
+xmlconf oracle 层：套件锁版随仓 `.xmlconf/`（`sha256sum -c` 可验），
+扁平清单再生 = `moon run --target native src/cmd/xmlconf_flatten`（逐字节
+稳定）；套件门 defer 五族分诊见 `ctx.md` §4。
 
-oracle 规划：语法层对标 W3C XML Conformance Suite（xmlconf）锁版接入；
 若走 RDF/XML 面，复用 W3C rdf-tests 的 rdf-xml 套件与 jsonld 仓的
 `.rdf-tests` 锁版基建（SHA256SUMS + manifest）。
 
