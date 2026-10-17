@@ -17,6 +17,11 @@ fmt 幂等（黄金门穿 fmt 稳定）。
 （`.xmlconf/`，SHA256SUMS 可验），file-by-file 双桶套件门
 **2068 passed / 517 deferred / 2585 total**（deferred 五族逐条可辩护，
 账见 `ctx.md` §4）。
+**役A1 已落**：编码前端 `decode_source(Bytes)`——BOM 嗅探（UTF-8/
+UTF-16 LE/BE）、声明面编码决策（utf-8 严格 / utf-16 BOM 键控 /
+iso-8859-1，余者 UnsupportedEncoding 拒）、BOM/声明冲突检测、
+版本键控 Char 门（1.0 全表 vs 1.1 restricted-literal）；套件门
+读数推进 **2135 passed / 450 deferred / 2585 total**（账见 `ctx.md` §5）。
 
 ### 路线（里程碑）
 
@@ -27,6 +32,7 @@ fmt 幂等（黄金门穿 fmt 稳定）。
 | M1 | Node 适配层 + 数据模型（自有规范型 DOM 树 + 往返门 + 三契约钉） | **已关**（2026-10-15，14/14） |
 | G1 | gen 三件套：XML 方言形状表 → 类型化骨架（spec 卷一） | **已关**（2026-10-15，40+15 双仓绿，R-G1a/b/c/d） |
 | M2 | xmlconf oracle 层：套件锁版随仓 + file-by-file 双桶门 | **已关**（2026-10-16，2068/517/2585，R-M2a/b） |
+| A1 | 编码前端 + 版本键控 Char 门（decode_source） | **已关**（2026-10-16，2135/450/2585，R-A1a/b） |
 | 应用语义层 | RDF/XML 映射、CML 等——独立战线另立仓或归口，仓位随消费端拍 | 未立项 |
 
 ### 分层裁决预立
@@ -52,7 +58,7 @@ fmt 幂等（黄金门穿 fmt 稳定）。
 ## 测试与验证
 
 ```bash
-moon test --target native    # 16/16（M1 往返 6 + 契约/模型 8 + G1 联调 1 + M2 套件门 1）
+moon test --target native    # 38/38（M1 往返 6 + 契约/模型 8 + G1 联调 1 + M2 套件门 1 + A1 编码单元 22）
 ```
 黄金门/负例住生成器仓（根仓 `skelgen/schema`,40/40）:
 再生对拍 = `moon run skelgen/xmlregen` 后逐字节比对。

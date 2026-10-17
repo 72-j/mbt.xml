@@ -144,7 +144,58 @@
   deferred 对应五项(A 编码层/B 外部实体解析器+catalog/C PE·条件段/
   D XML 1.1 面/E 1.0 名字全表),均单独立项候拍。
 
-## 5. 换机迁移清单
+## 5. 役A1:编码前端 + 版本键控 Char 门(2026-10-16,已关)
+
+- **起因**:M2 收官五族候拍,选役 A(编码面)——五族中唯一全在
+  moonxml 自有层(不动底座)的战役;施工中定谳其真身不止「换码」
+  而是「byte→String 前端 + 版本键控 Char 门」一整层。
+- **落地面**:`src/decode.mbt`(pub `decode_source(Bytes)` + 内部
+  BOM 嗅探/UTF-16 严格解码/声明嗅探/严格 UTF-8/latin-1/Char 门);
+  `src/decode_test.mbt`(机制单元 22);错误词表新二词
+  `XmlErrorKind::Encoding(String)` / `IllegalChar(Int)`(node.mbt);
+  套件门源入口改 `decode_source → parse`(decode_lossy 退役)。
+- **门**:`moon test --target native` **38/38**(M1 14 + G1 1 + M2 套件 1
+  + A1 单元 22);套件读数 **2135 passed / 450 deferred / 2585 total**
+  (自 2068/517:净关 67)。
+- **R-A1a [定案] 支持编码集 = {UTF-8(严格,BOM 剥)/ UTF-16(BOM 键控
+  LE/BE,代理配对严格)/ ISO-8859-1 / ASCII 同族}**,其余编码名=
+  UnsupportedEncoding 拒(对位 R-M2b「按引擎实际行为钉」——8 位日文
+  三码不进支持集,japanese error 族正判)。BOM/声明双向冲突 = 错
+  (UTF-8 BOM+latin-1 声 / UTF-16 BOM+utf-8 声)。
+- **R-A1b [定案] Char 门 = 解码层前置、版本键控**:1.0 全表
+  ([#x9|#xA|#xD|#x20-#xD7FF|#xE000-#xFFFD|#x10000-#x10FFFF])vs
+  1.1 restricted-literal([#x1-#x8|#xB-#xC|#xE-#x1F|#x7F-#x84|#x86-#x9F]
+  须走字符引用;NEL 字面合法);版本取自声明嗅探。Char 生产约束
+  一切产生式,前置整扫是正判据非碰绿——底座不做此面,本层补位。
+- **闭合账(67)**:valid 面 7(japanese UTF-16 ×4 + xmltest 049-051
+  UTF-16LE 无声明);拒面 60——严格 UTF-8(168-170/E27/02n30/31/
+  errata-4e ibm04 ×8/xml-1.1 P04 ×8/n58/n67)、1.1 字面门
+  (ibm02n32-63 ×32、eduni 011/013/041)、UnsupportedEncoding 门
+  (japanese 8 位 ×6)、BOM/声冲突(misc/007)、底座声明词法
+  (055/008/009)。**碰绿正判收编**:plain 桶 oasis p02fail*31
+  (UTF-16LE + C0/非法字)与 iso-8859-1 系 13 档(NS IRI/NEL)自
+  lossy 碰绿转正判。
+- **勘误(入账)**:R-M2b 括注「error 案全走必拒判」与门码不符——
+  门码实钉 **error → 必解析**(expected_ok 含 error),实况 32 案
+  error 档全在 plain(18 过 14 拒);14 拒者回挂 deferred
+  (japanese 8 位 6 + bomboom 3 + 008/009/055-057 5)。若改钉
+  「error 双向可过」此 14 案即闭——月台留拍,不在 A1 内翻案。
+- **事实记账(底座/套件)**:
+  1. 底座对已解码 String 面做 decl/内容一致性启发
+  (「declared UTF-16 but content is ASCII/UTF-8」)——UTF-16 声明档
+  (sun utf16b/l)解码正确仍被拒;BOM 已消费,核对权在底座,
+  A 残留桶待底座修或 bytes 入口。
+  2. 底座声明词法拒 NEL/伪属性间隔(055「whitespace required
+  between XML declaration pseudo-attributes」)与非常规 version
+  (008「invalid version」)——error 判词档按必解析钉则恒挂。
+  3. moonxml 模块默认 target wasm 下 async fs 仍必炸——套件门/
+  扁平器一律 `--target native`(不变);decode 面本身全后端可移植。
+- **月台/余账三分类**:配置类 = 无;外部依赖类 = 无;新能力类 =
+  ① error 判词改「双向可过」的口径翻案(14 案);② 8 位日文三码
+  (euc-jp/shift_jis/iso-2022-jp)进支持集(需 JIS 表,6+案);
+  ③ 四族 B/C/D/E 残部照旧候拍(B 70/C 39/D 23/E 310)。
+
+## 6. 换机迁移清单
 
 纯 MoonBit 仓（无 C stub）：clone 后 `moon install && moon test` 即可；
 依赖版本以 `moon.mod` import 钉为准（Milky2018/xml@0.6.0 等）。
