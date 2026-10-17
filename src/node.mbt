@@ -88,6 +88,8 @@ pub(all) suberror XmlErrorKind {
   UnmatchedTag(expected~ : String, found~ : String)
   InvalidAttribute(String)
   InvalidEntity(String)
+  Encoding(String)
+  IllegalChar(Int32)
   Structure(String)
 } derive(Eq)
 

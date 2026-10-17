@@ -92,6 +92,8 @@ fn xmlconf_error_hint(err : @moonxml.XmlError) -> String {
           "UnmatchedTag(expected=\{expected}, found=\{found})"
         InvalidAttribute(message) => "InvalidAttribute(\{message})"
         InvalidEntity(message) => "InvalidEntity(\{message})"
+        Encoding(message) => "Encoding(\{message})"
+        IllegalChar(codepoint) => "IllegalChar(\{codepoint})"
         Structure(message) => "Structure(\{message})"
         UnexpectedEof => "UnexpectedEof"
       }
