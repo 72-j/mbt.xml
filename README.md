@@ -22,6 +22,11 @@ UTF-16 LE/BE）、声明面编码决策（utf-8 严格 / utf-16 BOM 键控 /
 iso-8859-1，余者 UnsupportedEncoding 拒）、BOM/声明冲突检测、
 版本键控 Char 门（1.0 全表 vs 1.1 restricted-literal）；套件门
 读数推进 **2135 passed / 450 deferred / 2585 total**（账见 `ctx.md` §5）。
+**役E1 已落**：版本面键控名字段门 + 名字表 gen——W3C XML 1.0 4e/1.1 2e
+规范锁版随仓（`.xmlnames/`），区间表 TOML → skelschema 方言三件套 →
+`name_tables_gen.mbt`；`parse_edition` 按 1.0 版次面（Editions1to4 全表 /
+Edition5 紧凑）键控名字产生式；套件门 EDITION 感知双面裁决，读数推进
+**2437 passed / 148 deferred / 2585 total**（账见 `ctx.md` §6）。
 
 ### 路线（里程碑）
 
@@ -33,6 +38,7 @@ iso-8859-1，余者 UnsupportedEncoding 拒）、BOM/声明冲突检测、
 | G1 | gen 三件套：XML 方言形状表 → 类型化骨架（spec 卷一） | **已关**（2026-10-15，40+15 双仓绿，R-G1a/b/c/d） |
 | M2 | xmlconf oracle 层：套件锁版随仓 + file-by-file 双桶门 | **已关**（2026-10-16，2068/517/2585，R-M2a/b） |
 | A1 | 编码前端 + 版本键控 Char 门（decode_source） | **已关**（2026-10-16，2135/450/2585，R-A1a/b） |
+| E1 | 版本面键控名字段门 + 名字表 gen（parse_edition） | **已关**（2026-10-21，2437/148/2585，R-E1a/b/c/d） |
 | 应用语义层 | RDF/XML 映射、CML 等——独立战线另立仓或归口，仓位随消费端拍 | 未立项 |
 
 ### 分层裁决预立
@@ -58,13 +64,17 @@ iso-8859-1，余者 UnsupportedEncoding 拒）、BOM/声明冲突检测、
 ## 测试与验证
 
 ```bash
-moon test --target native    # 38/38（M1 往返 6 + 契约/模型 8 + G1 联调 1 + M2 套件门 1 + A1 编码单元 22）
+moon test --target native    # 48/48（M1 往返 6 + 契约/模型 8 + G1 联调 1 + M2 套件门 1 + A1 编码单元 22 + E1 名字段单元 10）
 ```
-黄金门/负例住生成器仓（根仓 `skelgen/schema`,40/40）:
-再生对拍 = `moon run skelgen/xmlregen` 后逐字节比对。
+黄金门/负例住生成器仓（根仓 `skelschema` 双方言 + `skelgen` 双金门，
+schema 49 + link 8）：再生对拍 = `moon run skelgen/xmlregen` /
+`moon run skelgen/xmlnameregen` 后逐字节比对。
 xmlconf oracle 层：套件锁版随仓 `.xmlconf/`（`sha256sum -c` 可验），
-扁平清单再生 = `moon run --target native src/cmd/xmlconf_flatten`（逐字节
-稳定）；套件门 defer 五族分诊见 `ctx.md` §4。
+扁平清单再生 = `moon run --target native src/cmd/xmlconf_flatten`
+（逐字节稳定，含 EDITION 版次面列）；套件门双面裁决（manifest EDITION
+列 → 4e 全表面/5e 紧凑面）deferred 分诊见 `ctx.md` §4/§6；名字区间表
+数据真源锁版 `.xmlnames/`（`sha256sum -c` 可验，提取脚本
+`tools/extract_name_tables.py`）。
 
 若走 RDF/XML 面，复用 W3C rdf-tests 的 rdf-xml 套件与 jsonld 仓的
 `.rdf-tests` 锁版基建（SHA256SUMS + manifest）。

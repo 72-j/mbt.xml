@@ -215,9 +215,26 @@ fn parse_into(source : String) -> Document raise XmlError {
 
 ///|
 /// 解析入口:源文本 → 文档树(命名空间已解析,实体已展开;
-/// 错误面 = [XmlError],位置透传)。
+/// 错误面 = [XmlError],位置透传)。缺省 = XML 1.0 五版面(Edition5,
+/// 现行底座行为);版次敏感消费方用 [parse_edition]。
 pub fn parse(source : String) -> Result[Document, XmlError] {
-  Ok(parse_into(source)) catch {
+  parse_edition(source, edition=XmlEdition::Edition5)
+}
+
+///|
+/// 按版本面解析:树建后走名字段门(役E1,R-E1c)。version="1.1" 文档
+/// 不受版本面选择影响(恒 1.1 紧凑表);版本面只分棄 1.0 文档。
+pub fn parse_edition(
+  source : String,
+  edition~ : XmlEdition,
+) -> Result[Document, XmlError] {
+  Ok(
+    {
+      let document = parse_into(source)
+      validate_document_names(document, edition)
+      document
+    },
+  ) catch {
     error => Err(error)
   }
 }

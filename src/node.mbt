@@ -82,6 +82,7 @@ pub extend Document with Eq::{equal, not_equal}
 ///|
 /// 解析错误面:词表对位底座 kind(规范拼写保留),结构自有。
 /// [Structure] 为适配层新增——事件序/树结构错(底座已保 WF,此臂为防御纵深)。
+/// [IllegalName] 为役E1 新增——版本面键控名字段门(树不带 span,零位报)。
 pub(all) suberror XmlErrorKind {
   UnexpectedEof
   InvalidSyntax(String)
@@ -90,6 +91,7 @@ pub(all) suberror XmlErrorKind {
   InvalidEntity(String)
   Encoding(String)
   IllegalChar(Int32)
+  IllegalName(String)
   Structure(String)
 } derive(Eq)
 

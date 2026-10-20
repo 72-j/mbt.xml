@@ -1,11 +1,13 @@
 ///|
 /// M2 套件门:W3C XML Conformance Suite(xmlts20130923 锁版,.xmlconf/ 随仓)
 /// file-by-file,源入口 = @moonxml.decode_source(役A1 编码前端 + Char 门)
-/// 再 @moonxml.parse。分桶:plain = hard verdicts——valid/invalid/error → 必解析
+/// 再 @moonxml.parse_edition(役E1 名字段门,按 manifest EDITION 列选版本面:
+/// "1 2 3 4" → 4e 全表门 / "5" → 5e 紧凑表门 / 缺省 = 两面全查)。
+/// 分桶:plain = hard verdicts——valid/invalid/error → 必解析
 /// (invalid = DTD 有效性违例,非良构层职责;error = XML 1.0 可恢复违例,
 /// 按本引擎实际行为钉);not-wf = 必拒。deferred = 五族分诊(逐条可辩护,
 /// 桶闭钉):A 编码残部 / B 外挂 DTD/实体 / C PE·条件段 / D XML 1.1 残部 /
-/// E 名字域。
+/// E 名字段底座词法残部。
 async test "xmlconf suite gate" {
   let tsv_text = @utf8.decode_lossy(
     @fs.read_file("./.xmlconf/xmlconf_manifest.tsv").binary(),
@@ -14,6 +16,7 @@ async test "xmlconf suite gate" {
   let mut passed = 0
   let mut failed = 0
   let mut deferred_count = 0
+  let mut no_face = 0
   let failures : Array[String] = []
   let deferred : Array[String] = [
     // A 编码残部(8):UTF-16 声明档——底座对已解码 String 面做 decl/内容一致性启发(declared UTF-16 but content ASCII/UTF-8)而拒;BOM 已消费,核对权在底座,等底座修或 bytes 入口
@@ -66,138 +69,68 @@ async test "xmlconf suite gate" {
     "ibm/xml-1.1/valid/P05/ibm05v01.xml", "ibm/xml-1.1/valid/P05/ibm05v02.xml", "ibm/xml-1.1/valid/P05/ibm05v03.xml",
     "ibm/xml-1.1/valid/P05/ibm05v05.xml", "eduni/xml-1.1/008.xml", "eduni/xml-1.1/009.xml",
     "eduni/xml-1.1/055.xml", "eduni/xml-1.1/056.xml", "eduni/xml-1.1/057.xml",
-    // E 名字/字符域(310):引擎名字符用 1.1 紧凑区间,套件 1.0 面要求 1.0 全表——双向偏差:PITarget 300 案(漏拒)+ oasis p04/p05pass1、012(错拒)同根;byte 面案已由役A1 收编
+    // E 名字/字符域(8):底座 split_qualified_name 名字策略先拒(首/尾冒号名、
+    // 组合字符衔接段)——错误在树建前,版本面门不可达;与版次无关(4e/5e 两面
+    // 同拒),待底座修或 moonxml 自立名字层。役E1 已收编 302 漏拒族(套件
+    // EDITION=1 2 3 4 面判词,4e 表门正判入 plain)。
      "eduni/errata-4e/ibm04v01.xml", "eduni/errata-4e/ibm05v01.xml", "eduni/errata-4e/ibm05v02.xml",
-    "eduni/errata-4e/ibm05v03.xml", "eduni/errata-4e/ibm05v05.xml", "ibm/not-wf/P85/ibm85n03.xml",
-    "ibm/not-wf/P85/ibm85n04.xml", "ibm/not-wf/P85/ibm85n05.xml", "ibm/not-wf/P85/ibm85n06.xml",
-    "ibm/not-wf/P85/ibm85n07.xml", "ibm/not-wf/P85/ibm85n08.xml", "ibm/not-wf/P85/ibm85n09.xml",
-    "ibm/not-wf/P85/ibm85n10.xml", "ibm/not-wf/P85/ibm85n100.xml", "ibm/not-wf/P85/ibm85n101.xml",
-    "ibm/not-wf/P85/ibm85n102.xml", "ibm/not-wf/P85/ibm85n103.xml", "ibm/not-wf/P85/ibm85n104.xml",
-    "ibm/not-wf/P85/ibm85n105.xml", "ibm/not-wf/P85/ibm85n106.xml", "ibm/not-wf/P85/ibm85n107.xml",
-    "ibm/not-wf/P85/ibm85n108.xml", "ibm/not-wf/P85/ibm85n109.xml", "ibm/not-wf/P85/ibm85n11.xml",
-    "ibm/not-wf/P85/ibm85n110.xml", "ibm/not-wf/P85/ibm85n111.xml", "ibm/not-wf/P85/ibm85n112.xml",
-    "ibm/not-wf/P85/ibm85n113.xml", "ibm/not-wf/P85/ibm85n114.xml", "ibm/not-wf/P85/ibm85n115.xml",
-    "ibm/not-wf/P85/ibm85n116.xml", "ibm/not-wf/P85/ibm85n117.xml", "ibm/not-wf/P85/ibm85n118.xml",
-    "ibm/not-wf/P85/ibm85n119.xml", "ibm/not-wf/P85/ibm85n12.xml", "ibm/not-wf/P85/ibm85n120.xml",
-    "ibm/not-wf/P85/ibm85n121.xml", "ibm/not-wf/P85/ibm85n122.xml", "ibm/not-wf/P85/ibm85n123.xml",
-    "ibm/not-wf/P85/ibm85n124.xml", "ibm/not-wf/P85/ibm85n125.xml", "ibm/not-wf/P85/ibm85n126.xml",
-    "ibm/not-wf/P85/ibm85n127.xml", "ibm/not-wf/P85/ibm85n128.xml", "ibm/not-wf/P85/ibm85n129.xml",
-    "ibm/not-wf/P85/ibm85n13.xml", "ibm/not-wf/P85/ibm85n130.xml", "ibm/not-wf/P85/ibm85n131.xml",
-    "ibm/not-wf/P85/ibm85n132.xml", "ibm/not-wf/P85/ibm85n133.xml", "ibm/not-wf/P85/ibm85n134.xml",
-    "ibm/not-wf/P85/ibm85n135.xml", "ibm/not-wf/P85/ibm85n136.xml", "ibm/not-wf/P85/ibm85n137.xml",
-    "ibm/not-wf/P85/ibm85n138.xml", "ibm/not-wf/P85/ibm85n139.xml", "ibm/not-wf/P85/ibm85n14.xml",
-    "ibm/not-wf/P85/ibm85n140.xml", "ibm/not-wf/P85/ibm85n141.xml", "ibm/not-wf/P85/ibm85n142.xml",
-    "ibm/not-wf/P85/ibm85n143.xml", "ibm/not-wf/P85/ibm85n144.xml", "ibm/not-wf/P85/ibm85n145.xml",
-    "ibm/not-wf/P85/ibm85n146.xml", "ibm/not-wf/P85/ibm85n147.xml", "ibm/not-wf/P85/ibm85n148.xml",
-    "ibm/not-wf/P85/ibm85n149.xml", "ibm/not-wf/P85/ibm85n15.xml", "ibm/not-wf/P85/ibm85n150.xml",
-    "ibm/not-wf/P85/ibm85n151.xml", "ibm/not-wf/P85/ibm85n152.xml", "ibm/not-wf/P85/ibm85n153.xml",
-    "ibm/not-wf/P85/ibm85n154.xml", "ibm/not-wf/P85/ibm85n155.xml", "ibm/not-wf/P85/ibm85n156.xml",
-    "ibm/not-wf/P85/ibm85n157.xml", "ibm/not-wf/P85/ibm85n158.xml", "ibm/not-wf/P85/ibm85n159.xml",
-    "ibm/not-wf/P85/ibm85n16.xml", "ibm/not-wf/P85/ibm85n160.xml", "ibm/not-wf/P85/ibm85n161.xml",
-    "ibm/not-wf/P85/ibm85n162.xml", "ibm/not-wf/P85/ibm85n163.xml", "ibm/not-wf/P85/ibm85n164.xml",
-    "ibm/not-wf/P85/ibm85n165.xml", "ibm/not-wf/P85/ibm85n166.xml", "ibm/not-wf/P85/ibm85n167.xml",
-    "ibm/not-wf/P85/ibm85n168.xml", "ibm/not-wf/P85/ibm85n169.xml", "ibm/not-wf/P85/ibm85n17.xml",
-    "ibm/not-wf/P85/ibm85n170.xml", "ibm/not-wf/P85/ibm85n171.xml", "ibm/not-wf/P85/ibm85n172.xml",
-    "ibm/not-wf/P85/ibm85n173.xml", "ibm/not-wf/P85/ibm85n174.xml", "ibm/not-wf/P85/ibm85n175.xml",
-    "ibm/not-wf/P85/ibm85n176.xml", "ibm/not-wf/P85/ibm85n177.xml", "ibm/not-wf/P85/ibm85n178.xml",
-    "ibm/not-wf/P85/ibm85n179.xml", "ibm/not-wf/P85/ibm85n18.xml", "ibm/not-wf/P85/ibm85n180.xml",
-    "ibm/not-wf/P85/ibm85n181.xml", "ibm/not-wf/P85/ibm85n182.xml", "ibm/not-wf/P85/ibm85n183.xml",
-    "ibm/not-wf/P85/ibm85n184.xml", "ibm/not-wf/P85/ibm85n185.xml", "ibm/not-wf/P85/ibm85n186.xml",
-    "ibm/not-wf/P85/ibm85n187.xml", "ibm/not-wf/P85/ibm85n188.xml", "ibm/not-wf/P85/ibm85n189.xml",
-    "ibm/not-wf/P85/ibm85n19.xml", "ibm/not-wf/P85/ibm85n190.xml", "ibm/not-wf/P85/ibm85n191.xml",
-    "ibm/not-wf/P85/ibm85n192.xml", "ibm/not-wf/P85/ibm85n193.xml", "ibm/not-wf/P85/ibm85n194.xml",
-    "ibm/not-wf/P85/ibm85n195.xml", "ibm/not-wf/P85/ibm85n196.xml", "ibm/not-wf/P85/ibm85n197.xml",
-    "ibm/not-wf/P85/ibm85n198.xml", "ibm/not-wf/P85/ibm85n20.xml", "ibm/not-wf/P85/ibm85n21.xml",
-    "ibm/not-wf/P85/ibm85n22.xml", "ibm/not-wf/P85/ibm85n23.xml", "ibm/not-wf/P85/ibm85n24.xml",
-    "ibm/not-wf/P85/ibm85n25.xml", "ibm/not-wf/P85/ibm85n26.xml", "ibm/not-wf/P85/ibm85n27.xml",
-    "ibm/not-wf/P85/ibm85n28.xml", "ibm/not-wf/P85/ibm85n29.xml", "ibm/not-wf/P85/ibm85n30.xml",
-    "ibm/not-wf/P85/ibm85n31.xml", "ibm/not-wf/P85/ibm85n32.xml", "ibm/not-wf/P85/ibm85n33.xml",
-    "ibm/not-wf/P85/ibm85n34.xml", "ibm/not-wf/P85/ibm85n35.xml", "ibm/not-wf/P85/ibm85n36.xml",
-    "ibm/not-wf/P85/ibm85n37.xml", "ibm/not-wf/P85/ibm85n38.xml", "ibm/not-wf/P85/ibm85n39.xml",
-    "ibm/not-wf/P85/ibm85n40.xml", "ibm/not-wf/P85/ibm85n41.xml", "ibm/not-wf/P85/ibm85n42.xml",
-    "ibm/not-wf/P85/ibm85n43.xml", "ibm/not-wf/P85/ibm85n44.xml", "ibm/not-wf/P85/ibm85n45.xml",
-    "ibm/not-wf/P85/ibm85n46.xml", "ibm/not-wf/P85/ibm85n47.xml", "ibm/not-wf/P85/ibm85n48.xml",
-    "ibm/not-wf/P85/ibm85n49.xml", "ibm/not-wf/P85/ibm85n50.xml", "ibm/not-wf/P85/ibm85n51.xml",
-    "ibm/not-wf/P85/ibm85n52.xml", "ibm/not-wf/P85/ibm85n53.xml", "ibm/not-wf/P85/ibm85n54.xml",
-    "ibm/not-wf/P85/ibm85n55.xml", "ibm/not-wf/P85/ibm85n56.xml", "ibm/not-wf/P85/ibm85n57.xml",
-    "ibm/not-wf/P85/ibm85n58.xml", "ibm/not-wf/P85/ibm85n59.xml", "ibm/not-wf/P85/ibm85n60.xml",
-    "ibm/not-wf/P85/ibm85n61.xml", "ibm/not-wf/P85/ibm85n62.xml", "ibm/not-wf/P85/ibm85n63.xml",
-    "ibm/not-wf/P85/ibm85n64.xml", "ibm/not-wf/P85/ibm85n65.xml", "ibm/not-wf/P85/ibm85n66.xml",
-    "ibm/not-wf/P85/ibm85n67.xml", "ibm/not-wf/P85/ibm85n68.xml", "ibm/not-wf/P85/ibm85n69.xml",
-    "ibm/not-wf/P85/ibm85n70.xml", "ibm/not-wf/P85/ibm85n71.xml", "ibm/not-wf/P85/ibm85n72.xml",
-    "ibm/not-wf/P85/ibm85n73.xml", "ibm/not-wf/P85/ibm85n74.xml", "ibm/not-wf/P85/ibm85n75.xml",
-    "ibm/not-wf/P85/ibm85n76.xml", "ibm/not-wf/P85/ibm85n77.xml", "ibm/not-wf/P85/ibm85n78.xml",
-    "ibm/not-wf/P85/ibm85n79.xml", "ibm/not-wf/P85/ibm85n80.xml", "ibm/not-wf/P85/ibm85n81.xml",
-    "ibm/not-wf/P85/ibm85n82.xml", "ibm/not-wf/P85/ibm85n83.xml", "ibm/not-wf/P85/ibm85n84.xml",
-    "ibm/not-wf/P85/ibm85n85.xml", "ibm/not-wf/P85/ibm85n86.xml", "ibm/not-wf/P85/ibm85n87.xml",
-    "ibm/not-wf/P85/ibm85n88.xml", "ibm/not-wf/P85/ibm85n89.xml", "ibm/not-wf/P85/ibm85n90.xml",
-    "ibm/not-wf/P85/ibm85n91.xml", "ibm/not-wf/P85/ibm85n92.xml", "ibm/not-wf/P85/ibm85n93.xml",
-    "ibm/not-wf/P85/ibm85n94.xml", "ibm/not-wf/P85/ibm85n95.xml", "ibm/not-wf/P85/ibm85n96.xml",
-    "ibm/not-wf/P85/ibm85n97.xml", "ibm/not-wf/P85/ibm85n98.xml", "ibm/not-wf/P85/ibm85n99.xml",
-    "ibm/not-wf/P86/ibm86n01.xml", "ibm/not-wf/P86/ibm86n02.xml", "ibm/not-wf/P86/ibm86n03.xml",
-    "ibm/not-wf/P86/ibm86n04.xml", "ibm/not-wf/P87/ibm87n01.xml", "ibm/not-wf/P87/ibm87n02.xml",
-    "ibm/not-wf/P87/ibm87n03.xml", "ibm/not-wf/P87/ibm87n04.xml", "ibm/not-wf/P87/ibm87n05.xml",
-    "ibm/not-wf/P87/ibm87n06.xml", "ibm/not-wf/P87/ibm87n07.xml", "ibm/not-wf/P87/ibm87n08.xml",
-    "ibm/not-wf/P87/ibm87n09.xml", "ibm/not-wf/P87/ibm87n10.xml", "ibm/not-wf/P87/ibm87n11.xml",
-    "ibm/not-wf/P87/ibm87n12.xml", "ibm/not-wf/P87/ibm87n13.xml", "ibm/not-wf/P87/ibm87n14.xml",
-    "ibm/not-wf/P87/ibm87n15.xml", "ibm/not-wf/P87/ibm87n16.xml", "ibm/not-wf/P87/ibm87n17.xml",
-    "ibm/not-wf/P87/ibm87n18.xml", "ibm/not-wf/P87/ibm87n19.xml", "ibm/not-wf/P87/ibm87n20.xml",
-    "ibm/not-wf/P87/ibm87n21.xml", "ibm/not-wf/P87/ibm87n22.xml", "ibm/not-wf/P87/ibm87n23.xml",
-    "ibm/not-wf/P87/ibm87n24.xml", "ibm/not-wf/P87/ibm87n25.xml", "ibm/not-wf/P87/ibm87n26.xml",
-    "ibm/not-wf/P87/ibm87n27.xml", "ibm/not-wf/P87/ibm87n28.xml", "ibm/not-wf/P87/ibm87n29.xml",
-    "ibm/not-wf/P87/ibm87n30.xml", "ibm/not-wf/P87/ibm87n31.xml", "ibm/not-wf/P87/ibm87n32.xml",
-    "ibm/not-wf/P87/ibm87n33.xml", "ibm/not-wf/P87/ibm87n34.xml", "ibm/not-wf/P87/ibm87n35.xml",
-    "ibm/not-wf/P87/ibm87n36.xml", "ibm/not-wf/P87/ibm87n37.xml", "ibm/not-wf/P87/ibm87n38.xml",
-    "ibm/not-wf/P87/ibm87n39.xml", "ibm/not-wf/P87/ibm87n40.xml", "ibm/not-wf/P87/ibm87n41.xml",
-    "ibm/not-wf/P87/ibm87n42.xml", "ibm/not-wf/P87/ibm87n43.xml", "ibm/not-wf/P87/ibm87n44.xml",
-    "ibm/not-wf/P87/ibm87n45.xml", "ibm/not-wf/P87/ibm87n46.xml", "ibm/not-wf/P87/ibm87n47.xml",
-    "ibm/not-wf/P87/ibm87n48.xml", "ibm/not-wf/P87/ibm87n49.xml", "ibm/not-wf/P87/ibm87n50.xml",
-    "ibm/not-wf/P87/ibm87n51.xml", "ibm/not-wf/P87/ibm87n52.xml", "ibm/not-wf/P87/ibm87n53.xml",
-    "ibm/not-wf/P87/ibm87n54.xml", "ibm/not-wf/P87/ibm87n55.xml", "ibm/not-wf/P87/ibm87n56.xml",
-    "ibm/not-wf/P87/ibm87n57.xml", "ibm/not-wf/P87/ibm87n58.xml", "ibm/not-wf/P87/ibm87n59.xml",
-    "ibm/not-wf/P87/ibm87n60.xml", "ibm/not-wf/P87/ibm87n61.xml", "ibm/not-wf/P87/ibm87n62.xml",
-    "ibm/not-wf/P87/ibm87n63.xml", "ibm/not-wf/P87/ibm87n64.xml", "ibm/not-wf/P87/ibm87n66.xml",
-    "ibm/not-wf/P87/ibm87n67.xml", "ibm/not-wf/P87/ibm87n68.xml", "ibm/not-wf/P87/ibm87n69.xml",
-    "ibm/not-wf/P87/ibm87n70.xml", "ibm/not-wf/P87/ibm87n71.xml", "ibm/not-wf/P87/ibm87n72.xml",
-    "ibm/not-wf/P87/ibm87n73.xml", "ibm/not-wf/P87/ibm87n74.xml", "ibm/not-wf/P87/ibm87n75.xml",
-    "ibm/not-wf/P87/ibm87n76.xml", "ibm/not-wf/P87/ibm87n77.xml", "ibm/not-wf/P87/ibm87n78.xml",
-    "ibm/not-wf/P87/ibm87n79.xml", "ibm/not-wf/P87/ibm87n80.xml", "ibm/not-wf/P87/ibm87n81.xml",
-    "ibm/not-wf/P87/ibm87n82.xml", "ibm/not-wf/P87/ibm87n83.xml", "ibm/not-wf/P87/ibm87n84.xml",
-    "ibm/not-wf/P87/ibm87n85.xml", "ibm/not-wf/P88/ibm88n03.xml", "ibm/not-wf/P88/ibm88n04.xml",
-    "ibm/not-wf/P88/ibm88n05.xml", "ibm/not-wf/P88/ibm88n06.xml", "ibm/not-wf/P88/ibm88n08.xml",
-    "ibm/not-wf/P88/ibm88n09.xml", "ibm/not-wf/P88/ibm88n10.xml", "ibm/not-wf/P88/ibm88n11.xml",
-    "ibm/not-wf/P88/ibm88n12.xml", "ibm/not-wf/P88/ibm88n13.xml", "ibm/not-wf/P88/ibm88n14.xml",
-    "ibm/not-wf/P88/ibm88n15.xml", "ibm/not-wf/P88/ibm88n16.xml", "ibm/not-wf/P89/ibm89n03.xml",
-    "ibm/not-wf/P89/ibm89n04.xml", "ibm/not-wf/P89/ibm89n05.xml", "oasis/p04pass1.xml",
-    "oasis/p05pass1.xml", "xmltest/not-wf/sa/140.xml", "xmltest/not-wf/sa/141.xml",
-    "xmltest/valid/sa/012.xml",
+    "eduni/errata-4e/ibm05v03.xml", "eduni/errata-4e/ibm05v05.xml", "oasis/p04pass1.xml",
+    "oasis/p05pass1.xml", "xmltest/valid/sa/012.xml",
   ]
   for row in tsv_text.split("\n") {
     if row.length() == 0 {
       continue
     }
     let parts : Array[StringView] = row.split("\t").collect()
-    if parts.length() != 3 {
+    if parts.length() != 4 {
       continue
     }
     let ty = parts[0].to_owned()
     let path = parts[1].to_owned()
+    let editions = parts[3].to_owned()
     total += 1
     if deferred.contains(path) {
       deferred_count += 1
       continue
     }
-    let bytes = @fs.read_file("./.xmlconf/xmlconf/\{path}").binary()
-    let outcome_ok = match @moonxml.decode_source(bytes) {
-      Err(_) => false
-      Ok(text) =>
-        match @moonxml.parse(text) {
-          Ok(_) => true
-          Err(_) => false
-        }
+    // 役E1 版本面:EDITION 列选适用面("4" → Editions1to4 全表门 / "5" →
+    // Edition5 紧凑表门;缺省 = 全版本适用 = 两面全查)。
+    let faces : Array[@moonxml.XmlEdition] = []
+    for token in editions.split(" ") {
+      if token == "4" {
+        faces.push(@moonxml.Editions1to4)
+      } else if token == "5" {
+        faces.push(@moonxml.Edition5)
+      } else {
+        ()
+      }
     }
     let expected_ok = ty == "valid" || ty == "invalid" || ty == "error"
-    if outcome_ok == expected_ok {
+    if faces.length() == 0 && editions != "" {
+      // 标注了非 4/5 版次(两面皆不适用)= 无法裁决,账面拒绝待分诊
+      no_face += 1
+      failed += 1
+      failures.push("no-face \{ty} \{path}")
+      continue
+    }
+    let bytes = @fs.read_file("./.xmlconf/xmlconf/\{path}").binary()
+    let outcome_ok = match @moonxml.decode_source(bytes) {
+      Err(_) => expected_ok == false
+      Ok(text) => {
+        let mut all_faces_match = true
+        for face in faces {
+          let face_ok = match @moonxml.parse_edition(text, edition=face) {
+            Ok(_) => expected_ok
+            Err(_) => expected_ok == false
+          }
+          if face_ok == false {
+            all_faces_match = false
+          }
+        }
+        all_faces_match
+      }
+    }
+    if outcome_ok {
       passed += 1
     } else {
       failed += 1
@@ -213,6 +146,7 @@ async test "xmlconf suite gate" {
     debug("xmlconf failures (\{failed}) dumped to /tmp/xmlconf_failures.txt")
   }
   assert_eq(failed, 0)
+  assert_eq(no_face, 0) // 版本面闭钉:manifest 不得出现非 4/5 标注(出现即待分诊)
   assert_eq(deferred_count, deferred.length()) // 桶表闭钉:每条 deferred 必须真被 TSV 消费(防错字漏判)
   assert_true(passed + deferred_count == total)
   debug(

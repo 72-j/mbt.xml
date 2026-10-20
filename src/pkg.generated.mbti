@@ -4,7 +4,23 @@ package "thy1016/moonxml"
 // Values
 pub fn decode_source(Bytes) -> Result[String, XmlError]
 
+pub fn is_base_char_10(Int) -> Bool
+
+pub fn is_combining_char_10(Int) -> Bool
+
+pub fn is_digit_10(Int) -> Bool
+
+pub fn is_extender_10(Int) -> Bool
+
+pub fn is_ideographic_10(Int) -> Bool
+
+pub fn is_name_char_11(Int) -> Bool
+
+pub fn is_name_start_char_11(Int) -> Bool
+
 pub fn parse(String) -> Result[Document, XmlError]
+
+pub fn parse_edition(String, edition~ : XmlEdition) -> Result[Document, XmlError]
 
 // Errors
 pub(all) suberror XmlError {
@@ -21,6 +37,7 @@ pub(all) suberror XmlErrorKind {
   InvalidEntity(String)
   Encoding(String)
   IllegalChar(Int)
+  IllegalName(String)
   Structure(String)
 } derive(Eq)
 pub fn XmlErrorKind::equal(Self, Self) -> Bool
@@ -85,6 +102,13 @@ pub(all) struct XmlDecl {
 } derive(Eq)
 pub fn XmlDecl::equal(Self, Self) -> Bool
 pub fn XmlDecl::not_equal(Self, Self) -> Bool
+
+pub(all) enum XmlEdition {
+  Editions1to4
+  Edition5
+} derive(Eq)
+pub fn XmlEdition::equal(Self, Self) -> Bool
+pub fn XmlEdition::not_equal(Self, Self) -> Bool
 
 pub(all) struct XmlName {
   qualified_name : String

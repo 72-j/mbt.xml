@@ -195,7 +195,76 @@
   (euc-jp/shift_jis/iso-2022-jp)进支持集(需 JIS 表,6+案);
   ③ 四族 B/C/D/E 残部照旧候拍(B 70/C 39/D 23/E 310)。
 
-## 6. 换机迁移清单
+## 6. 役E1:版本面键控名字段门 + 名字表 gen(2026-10-21,已关)
+
+- **起因**:A1 收官余账候拍选 E 族(310,最大桶)。役前探针定谳三层事实:
+  ① 漏拒向 P85 族(下标 302)的 PI 住**内部子集**,但底座事件面照发 PI,落树
+  prologue/epilogue——树面全查即可及;② 错拒向(8)卡底座
+  `split_qualified_name`(首/尾冒号名、组合字符衔接段),树建前即拒,moonxml
+  层门不可达;③ **套件本身是版本分裂设计**——同名测试成对
+  (`ibm/not-wf/P85/ibm85n03` not-wf vs `eduni/errata-4e/ibm85n03` valid,
+  注释自供 "only legal per 5th edition"),官方裁决模型 = TEST 元素
+  EDITION 属性按适用版次标注,处理器按面选子集。M2 "1.0 全表 vs 1.1 紧凑
+  双向偏差"的判断就此勘误:不是 1.0 vs 1.1,是 **1.0 的 4e 全表面 vs 5e
+  紧凑面**(5e 名字段与 1.1 同形),两套判词都在套件里。
+- **落地面**:
+  - 数据面:`.xmlnames/`(W3C XML 1.0 4e + XML 1.1 2e 规范 HTML 锁版随仓,
+    SHA256SUMS 可验)+ `tools/extract_name_tables.py`(规范文本→区间表机械
+    翻译)+ `src/xml_name_tables.toml`(人维护面:1.0 4e 五产生式
+    base_char/ideographic/combining_char/digit/extender + 1.1 两产生式
+    name_start_char/name_char,hex 字面,refs 记产生式引用);
+  - gen 链:skelschema 新方言 `xmlname_toml_gen.mbt`(parse/validate/emit
+    三件套,base 零改动——“新方言 = 新数据”再演;production id 是数据,
+    生成器零硬编码);负例 9 + 形态钉住 `xmlname_toml_gen_test.mbt`
+    (49/49);金门 + scope 门住 `skelgen/xmlname_link_test.mbt`
+    (重生成 ≡ 入库件逐字节 + 顶层键闭集);再生命令
+    `moon run skelgen/xmlnameregen`;产物 `src/name_tables_gen.mbt`
+    (区间表 + `is_<id>` 谓词,refs 机械展开为析取,fmt 幂等);
+  - 手写层:`src/namecheck.mbt`(拼装语义:1.0 Letter = BaseChar|Ideographic、
+    Name/NameChar 组合、版本键控)+ `parse_edition(source, edition~)`
+    接线 + `XmlErrorKind::IllegalName(String)` 新词;
+  - 套件门:扁平器 TSV 加第 4 列 EDITION(再生逐字节稳定,md5 同);
+    门改双面裁决(EDITION=1 2 3 4 → 4e 表面 / =5 → 5e 面 / 缺省 = 两面
+    全查)+ no-face 闭钉。
+- **门**:moonxml **48/48**(38 旧 + E1 名字段单元 10);套件读数
+  **2437 passed / 148 deferred / 2585 total**(自 2135/450:净关 302,
+  桶外零破坏)。生成链:skelschema 49/49 + skelgen 8/8(金门咬进域定门)。
+- **R-E1a [定案] 名字表 = 规范锁版 + 提取脚本 + TOML 人维护面**:区间形
+  照规范原文(贴邻合法,如 4e #x00FF|#x0100——金门咬出后撤销“贴邻并一条”
+  判);ref 只记引用不展开(展开是 emit 期机械形);词表封闭,生成器不识
+  具体产生式名。
+- **R-E1b [定案] 门形 = 策略显式化**:版本(version=1.1/1.0/缺省)选表族,
+  版本面(XmlEdition:Editions1to4/Edition5)在 1.0 族内选表;`parse()`
+  = Edition5 缺省面(= 现行底座行为,旧消费者零感知);版次敏感消费方走
+  `parse_edition`。门在树建后全量行走(DOCTYPE 名/PI 目标/元素名/属性名);
+  5e 面门 ⊆ 底座(零新增拒绝,自防底座换面),≤4e 面是门增量所在。
+- **R-E1c [定案] 套件门 = EDITION 感知双面裁决**:manifest 第 4 列
+  (缺省 = 全版本适用);每案按适用面逐面验,全匹配才过;非 4/5 标注 =
+  no-face 闭钉红(防新版次标注静默漏判)。302 漏拒族(EDITION=1 2 3 4)
+  以 4e 面门正判入 plain;313+383 标注案读数全咬模拟预言。
+- **R-E1d [定案] 施工前 python 全量模拟锁面**(A1 先例二演):真管线倾倒
+  1360 parse-ok 案的全名字面,按新表预言翻案——302 全闭 / plain 零破坏
+  预言与实跑严丝合缝;模拟器自身三虫(TSV 4 位 hex 正则咬不住 5 位、
+  NameChar 忘并 digit、not-wf 判“门拒”误记破坏)皆即地定谳,记此防再犯。
+- **事实记账**:
+  1. 底座 `split_qualified_name` 名字策略(拒首/尾冒号、拒组合字符衔接段)
+     是 8 错拒案与 D 族 1.1-valid 案(P04a/P05 冒号名)的共同根因——待底座
+     修或 moonxml 自立名字层(后者的六边形含义:底座降格为纯词法事件源,
+     命名空间/名字面收 moonxml 自有)。
+  2. 内部子集 PI 落树 prologue/epilogue(M2 已证),E 族正判靠它——树面
+     全查的覆盖面证词在此。
+  3. 根仓存量红 5(非本役):moonspace gen_gate(已撤出主仓索引的独立
+     工作区)/ mooncmd sqlite×3 / rdf trig 金门(rdf/ 无未提交改动)——
+     各域自清,不在本役代改。
+  4. 域定门表修:子模块 gitlink 行 porcelain 报「 M moonxml」(无斜杠),
+     前缀不带 / 才咬得中(moonxml/moonttl 两行改);skelgen 门命令补根包
+     (link 金门此前在门命令外)。
+- **月台/余账三分类**:配置类 = 无;外部依赖类 = 底座名字策略(8 错拒
+  +D 族冒号名同根);新能力类 = ① PI 目标 xml 保留字规则(PITarget -=
+  XxMmLl 三连)未查——套件无判词案,消费端出现再立;② B 70/C 39/D 23
+  残部照旧候拍;③ 8 位日文三码(JIS 表,亦可走本役 gen 形)。
+
+## 7. 换机迁移清单
 
 纯 MoonBit 仓（无 C stub）：clone 后 `moon install && moon test` 即可；
 依赖版本以 `moon.mod` import 钉为准（Milky2018/xml@0.6.0 等）。
