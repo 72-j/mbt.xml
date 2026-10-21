@@ -2,8 +2,8 @@
 /// xmlconf_flatten —— W3C XML Conformance Suite(xmlts20130923)清单扁平化:
 /// 官方聚合清单 xmlconf.xml 用 DTD 外部参数实体聚合 21 本分册(外挂实体
 /// 面超出 @moonxml 解析层),本命令按「组→分册」映射逐册用 @moonxml 自解析
-/// (dogfood),产锁版 TSV:TYPE \t base+URI \t ID \t EDITION(保持册序,
-/// 再生逐字节稳定;EDITION 缺省 = 空串 = 全版本适用)。
+/// (dogfood),产锁版 TSV:TYPE \t base+URI \t ID \t EDITION \t NS(保持
+/// 册序,再生逐字节稳定;EDITION/NS 缺省 = 空串 = 全版本适用/非 NS 面)。
 /// 运行:moon run cmd/xmlconf_flatten(cwd = moonxml 仓根)。
 
 ///|
@@ -60,7 +60,10 @@ fn collect_tests(
           // EDITION 属性(役E1):测试适用的 XML 1.0 版次面("1 2 3 4" / "5";
           // 缺省 = 全版本适用)。套件官方裁决模型:处理器按面选子集。
           let edition = attribute_of(sub, "EDITION")
-          rows.push("\{ty}\t\{base}\{uri}\t\{id}\t\{edition}")
+          // NS 列(役N1):Namespaces in XML 测试只对 NS-aware 处理器适用
+          // (官方套件把 NS 测试独立成节)——按分册径标 "ns",余者空 = 非 NS 面。
+          let ns = if base.has_prefix("eduni/namespaces/") { "ns" } else { "" }
+          rows.push("\{ty}\t\{base}\{uri}\t\{id}\t\{edition}\t\{ns}")
         }
         collect_tests(sub, base, rows)
       }

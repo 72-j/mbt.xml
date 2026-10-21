@@ -151,3 +151,90 @@ test "names legal in both faces pass (namespace-qualified forms)" {
     "ok",
   )
 }
+
+///|
+/// 役N1 NS 模式旗标:非 NS 面(名字原文直通/xmlns 即普通属性/无前缀解析)
+/// 与 NS-on 面的树形状钉。
+
+///|
+test "ns-off: colon names accepted (element, attribute, PI target)" {
+  let source = "<?PITarget: with colon?><:lead a:b=\"v\" tail:=\"w\"><x:y/></:lead>"
+  assert_eq(
+    kind_of(
+      @moonxml.parse_edition(
+        source,
+        edition=@moonxml.Editions1to4,
+        ns=@moonxml.Off,
+      ),
+    ),
+    "ok",
+  )
+}
+
+///|
+test "ns-off: combining char after colon accepted on 4e face" {
+  // 套件对样 oasis/p04pass1:NS-always-on 下必拒,非 NS 面 1.0 合法
+  let source = "<A.-:\u{0300}\u{00B7}/>"
+  assert_eq(
+    kind_of(
+      @moonxml.parse_edition(
+        source,
+        edition=@moonxml.Editions1to4,
+        ns=@moonxml.Off,
+      ),
+    ),
+    "ok",
+  )
+}
+
+///|
+test "ns-off: xmlns is an ordinary attribute kept in place" {
+  let source = "<doc xmlns=\"urn:d\" a=\"1\" xmlns:p=\"urn:p\"/>"
+  match
+    @moonxml.parse_edition(source, edition=@moonxml.Edition5, ns=@moonxml.Off) {
+    Ok(document) => {
+      let attributes = document.root.attributes
+      assert_eq(attributes.length(), 3)
+      assert_eq(attributes[0].name.qualified_name, "xmlns")
+      assert_eq(attributes[1].name.qualified_name, "a")
+      assert_eq(attributes[2].name.qualified_name, "xmlns:p")
+      // 非 NS 面:无命名空间语义可记
+      assert_true(attributes[0].name.namespace_uri is None)
+      assert_true(document.root.name.prefix is None)
+      assert_eq(document.root.name.local_name, "doc")
+    }
+    Err(_) => fail("ns-off must accept")
+  }
+}
+
+///|
+test "ns-off: unbound prefix accepted (no NS resolution)" {
+  let source = "<p:doc p:attr=\"v\"/>"
+  assert_eq(
+    kind_of(
+      @moonxml.parse_edition(source, edition=@moonxml.Edition5, ns=@moonxml.Off),
+    ),
+    "ok",
+  )
+}
+
+///|
+test "ns-on unchanged: unbound prefix still rejected" {
+  let source = "<p:doc/>"
+  match
+    @moonxml.parse_edition(source, edition=@moonxml.Edition5, ns=@moonxml.On) {
+    Err(At(error=@moonxml.InvalidSyntax(message), ..)) =>
+      assert_true(message.contains("undeclared namespace prefix"))
+    other => fail("ns-on must reject unbound prefix: \{other_is_err(other)}")
+  }
+}
+
+///|
+fn other_is_err(
+  result : Result[@moonxml.Document, @moonxml.XmlError],
+) -> String {
+  match result {
+    Ok(_) => "parsed ok"
+    Err(At(error~, ..)) => error_to_text(error)
+  }
+}

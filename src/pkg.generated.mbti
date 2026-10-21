@@ -20,7 +20,7 @@ pub fn is_name_start_char_11(Int) -> Bool
 
 pub fn parse(String) -> Result[Document, XmlError]
 
-pub fn parse_edition(String, edition~ : XmlEdition) -> Result[Document, XmlError]
+pub fn parse_edition(String, edition~ : XmlEdition, ns? : NsMode) -> Result[Document, XmlError]
 
 // Errors
 pub(all) suberror XmlError {
@@ -79,6 +79,13 @@ pub(all) enum Node {
 } derive(Eq)
 pub fn Node::equal(Self, Self) -> Bool
 pub fn Node::not_equal(Self, Self) -> Bool
+
+pub(all) enum NsMode {
+  On
+  Off
+} derive(Eq)
+pub fn NsMode::equal(Self, Self) -> Bool
+pub fn NsMode::not_equal(Self, Self) -> Bool
 
 pub(all) struct SourcePosition {
   offset : Int

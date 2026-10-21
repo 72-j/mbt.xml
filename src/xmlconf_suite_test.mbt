@@ -2,7 +2,8 @@
 /// M2 套件门:W3C XML Conformance Suite(xmlts20130923 锁版,.xmlconf/ 随仓)
 /// file-by-file,源入口 = @moonxml.decode_source(役A1 编码前端 + Char 门)
 /// 再 @moonxml.parse_edition(役E1 名字段门,按 manifest EDITION 列选版本面:
-/// "1 2 3 4" → 4e 全表门 / "5" → 5e 紧凑表门 / 缺省 = 两面全查)。
+/// "1 2 3 4" → 4e 全表门 / "5" → 5e 紧凑表门 / 缺省 = 两面全查;役N1 NS 列:
+/// eduni/namespaces/** = NS-aware 面,余者 = 非 NS 面——两轴正交)。
 /// 分桶:plain = hard verdicts——valid/invalid → 必解析(invalid = DTD
 /// 有效性违例,非良构层职责);not-wf → 必拒;error = XML 1.0 §1.2 可恢复
 /// 违例 → 双向可过(役E2 勘误:报错即拒与继续解析都在规范符合带内)。
@@ -58,28 +59,27 @@ async test "xmlconf suite gate" {
     "oasis/p62fail1.xml", "oasis/p62fail2.xml", "oasis/p63fail1.xml", "oasis/p63fail2.xml",
     "oasis/p64fail1.xml", "oasis/p64fail2.xml", "sun/not-wf/cond01.xml", "sun/not-wf/cond02.xml",
     "sun/not-wf/decl01.xml", "sun/valid/pe00.xml", "sun/valid/pe02.xml",
-    // D 名字/命名空间/字符引用残部(14):NS 冒号名错拒(1.1 valid P04a/P05 冒号名,与 E 错拒 8 同根——NS-always-on 与套件非 NS 面冲突,NS 模式旗标月台)/ NS 1.1 前缀解绑错拒(003/004,xmlns:p 空串 1.1 合法,自立 NS 层月台)/ 底座 char-ref·实体校验面(043/054/ibm02v02/03/05,1.1 控制字符经引用合法)/ E50(1.1 2e errata 名字字符增补,未进 REC 正文)/ 006(外部实体 valid 面)。役E2 移出:008/009/055-057(error 双向)、016/019(4e 面 IllegalName 正判)、001/002(改挂 B)
+    // D 名字/命名空间/字符引用残部(9):NS 1.1 前缀解绑错拒(003/004,xmlns:p 空串 1.1 合法——NS-aware 面内唯一可闭族,底座 NS 规则版本键控月台)/ 底座 char-ref·实体校验面(043/054/ibm02v02/03/05,1.1 控制字符经引用合法)/ E50(1.1 2e errata 名字字符增补,未进 REC 正文)/ 006(外部实体 valid 面)。役E2 移出 008/009/055-057/001/002;役N1 移出冒号名 5(NS 模式旗标非 NS 面正判)
      "eduni/errata-2e/E50.xml", "eduni/namespaces/1.1/003.xml", "eduni/namespaces/1.1/004.xml",
     "eduni/xml-1.1/006.xml", "eduni/xml-1.1/043.xml", "eduni/xml-1.1/054.xml", "ibm/xml-1.1/valid/P02/ibm02v02.xml",
-    "ibm/xml-1.1/valid/P02/ibm02v03.xml", "ibm/xml-1.1/valid/P02/ibm02v05.xml", "ibm/xml-1.1/valid/P04/ibm04v01.xml",
-    "ibm/xml-1.1/valid/P05/ibm05v01.xml", "ibm/xml-1.1/valid/P05/ibm05v02.xml", "ibm/xml-1.1/valid/P05/ibm05v03.xml",
-    "ibm/xml-1.1/valid/P05/ibm05v05.xml",
-    // E 名字/字符域(8):底座 split_qualified_name 名字策略先拒(首/尾冒号名、组合字符衔接段)——错误在树建前,版本面门不可达;与版次无关(4e/5e 两面同拒),待底座修或 moonxml 自立名字层。役E1 已收编 302 漏拒族(套件 EDITION=1 2 3 4 面判词,4e 表门正判入 plain)。
-     "eduni/errata-4e/ibm04v01.xml", "eduni/errata-4e/ibm05v01.xml", "eduni/errata-4e/ibm05v02.xml",
-    "eduni/errata-4e/ibm05v03.xml", "eduni/errata-4e/ibm05v05.xml", "oasis/p04pass1.xml",
-    "oasis/p05pass1.xml", "xmltest/valid/sa/012.xml",
+    "ibm/xml-1.1/valid/P02/ibm02v03.xml", "ibm/xml-1.1/valid/P02/ibm02v05.xml",
+    // E 名字段(0,桶空役N1 清):底座 split_qualified_name 名字策略先拒族(首/尾冒号名、组合字符衔接段)已由 NS 模式旗标非 NS 面全数正判入 plain;桶壳保留——新名字域败案先归此再分诊。
+
   ]
   for row in tsv_text.split("\n") {
     if row.length() == 0 {
       continue
     }
     let parts : Array[StringView] = row.split("\t").collect()
-    if parts.length() != 4 {
+    if parts.length() != 5 {
       continue
     }
     let ty = parts[0].to_owned()
     let path = parts[1].to_owned()
     let editions = parts[3].to_owned()
+    // NS 列(役N1):Namespaces in XML 测试只对 NS-aware 处理器适用,
+    // 余者按非 NS 面判——两轴正交(EDITION 选版次面,NS 选规范面)。
+    let ns_mode = if parts[4] == "ns" { @moonxml.On } else { @moonxml.Off }
     total += 1
     if deferred.contains(path) {
       deferred_count += 1
@@ -116,7 +116,8 @@ async test "xmlconf suite gate" {
       Ok(text) => {
         let mut all_faces_match = true
         for face in faces {
-          let face_ok = match @moonxml.parse_edition(text, edition=face) {
+          let face_ok = match
+            @moonxml.parse_edition(text, edition=face, ns=ns_mode) {
             Ok(_) => expected_ok
             Err(_) => two_way_ok || expected_ok == false
           }

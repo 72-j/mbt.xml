@@ -303,7 +303,41 @@
   ——japanese×6 已以 error 双向闭——但真解码能力是底座仓消费价值);
   ③ B 69/C 39 残部照旧。
 
-## 8. 换机迁移清单
+## 8. 役N1:NS 模式旗标(2026-10-21,已关)
+
+- **起因**:E2 关役月台首选项——E 错拒 8 + D 冒号名 5 = 13 案的唯一闭案径。
+  役前定谳修正了 E2 的一个预判:「自立 NS 层」救不了这批案(自有层同为
+  NCName 规则),真解 = **NS 处理本身可选**——XML 1.0 基础规范与
+  Namespaces 是两个规范面,非 NS 处理器合法地接受冒号名/组合字符衔接段。
+- **落地面**:`NsMode { On; Off }` + `parse_edition(source, edition~,
+  ns~ = On)`;Off 路 = 底座 raw Reader(namespace_aware 缺省 false,
+  PI 目标/DOCTYPE 名冒号合法)+ 名字原文直通(qualified_name = 原文,
+  prefix/local/uri = None——非 NS 面无命名空间语义可记)+ xmlns 即普通
+  属性保持原位;On 路不变(NamespaceReader,底座承担 NS 规则,无需自研)。
+  名字段门(E1 树面全查)两模共用, editions 语义不变。套件门加 NS 列
+  (扁平器按分册径 `eduni/namespaces/**` 标 `ns`,59 案;TSV 五列,再生
+  逐字节稳定),NS 测试只对 NS-aware 处理器适用(官方套件独立成节的
+  适用性语义),两轴正交:EDITION 选版次面,NS 选规范面。
+- **R-N1a [定案] NS-off = 名字原文直通**:非 NS 面无命名空间语义可记,
+  prefix/local_name/namespace_uri 三字段 None 形(不发明 NS-ish 结构);
+  xmlns 不另眼。On/Off 两模树形状不同模不同树——各自往返自洽,消费方
+  按模选径。
+- **R-N1b [定案] 模拟镜像门码**:役前探针首跑 387/330 翻红全是探针口径
+  差(定死 Edition5、未排 NS 面案、未算 error 双向、deferred 未排除);
+  修至镜像门码后三账全绿(plain not-wf 零翻红/其余判词零翻绿/13 目标
+  全接)。教训:模拟器必须与门码同构,差一条口径就是假红。
+- **R-N1c [事实] 底座属性词法**:任意属性名后必须有 `=`(名字后直接
+  `>` = 缺等错)——`tail:` 孤冒号属性名任何模式下都不可解析(与 NS 无关,
+  底座词法面);sa/012 的 `:=\"v1\"` 形不受影响(名字 `:` + 等号)。
+- **门**:套件读数 **2453/132→2466/119/2585**(净关 13);桶态
+  A2/B69/C39/D9/E0(E 桶空壳保留);门 **53/53** --target native
+  (NS-off 单元 5:冒号名三处/xmlns 原位/未绑前缀两模对照)。
+- **月台/余账**:① D 桶 9:003/004(NS-aware 面内 1.1 解绑,底座 NS
+  规则版本键控月台)/043·054·ibm02v02·03·05(底座 char-ref 面)/E50
+  (errata 边缘)/006(外部实体);② JIS 三码 gen(真解码能力,套件零
+  增量);③ B 69/C 39 残部(重型另立)。
+
+## 9. 换机迁移清单
 
 纯 MoonBit 仓（无 C stub）：clone 后 `moon install && moon test` 即可；
 依赖版本以 `moon.mod` import 钉为准（Milky2018/xml@0.6.0 等）。
