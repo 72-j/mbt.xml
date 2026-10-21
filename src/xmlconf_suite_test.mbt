@@ -3,11 +3,11 @@
 /// file-by-file,源入口 = @moonxml.decode_source(役A1 编码前端 + Char 门)
 /// 再 @moonxml.parse_edition(役E1 名字段门,按 manifest EDITION 列选版本面:
 /// "1 2 3 4" → 4e 全表门 / "5" → 5e 紧凑表门 / 缺省 = 两面全查)。
-/// 分桶:plain = hard verdicts——valid/invalid/error → 必解析
-/// (invalid = DTD 有效性违例,非良构层职责;error = XML 1.0 可恢复违例,
-/// 按本引擎实际行为钉);not-wf = 必拒。deferred = 五族分诊(逐条可辩护,
-/// 桶闭钉):A 编码残部 / B 外挂 DTD/实体 / C PE·条件段 / D XML 1.1 残部 /
-/// E 名字段底座词法残部。
+/// 分桶:plain = hard verdicts——valid/invalid → 必解析(invalid = DTD
+/// 有效性违例,非良构层职责);not-wf → 必拒;error = XML 1.0 §1.2 可恢复
+/// 违例 → 双向可过(役E2 勘误:报错即拒与继续解析都在规范符合带内)。
+/// deferred = 五族分诊(逐条可辩护,桶闭钉):A 编码残部 / B 外挂 DTD·实体 /
+/// C PE·条件段 / D 名字·命名空间·字符引用残部 / E 名字段底座词法残部。
 async test "xmlconf suite gate" {
   let tsv_text = @utf8.decode_lossy(
     @fs.read_file("./.xmlconf/xmlconf_manifest.tsv").binary(),
@@ -19,11 +19,9 @@ async test "xmlconf suite gate" {
   let mut no_face = 0
   let failures : Array[String] = []
   let deferred : Array[String] = [
-    // A 编码残部(8):UTF-16 声明档——底座对已解码 String 面做 decl/内容一致性启发(declared UTF-16 but content ASCII/UTF-8)而拒;BOM 已消费,核对权在底座,等底座修或 bytes 入口
-    "sun/invalid/utf16b.xml", "sun/invalid/utf16l.xml", "japanese/pr-xml-euc-jp.xml",
-    "japanese/pr-xml-iso-2022-jp.xml", "japanese/pr-xml-shift_jis.xml", "japanese/weekly-euc-jp.xml",
-    "japanese/weekly-iso-2022-jp.xml", "japanese/weekly-shift_jis.xml",
-    // B 外挂 DTD/实体(70):SYSTEM 外部子集/外部实体内容(含 incl* 六例外挂 BOM 案,役A1 自 A 改挂——根因=外挂实体取回)——引擎不取外挂,判据外
+    // A 编码残部(2):UTF-16 声明档——底座对已解码 String 面做 decl/内容一致性启发(declared UTF-16 but content ASCII/UTF-8)而拒;BOM 已消费,核对权在底座,等底座修或 bytes 入口。japanese×6 役E2 移 plain(error 判词双向)
+    "sun/invalid/utf16b.xml", "sun/invalid/utf16l.xml",
+    // B 外挂 DTD/实体(69):SYSTEM 外部子集/外部实体内容——引擎不取外挂,判据外。incl* 六例外挂 BOM 案役A1 自 A 改挂;bomboom×3 役E2 移 plain(error 判词双向);001/002 役E2 自 D 改挂(外部子集声明更高版本号,须外取才能判)
      "eduni/errata-2e/E18.xml", "eduni/errata-2e/E19.xml", "ibm/not-wf/P30/ibm30n01.xml",
     "ibm/not-wf/P31/ibm31n01.xml", "ibm/not-wf/P61/ibm61n01.xml", "ibm/not-wf/P77/ibm77n03.xml",
     "ibm/not-wf/P77/ibm77n04.xml", "ibm/not-wf/P79/ibm79n01.xml", "ibm/not-wf/P79/ibm79n02.xml",
@@ -46,8 +44,7 @@ async test "xmlconf suite gate" {
     "xmltest/valid/ext-sa/012.xml", "xmltest/valid/ext-sa/013.xml", "xmltest/valid/ext-sa/014.xml",
     "xmltest/valid/not-sa/031.xml", "eduni/errata-4e/incl8bom.xml", "eduni/errata-4e/incl8bombom.xml",
     "eduni/errata-4e/inclbom_be.xml", "eduni/errata-4e/inclbom_le.xml", "eduni/errata-4e/inclbombom_be.xml",
-    "eduni/errata-4e/inclbombom_le.xml", "eduni/errata-4e/inclbomboom_be.xml", "eduni/errata-4e/inclbomboom_le.xml",
-    "eduni/errata-4e/incl8bomboom.xml",
+    "eduni/errata-4e/inclbombom_le.xml", "eduni/xml-1.1/001.xml", "eduni/xml-1.1/002.xml",
     // C PE 展开/条件段(39):内部子集 PE 间接展开(`%xx;`→`&#37;zz;` 形)与 INCLUDE/IGNORE 条件段——新能力单独立项
      "eduni/errata-3e/E13.xml", "ibm/not-wf/P62/ibm62n01.xml", "ibm/not-wf/P62/ibm62n02.xml",
     "ibm/not-wf/P62/ibm62n03.xml", "ibm/not-wf/P62/ibm62n04.xml", "ibm/not-wf/P62/ibm62n05.xml",
@@ -61,18 +58,13 @@ async test "xmlconf suite gate" {
     "oasis/p62fail1.xml", "oasis/p62fail2.xml", "oasis/p63fail1.xml", "oasis/p63fail2.xml",
     "oasis/p64fail1.xml", "oasis/p64fail2.xml", "sun/not-wf/cond01.xml", "sun/not-wf/cond02.xml",
     "sun/not-wf/decl01.xml", "sun/valid/pe00.xml", "sun/valid/pe02.xml",
-    // D XML 1.1 语义残部(23):NS 1.1 前缀解绑错拒(003/004)+ 1.1 专属 not-wf 漏拒(001/002/016/019)+ 1.1 valid 档(底座名字表,E 族同根)+ E50——版本门与 byte/字面字符面已由役A1 前置收编
+    // D 名字/命名空间/字符引用残部(14):NS 冒号名错拒(1.1 valid P04a/P05 冒号名,与 E 错拒 8 同根——NS-always-on 与套件非 NS 面冲突,NS 模式旗标月台)/ NS 1.1 前缀解绑错拒(003/004,xmlns:p 空串 1.1 合法,自立 NS 层月台)/ 底座 char-ref·实体校验面(043/054/ibm02v02/03/05,1.1 控制字符经引用合法)/ E50(1.1 2e errata 名字字符增补,未进 REC 正文)/ 006(外部实体 valid 面)。役E2 移出:008/009/055-057(error 双向)、016/019(4e 面 IllegalName 正判)、001/002(改挂 B)
      "eduni/errata-2e/E50.xml", "eduni/namespaces/1.1/003.xml", "eduni/namespaces/1.1/004.xml",
-    "eduni/xml-1.1/001.xml", "eduni/xml-1.1/002.xml", "eduni/xml-1.1/006.xml", "eduni/xml-1.1/016.xml",
-    "eduni/xml-1.1/019.xml", "eduni/xml-1.1/043.xml", "eduni/xml-1.1/054.xml", "ibm/xml-1.1/valid/P02/ibm02v02.xml",
+    "eduni/xml-1.1/006.xml", "eduni/xml-1.1/043.xml", "eduni/xml-1.1/054.xml", "ibm/xml-1.1/valid/P02/ibm02v02.xml",
     "ibm/xml-1.1/valid/P02/ibm02v03.xml", "ibm/xml-1.1/valid/P02/ibm02v05.xml", "ibm/xml-1.1/valid/P04/ibm04v01.xml",
     "ibm/xml-1.1/valid/P05/ibm05v01.xml", "ibm/xml-1.1/valid/P05/ibm05v02.xml", "ibm/xml-1.1/valid/P05/ibm05v03.xml",
-    "ibm/xml-1.1/valid/P05/ibm05v05.xml", "eduni/xml-1.1/008.xml", "eduni/xml-1.1/009.xml",
-    "eduni/xml-1.1/055.xml", "eduni/xml-1.1/056.xml", "eduni/xml-1.1/057.xml",
-    // E 名字/字符域(8):底座 split_qualified_name 名字策略先拒(首/尾冒号名、
-    // 组合字符衔接段)——错误在树建前,版本面门不可达;与版次无关(4e/5e 两面
-    // 同拒),待底座修或 moonxml 自立名字层。役E1 已收编 302 漏拒族(套件
-    // EDITION=1 2 3 4 面判词,4e 表门正判入 plain)。
+    "ibm/xml-1.1/valid/P05/ibm05v05.xml",
+    // E 名字/字符域(8):底座 split_qualified_name 名字策略先拒(首/尾冒号名、组合字符衔接段)——错误在树建前,版本面门不可达;与版次无关(4e/5e 两面同拒),待底座修或 moonxml 自立名字层。役E1 已收编 302 漏拒族(套件 EDITION=1 2 3 4 面判词,4e 表门正判入 plain)。
      "eduni/errata-4e/ibm04v01.xml", "eduni/errata-4e/ibm05v01.xml", "eduni/errata-4e/ibm05v02.xml",
     "eduni/errata-4e/ibm05v03.xml", "eduni/errata-4e/ibm05v05.xml", "oasis/p04pass1.xml",
     "oasis/p05pass1.xml", "xmltest/valid/sa/012.xml",
@@ -106,6 +98,11 @@ async test "xmlconf suite gate" {
       }
     }
     let expected_ok = ty == "valid" || ty == "invalid" || ty == "error"
+    // 役E2 判词面勘误(R-E2a):error = XML 1.0 §1.2/§5.1 可恢复违例——
+    // 处理器报错后可停可续,报错即拒与继续解析都在规范符合带内(本引擎
+    // 对这 14 案的拒因皆为能力边界:编码不支持/外部实体未取/声明词法,
+    // 非无声错续)。故 error 案 Ok/Err 皆匹配;valid/invalid/not-wf 不变。
+    let two_way_ok = ty == "error"
     if faces.length() == 0 && editions != "" {
       // 标注了非 4/5 版次(两面皆不适用)= 无法裁决,账面拒绝待分诊
       no_face += 1
@@ -115,13 +112,13 @@ async test "xmlconf suite gate" {
     }
     let bytes = @fs.read_file("./.xmlconf/xmlconf/\{path}").binary()
     let outcome_ok = match @moonxml.decode_source(bytes) {
-      Err(_) => expected_ok == false
+      Err(_) => two_way_ok || expected_ok == false
       Ok(text) => {
         let mut all_faces_match = true
         for face in faces {
           let face_ok = match @moonxml.parse_edition(text, edition=face) {
             Ok(_) => expected_ok
-            Err(_) => expected_ok == false
+            Err(_) => two_way_ok || expected_ok == false
           }
           if face_ok == false {
             all_faces_match = false

@@ -27,6 +27,9 @@ iso-8859-1，余者 UnsupportedEncoding 拒）、BOM/声明冲突检测、
 `name_tables_gen.mbt`；`parse_edition` 按 1.0 版次面（Editions1to4 全表 /
 Edition5 紧凑）键控名字产生式；套件门 EDITION 感知双面裁决，读数推进
 **2437 passed / 148 deferred / 2585 total**（账见 `ctx.md` §6）。
+**役E2 已落**：判词面勘误——error = XML 1.0 §1.2 可恢复违例，双向可过
+（14 案收编）+ D 族根因归位重挂（016/019 四e 面正判、001/002 改挂 B）；
+读数推进 **2453 passed / 132 deferred / 2585 total**（账见 `ctx.md` §7）。
 
 ### 路线（里程碑）
 
@@ -39,6 +42,7 @@ Edition5 紧凑）键控名字产生式；套件门 EDITION 感知双面裁决�
 | M2 | xmlconf oracle 层：套件锁版随仓 + file-by-file 双桶门 | **已关**（2026-10-16，2068/517/2585，R-M2a/b） |
 | A1 | 编码前端 + 版本键控 Char 门（decode_source） | **已关**（2026-10-16，2135/450/2585，R-A1a/b） |
 | E1 | 版本面键控名字段门 + 名字表 gen（parse_edition） | **已关**（2026-10-21，2437/148/2585，R-E1a/b/c/d） |
+| E2 | 判词面勘误（error 双向）+ D 族重挂 | **已关**（2026-10-21，2453/132/2585，R-E2a/b） |
 | 应用语义层 | RDF/XML 映射、CML 等——独立战线另立仓或归口，仓位随消费端拍 | 未立项 |
 
 ### 分层裁决预立
