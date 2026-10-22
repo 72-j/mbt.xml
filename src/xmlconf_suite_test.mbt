@@ -22,62 +22,39 @@ async test "xmlconf suite gate" {
   let mut no_face = 0
   let failures : Array[String] = []
   let deferred : Array[String] = [
-    // A 编码残部(2):UTF-16 声明档——底座对已解码 String 面做 decl/内容一致性启发(declared UTF-16 but content ASCII/UTF-8)而拒;BOM 已消费,核对权在底座,等底座修或 bytes 入口。japanese×6 役E2 移 plain(error 判词双向)
+    // 役PE位形+闸补役(2026-10-22/23):PE 声明立账 + 三处位形展开 + 外取
+    // 链子代基址合成(16 案毕业);三门上线——闸 S(standalone WFC,2)/
+    // 闸 P(实体值引用语法,3)/ 闸 G(声明名合法性,1)+ PE 载体额外 1
+    // (ibm68n06 实为 standalone 形)= 又 7 案毕业,B 桶 P/G/S 清零。
+    // 16 案留账。
+    // A 编码残部(2):UTF-16 invalid 档——census 勘账:A1 后 decode 已过,
+    // 拒点移至 parse 面(5e 面拒,invalid 案须可解析);旧「decl/内容一致性
+    // 启发拒」注记作废。japanese×6 役E2 移 plain(error 判词双向)。
     "sun/invalid/utf16b.xml", "sun/invalid/utf16l.xml",
-    // B 外挂 DTD/实体(69):SYSTEM 外部子集/外部实体内容——引擎不取外挂,判据外。incl* 六例外挂 BOM 案役A1 自 A 改挂;bomboom×3 役E2 移 plain(error 判词双向);001/002 役E2 自 D 改挂(外部子集声明更高版本号,须外取才能判)
-    // B 残留(役B3 后 25 = P12 + PE6/G2/S2/E1/M2;原 49,T27+V6 中
-    //   25 案随准入三闸毕业入 plain,ibm03v09 反向入账):
-    //   役B3 准入三闸(R-B3a):text decl 语法闸 + only-later 版次闸 +
-    //   版本键控 Char 门;25 毕业案拒因逐案探针核过 census 闸归属。
-    //   ibm03v09 反向入账:件 text decl 缺 P77 必备 encoding 而套件判
-    //   valid——官方描述自标 "(This test is questionable)",与 dtd07
-    //   (同由判 not-wf,文内自注 encoding 必备)自相矛盾;B3 前过门 =
-    //   text decl 未检视的漏读,非规范正判。
-    // PE 载体(6)——violation 住外取 PE 件内,PE 展开未实现取不到(C 族役并):
-    //   1.0 面 ibm77n03/n04、ibm79n01/n02、1.1 n21、eduni/xml-1.1/002
-     "ibm/xml-1.1/not-wf/P77/ibm77n21.xml", "ibm/not-wf/P77/ibm77n03.xml", "ibm/not-wf/P77/ibm77n04.xml",
-    "ibm/not-wf/P79/ibm79n01.xml", "ibm/not-wf/P79/ibm79n02.xml", "eduni/xml-1.1/002.xml",
-    // G 外取子集声明语法闸(2)——声明体语法未过闸(过闸跳过策略,
-    //   役B3 分诊:ibm77n14 实为 `<!ELEMENT 0node>` 非法名,自 T 归 G):
-     "ibm/not-wf/P68/ibm68n06.xml", "ibm/xml-1.1/not-wf/P77/ibm77n14.xml",
-    // S standalone 闸(2)——standalone='yes' 文档引用外取实体 WFC 未拒
-    //   (2.9 语义闸,validity 面职责;役B3 分诊:ibm32n09 实为 standalone
-    //   WFC,自 T 归 S):
-     "sun/not-wf/not-sa03.xml", "ibm/not-wf/P32/ibm32n09.xml",
-    // E 外取件编码声明闸(1)——text decl 声明编码与实际字节核对未实现
-    //   (decode 直通 UTF-8 面):
-     "sun/not-wf/encoding07.xml",
-    // M manifest/套件数据面(2)——ibm77v30 案依 1.1(内容 &#x0001; 经引用
-    //   1.0 拒 1.1 许)而 manifest 第 4 列空 = 两面全查必翻,待上游勘正;
-    //   ibm03v09 套件自相矛盾(见上):
+    // C PE/条件段残留(4):内部子集 PE 展开未立(E13/pe02,底座 turf,
+    //   候独立役)/ ibm62n03、ibm63n03(PE 闸边角,新机下 PARSE-OK-NOW,
+    //   not-wf 必拒未遂——拒因随新机翻新,留账待分诊):
+     "eduni/errata-3e/E13.xml", "ibm/not-wf/P62/ibm62n03.xml", "ibm/not-wf/P63/ibm63n03.xml",
+    "sun/valid/pe02.xml",
+    // M manifest/套件数据面(3,上游自相矛盾,候上游勘正)——ibm77v30
+    //   案依 1.1(&#x0001; 经引用 1.0 拒 1.1 许)而 manifest 版次列空 =
+    //   两面全查必翻;ibm03v09 件缺 P77 必备 encoding 而套件判 valid,
+    //   官方自标 "(This test is questionable)";E50(errata 2e 名字增补
+    //   字符 4e 面拒 5e 面许,manifest 版次列空 = 两面全查必翻,自 D 桶
+    //   移入——非引擎名策略可判,是数据面矛盾):
      "ibm/xml-1.1/valid/P77/ibm77v30.xml", "ibm/xml-1.1/valid/P03/ibm03v09.xml",
-    // P PE 展开/PE 语法闸(12,C∩B 交叠,PE 役并)——PE 补全声明
-    //   (005/006/E14 的 `<!ATTLIST %e;`)、PE 条件段关键词(014-016
-    //   `<![ %e; [`)、PE 值内 % 尾(p09fail/008/002)、PE 引导声明
-    //   (E18 `%pe; %intpe;`):
-     "xmltest/not-wf/not-sa/002.xml", "xmltest/not-wf/not-sa/008.xml", "oasis/p09fail1.xml",
-    "oasis/p09fail2.xml", "xmltest/valid/not-sa/014.xml", "xmltest/valid/not-sa/015.xml",
-    "xmltest/valid/not-sa/016.xml", "eduni/errata-2e/E18.xml", "xmltest/invalid/005.xml",
-    "xmltest/invalid/006.xml", "xmltest/invalid/not-sa/022.xml", "eduni/errata-2e/E14.xml",
-    // C PE 展开/条件段(39):内部子集 PE 间接展开(`%xx;`→`&#37;zz;` 形)与 INCLUDE/IGNORE 条件段——新能力单独立项
-     "eduni/errata-3e/E13.xml", "ibm/not-wf/P62/ibm62n01.xml", "ibm/not-wf/P62/ibm62n02.xml",
-    "ibm/not-wf/P62/ibm62n03.xml", "ibm/not-wf/P62/ibm62n04.xml", "ibm/not-wf/P62/ibm62n05.xml",
-    "ibm/not-wf/P62/ibm62n06.xml", "ibm/not-wf/P62/ibm62n07.xml", "ibm/not-wf/P62/ibm62n08.xml",
-    "ibm/not-wf/P63/ibm63n01.xml", "ibm/not-wf/P63/ibm63n02.xml", "ibm/not-wf/P63/ibm63n03.xml",
-    "ibm/not-wf/P63/ibm63n04.xml", "ibm/not-wf/P63/ibm63n05.xml", "ibm/not-wf/P63/ibm63n06.xml",
-    "ibm/not-wf/P63/ibm63n07.xml", "ibm/not-wf/P64/ibm64n01.xml", "ibm/not-wf/P64/ibm64n02.xml",
-    "ibm/not-wf/P64/ibm64n03.xml", "ibm/not-wf/P65/ibm65n01.xml", "ibm/not-wf/P65/ibm65n02.xml",
-    "ibm/valid/P09/ibm09v03.xml", "ibm/valid/P09/ibm09v05.xml", "ibm/valid/P32/ibm32v02.xml",
-    "ibm/valid/P78/ibm78v01.xml", "oasis/p30fail1.xml", "oasis/p31fail1.xml", "oasis/p61fail1.xml",
-    "oasis/p62fail1.xml", "oasis/p62fail2.xml", "oasis/p63fail1.xml", "oasis/p63fail2.xml",
-    "oasis/p64fail1.xml", "oasis/p64fail2.xml", "sun/not-wf/cond01.xml", "sun/not-wf/cond02.xml",
-    "sun/not-wf/decl01.xml", "sun/valid/pe00.xml", "sun/valid/pe02.xml",
-    // D 名字/命名空间/字符引用残部(9):NS 1.1 前缀解绑错拒(003/004,xmlns:p 空串 1.1 合法——NS-aware 面内唯一可闭族,底座 NS 规则版本键控月台)/ 底座 char-ref·实体校验面(043/054/ibm02v02/03/05,1.1 控制字符经引用合法)/ E50(1.1 2e errata 名字字符增补,未进 REC 正文)/ 006(外部实体 valid 面)。役E2 移出 008/009/055-057/001/002;役N1 移出冒号名 5(NS 模式旗标非 NS 面正判)
-     "eduni/errata-2e/E50.xml", "eduni/namespaces/1.1/003.xml", "eduni/namespaces/1.1/004.xml",
-    "eduni/xml-1.1/006.xml", "eduni/xml-1.1/043.xml", "eduni/xml-1.1/054.xml", "ibm/xml-1.1/valid/P02/ibm02v02.xml",
-    "ibm/xml-1.1/valid/P02/ibm02v03.xml", "ibm/xml-1.1/valid/P02/ibm02v05.xml",
-    // E 名字段(0,桶空役N1 清):底座 split_qualified_name 名字策略先拒族(首/尾冒号名、组合字符衔接段)已由 NS 模式旗标非 NS 面全数正判入 plain;桶壳保留——新名字域败案先归此再分诊。
-
+    "eduni/errata-2e/E50.xml",
+    // D 名字/命名空间/字符引用残留(7):NS 1.1 前缀解绑错拒(003/004,
+    //   xmlns:p 空串 1.1 合法,Milky namespace.mbt 无条件拒空 URI)/
+    //   1.1 控制字符经引用合法(043/054/ibm02v02/03/05,Milky dtd.mbt
+    //   entity-value char ref 1.0 表)。役E2 移出 008/009/055-057/001/002;
+    //   役N1 移出冒号名 5(NS 模式旗标非 NS 面正判)。
+     "eduni/namespaces/1.1/003.xml", "eduni/namespaces/1.1/004.xml", "eduni/xml-1.1/043.xml",
+    "eduni/xml-1.1/054.xml", "ibm/xml-1.1/valid/P02/ibm02v02.xml", "ibm/xml-1.1/valid/P02/ibm02v03.xml",
+    "ibm/xml-1.1/valid/P02/ibm02v05.xml",
+    // E 名字段(0,桶空役N1 清):底座 split_qualified_name 名字策略先拒族
+    //   已由 NS 模式旗标非 NS 面全数正判入 plain;桶壳保留——新名字域败案
+    //   先归此再分诊。
   ]
   // 役B2 外挂面:套件树全量预载(async 预载 + 同步 trait 面解耦——
   // EntityResolver 端口是同步面,取件走内存 store)。R-B1a 本地文件

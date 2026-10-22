@@ -14,6 +14,8 @@ priv struct DoctypeScan {
   subset_start : Int32
   /// 内部子集终点(']' 处);无子集 = -1
   subset_end : Int32
+  /// XMLDecl standalone=='yes'(闸 S 基准,闸补役);只取值不判官。
+  standalone_yes : Bool
 }
 
 ///|
@@ -23,6 +25,7 @@ priv struct DoctypeScan {
 fn scan_doctype(text : String) -> DoctypeScan? {
   let limit = text.length()
   let doc_version = peek_decl_version(text)
+  let standalone_yes = peek_decl_standalone(text)
   let mut pos = skip_doctype_space(text, 0)
   while pos < limit {
     let ch = text[pos]
@@ -43,7 +46,7 @@ fn scan_doctype(text : String) -> DoctypeScan? {
         text[pos + 6] == 'Y' &&
         text[pos + 7] == 'P' &&
         text[pos + 8] == 'E' {
-        return scan_doctype_body(text, pos + 9, doc_version)
+        return scan_doctype_body(text, pos + 9, doc_version, standalone_yes)
       }
       // 根元素起始:序区尽,无 doctype
       return None
@@ -64,6 +67,7 @@ fn scan_doctype_body(
   text : String,
   start : Int32,
   doc_version : String?,
+  standalone_yes : Bool,
 ) -> DoctypeScan? {
   let limit = text.length()
   let mut pos = skip_doctype_space(text, start)
@@ -113,6 +117,7 @@ fn scan_doctype_body(
             doc_version,
             subset_start,
             subset_end,
+            standalone_yes,
           })
         } else {
           None // 子集后无收口 '>'
@@ -128,6 +133,7 @@ fn scan_doctype_body(
       doc_version,
       subset_start: -1,
       subset_end: -1,
+      standalone_yes,
     })
   } else {
     None // 声明未收口
@@ -335,4 +341,49 @@ fn peek_decl_version(text : String) -> String? {
     Some((value, _)) => Some(value)
     None => None
   }
+}
+
+///|
+/// XMLDecl standalone 值探测(P32;闸 S 基准):'standalone' 词后引号值
+/// =="yes" 判真;词缺/值 "no"/畸形 = 假(判官权在底座,本扫描只取件)。
+fn peek_decl_standalone(text : String) -> Bool {
+  if !text.has_prefix("<?xml") {
+    return false
+  }
+  let limit = text.length()
+  if !(limit > 5 && is_doctype_space(text[5])) {
+    return false
+  }
+  let mut cursor : Int32 = 5
+  let mut close : Int32 = -1
+  while cursor + 1 < limit {
+    if text[cursor] == '?' && text[cursor + 1] == '>' {
+      close = cursor
+      break
+    }
+    cursor = cursor + 1
+  }
+  if close < 0 {
+    return false
+  }
+  let head = text[5:close].to_owned()
+  let head_limit = head.length()
+  let mut pos = skip_doctype_space(head, 0)
+  while pos < head_limit {
+    if has_word(head, pos, "standalone") {
+      let cursor = skip_doctype_space(head, pos + 10)
+      if cursor < head_limit && head[cursor] == '=' {
+        match read_doctype_quoted(head, cursor + 1) {
+          Some((value, _)) => return value == "yes"
+          None => return false
+        }
+      }
+      return false
+    }
+    while pos < head_limit && !is_doctype_space(head[pos]) {
+      pos = pos + 1
+    }
+    pos = skip_doctype_space(head, pos)
+  }
+  false
 }

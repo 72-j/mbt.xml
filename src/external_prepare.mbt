@@ -44,6 +44,7 @@ fn write_unit(buffer : ComposeBuffer, text : String, i : Int32) -> Unit {
 fn prepare_external(
   source : String,
   resolver : &EntityResolver,
+  edition : XmlEdition,
 ) -> (String, Array[SpanPatch]) raise XmlError {
   match scan_doctype(source) {
     None => (source, [])
@@ -52,7 +53,12 @@ fn prepare_external(
         resolver,
         table: Map([]),
         internal_literals: Map([]),
+        pe_values: Map([]),
+        pe_externals: Map([]),
+        pe_depth: 0,
         doc_version: doctype.doc_version,
+        standalone_yes: doctype.standalone_yes,
+        edition,
         consumed: 0,
       }
       if doctype.subset_start >= 0 {
@@ -237,6 +243,16 @@ fn expand_entry(
     raise expansion_error(
       source_start,
       "entity expansion too deep at '&\{name};'",
+    )
+  }
+  // 闸 S(闸补役,WFC 2.9 Entity Declared):standalone='yes' 时正文/
+  // 属性位出现本表实体引用即拒——本表实体皆外取件声明(内部子集字面量
+  // 链闭合收归者亦传递含外取内容)。预定义/纯内部实体不入本表,底座
+  // 自持,零误伤。
+  if depth == 0 && load.standalone_yes {
+    raise expansion_error(
+      source_start,
+      "entity '\{name}' declared in external subset but document declares standalone='yes'",
     )
   }
   load.consumed = load.consumed + content.length()

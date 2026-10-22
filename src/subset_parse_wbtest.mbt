@@ -19,7 +19,12 @@ fn subset_load_with(resolver : &EntityResolver) -> ExternalLoad {
     resolver,
     table: Map([]),
     internal_literals: Map([]),
+    pe_values: Map([]),
+    pe_externals: Map([]),
+    pe_depth: 0,
     doc_version: None,
+    standalone_yes: false,
+    edition: Editions1to4,
     consumed: 0,
   }
 }
@@ -99,5 +104,218 @@ test "unterminated entity value rejects" {
     Ok(_) => fail("unterminated value must reject")
     Err(At(error=XmlErrorKind::External(_), ..)) => ()
     Err(_) => fail("unexpected error kind")
+  }
+}
+
+///|
+/// 役PE位形钉:条件段关键词位 = PE 引用形(`<![ %e; [`),关键词从
+/// pe_values 取(014/015/022 位形);值带 '[' = 关键词+括号一体
+/// (bracket-in-value)。体恒原文零移位。
+test "conditional PE keyword gates body" {
+  let load = subset_load_with(DenyAll::{ })
+  load.pe_values.set("e", "INCLUDE")
+  let subset = "<![ %e; [\n<!ENTITY inc \"I\">\n]]>"
+  match subset_outcome(() => load_external_subset(subset, None, load)) {
+    Ok(_) =>
+      match load.table.get("inc") {
+        Some(InternalText(value)) => assert_eq(value, "I")
+        _ => fail("PE-keyword INCLUDE must parse body")
+      }
+    Err(_) => fail("conditional PE INCLUDE must pass")
+  }
+  let ignore_load = subset_load_with(DenyAll::{ })
+  ignore_load.pe_values.set("e", "IGNORE")
+  let ignore_subset = "<![ %e; [\n<!ENTITY ign \"X\">\n]]>"
+  match
+    subset_outcome(() => load_external_subset(ignore_subset, None, ignore_load)) {
+    Ok(_) => assert_true(ignore_load.table.get("ign") is None)
+    Err(_) => fail("conditional PE IGNORE must skip body")
+  }
+  let bracket_load = subset_load_with(DenyAll::{ })
+  bracket_load.pe_values.set("e", "INCLUDE[")
+  let bracket_subset = "<![ %e; <!ELEMENT r ANY>]]>"
+  match
+    subset_outcome(() => {
+      load_external_subset(bracket_subset, None, bracket_load)
+    }) {
+    Ok(_) => assert_true(bracket_load.table.get("r") is None)
+    Err(_) => fail("bracket-in-value conditional must pass")
+  }
+}
+
+///|
+/// 役PE位形钉:声明残段收口 = PE 值内顶层 '>'(005/E14 位形:
+/// `(#PCDATA)>` 补全 ELEMENT 声明)——收口后声明间残段不追,后续
+/// 声明照常解析。
+test "PE value top-level gt closes declaration" {
+  let load = subset_load_with(DenyAll::{ })
+  load.pe_values.set("e", "(#PCDATA)>")
+  let subset = "<!ELEMENT doc (#PCDATA) %e;\n<!ELEMENT after ANY>"
+  match subset_outcome(() => load_external_subset(subset, None, load)) {
+    Ok(_) => assert_true(load.table.get("after") is None)
+    Err(_) => fail("PE-closed declaration must pass")
+  }
+}
+
+///|
+/// 外取链桩 resolver(键 = doc 相对径;点段折叠同 resolver 契约;
+/// 测试件 helper 不跨文件,本地自有)。
+priv struct ChainResolver {
+  store : Map[String, String]
+}
+
+///|
+impl EntityResolver for ChainResolver with fn resolve(
+  self : ChainResolver,
+  base : String?,
+  system_id : String,
+  _public_id : String?,
+) -> Bytes? {
+  let rel = match base {
+    None => ""
+    Some(uri) => {
+      let mut last = -1
+      let limit = uri.length()
+      for index in 0..<limit {
+        if uri[index] == '/' {
+          last = index
+        }
+      }
+      if last < 0 {
+        ""
+      } else {
+        uri[:last].to_owned()
+      }
+    }
+  }
+  match self.store.get(normalize_dot_segments(rel + "/" + system_id)) {
+    Some(text) => {
+      let out : Array[Byte] = []
+      for ch in text {
+        out.push(ch.to_int().to_byte())
+      }
+      Some(Bytes::from_array(out[:]))
+    }
+    None => None
+  }
+}
+
+///|
+/// 役PE位形钉:E18 外取 PE 链——子代声明基址 = merge 合成(RFC 3986
+/// 径面),`../` 链三跳后孙代实体落表(直传生 system_id 时 resolver
+/// 面的 ".." 会咬掉 doc 目录,孙代取件落空 = 本役实证破形)。
+test "external PE chain resolves child base" {
+  let store : Map[String, String] = Map([
+    (
+      "subdir1/E18-pe", "<!ENTITY % extpe SYSTEM \"../subdir2/E18-extpe\">\n<!ENTITY % intpe \"%extpe;\">",
+    ),
+    ("subdir2/E18-extpe", "<!ENTITY ent SYSTEM 'E18-ent'>"),
+    ("subdir2/E18-ent", "CONTENT"),
+  ])
+  let resolver : &EntityResolver = ChainResolver::{ store, }
+  let load = subset_load_with(resolver)
+  let subset = "<!ENTITY % pe SYSTEM \"subdir1/E18-pe\">%pe;\n%intpe;\n"
+  match subset_outcome(() => collect_internal_external_entities(subset, load)) {
+    Ok(_) =>
+      match load.table.get("ent") {
+        Some(ExternalPiece(content)) => assert_eq(content, "CONTENT")
+        _ => fail("chain-resolved entity must land in table")
+      }
+    Err(_) => fail("E18 chain must pass")
+  }
+}
+
+///|
+/// 子代基址合成单元:None 直传 / '..' 折叠 / 绝对径与 scheme 原样。
+test "merge_base_reference unit shapes" {
+  assert_eq(merge_base_reference(None, "sub/a.ent"), "sub/a.ent")
+  assert_eq(
+    merge_base_reference(Some("sub1/E18-pe"), "../sub2/x.ent"),
+    "sub2/x.ent",
+  )
+  assert_eq(merge_base_reference(Some("f.ent"), "g.ent"), "g.ent")
+  assert_eq(merge_base_reference(Some("sub/a.ent"), "/abs/x.ent"), "/abs/x.ent")
+  assert_eq(
+    merge_base_reference(Some("sub/a.ent"), "http://x/y.ent"),
+    "http://x/y.ent",
+  )
+}
+
+///|
+/// 闸补役钉·闸 P(实体值引用语法):孤 '%' / 孤 '&' / 无 ';' 引用
+/// = P09 产生式违例;正形('%pe;'/'&#60;'/'&amp;')照常装载。
+test "entity value reference syntax gate" {
+  let load = subset_load_with(DenyAll::{ })
+  let bad = "<!ENTITY e \"100%\">"
+  match subset_outcome(() => load_external_subset(bad, None, load)) {
+    Ok(_) => fail("lone percent in value must reject")
+    Err(At(error=XmlErrorKind::External(_), ..)) => ()
+    Err(_) => fail("unexpected error kind")
+  }
+  let load2 = subset_load_with(DenyAll::{ })
+  let bad2 = "<!ENTITY % e \"asdf&\">"
+  match subset_outcome(() => load_external_subset(bad2, None, load2)) {
+    Ok(_) => fail("lone ampersand in value must reject")
+    Err(At(error=XmlErrorKind::External(_), ..)) => ()
+    Err(_) => fail("unexpected error kind")
+  }
+  let load3 = subset_load_with(DenyAll::{ })
+  let good = "<!ENTITY % e \"%pe;\">"
+  match subset_outcome(() => load_external_subset(good, None, load3)) {
+    Ok(_) => ()
+    Err(_) => fail("well-formed value refs must load")
+  }
+}
+
+///|
+/// 闸补役钉·闸 G(声明名合法性):`<!ELEMENT 0node>` 数字起名 = 拒;
+/// 正名 / 名位 PE 引用(021/023 位形)照旧过闸。
+test "declaration name validity gate" {
+  let load = subset_load_with(DenyAll::{ })
+  let bad = "<!ELEMENT 0node EMPTY>"
+  match subset_outcome(() => load_external_subset(bad, None, load)) {
+    Ok(_) => fail("digit-start element name must reject")
+    Err(At(error=XmlErrorKind::External(_), ..)) => ()
+    Err(_) => fail("unexpected error kind")
+  }
+  let load2 = subset_load_with(DenyAll::{ })
+  let good = "<!ELEMENT _a-1 ANY><!NOTATION n2 SYSTEM \"x\">"
+  match subset_outcome(() => load_external_subset(good, None, load2)) {
+    Ok(_) => ()
+    Err(_) => fail("legal declaration names must pass")
+  }
+  let load3 = subset_load_with(DenyAll::{ })
+  load3.pe_values.set("e", "doc a1 CDATA")
+  let pe_name = "<!ATTLIST %e; \"v1\">"
+  match subset_outcome(() => load_external_subset(pe_name, None, load3)) {
+    Ok(_) => ()
+    Err(_) => fail("PE-carried ATTLIST name must pass")
+  }
+}
+
+///|
+/// 闸补役钉·闸 S(standalone WFC):standalone='yes' + 本表实体正文位
+/// 展开即拒(WFC 2.9 Entity Declared);standalone 缺省不拦。
+test "standalone yes rejects table entity expansion" {
+  let load = { ..subset_load_with(DenyAll::{ }), standalone_yes: true, }
+  load.table.set("ext", ExternalPiece("X"))
+  let buffer : ComposeBuffer = { inner: StringBuilder(), length: 0, }
+  let outcome = subset_outcome(() => {
+    expand_entry(buffer, [], "ext", "X", 0, 5, load, 0, false)
+  })
+  match outcome {
+    Ok(_) => fail("standalone expansion must reject")
+    Err(At(error=XmlErrorKind::External(_), ..)) => ()
+    Err(_) => fail("unexpected error kind")
+  }
+  let load2 = subset_load_with(DenyAll::{ })
+  load2.table.set("ext", ExternalPiece("X"))
+  let buffer2 : ComposeBuffer = { inner: StringBuilder(), length: 0, }
+  match
+    subset_outcome(() => {
+      expand_entry(buffer2, [], "ext", "X", 0, 5, load2, 0, false)
+    }) {
+    Ok(_) => ()
+    Err(_) => fail("non-standalone expansion must pass")
   }
 }

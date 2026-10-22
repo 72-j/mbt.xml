@@ -385,7 +385,7 @@ pub fn parse_edition(
     {
       let (effective, patches) = match resolver {
         None => (source, [])
-        Some(face) => prepare_external(source, face)
+        Some(face) => prepare_external(source, face, edition)
       }
       let document = try {
         let document = match ns {

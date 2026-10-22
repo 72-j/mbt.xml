@@ -148,7 +148,7 @@ fn prepare_outcome(
   source : String,
   resolver : &EntityResolver,
 ) -> Result[(String, Array[SpanPatch]), XmlError] {
-  Ok(prepare_external(source, resolver)) catch {
+  Ok(prepare_external(source, resolver, Editions1to4)) catch {
     why => Err(why)
   }
 }
