@@ -269,3 +269,47 @@ EXTERNAL_EXPANSION_BUDGET=1000000(累计插入字符);错误归引用位。
 (最大族,候选次役)/P PE 闸 12(C∩B 并 PE 役)/V 外取件版次闸 6/
 E 编码闸 1/S standalone 闸 1/G 声明语法闸 1/M manifest 版次标注缺 1
 (两面冲突,待 manifest 勘正或版次双向容忍语义立项)。
+
+### 6. 役B3 定案(R-B3 [定案] 2026-10-22)
+
+**R-B3a 准入三闸**:`admit_external_text(text, doc_version)` = text decl
+验证剥除 + 版本键控 Char 门,取件两步的第二步(decode_source 解码面之后
+的校验面)。①**语法闸**(P77:仅文首触发——`<?xml` 后随 S 或 `?>`;
+缺 encoding/序位倒置(version 后于 encoding)/standalone 越权/版本词形
+∉{1.0,1.1}/伪属性集封闭({version,encoding} 外即拒)/分隔符版次键控
+(NEL·U+2028 仅 1.1 文档面合法)皆拒;违例一律 `External` 域——件破即拒,
+R-B1d 延伸)。②**only-later 版次闸**(XML 1.1 §4.3.4):件 text decl
+版次晚于文档版次即拒(1.1 件在 1.0 文档 = 违例);1.0 件在 1.1 文档
+**合法**——单向规则,非等值核对。③**Char 门**(复用 [gate_chars],
+`doc_version == Some("1.1")` 键控):外取件按文档版本规则做字面受限区
+扫描;字符引用是 ASCII 文本天然放行(ibm77v22-29 校准)。
+
+**R-B3b doc_version 基准与只取不判**:`peek_decl_version` 只读 XMLDecl
+version 引号值,无 XMLDecl = None = 1.0 缺省;语法面归底座判官。勘误账:
+`has_word` 词边界初版拒 `=` 作后随符——`version='1.1'` 紧随形(标准形)
+咬不中 → doc_version 恒 None → 版次闸全误拒(valid 14 案回归);边界集
+补 `=`(Eq 紧随词是词法正形)。**供词函数的边界集必须覆盖全部调用位形**。
+
+**R-B3c T 族翻案分诊(普查驱动)**:T27 实为异质四族——14 案 Char 门
+(字面控制字符 #x7F/#x80-#x9F 住外取子集/实体内容,含注释/PI 内;
+n15/n19/n20 嵌套引用同拒)+ 6 案 V 闸(n13 虽住 P77 目录实为 1.0 文档引
+1.1 件;eduni/xml-1.1/001-005、E38 = 1.0 文档引 1.1 外取子集)+ 5 案
+text decl 语法(dtd07 缺 encoding/ext-sa/002 standalone 越权/ibm30n01
+声明住体中/n17·n18 NEL·U+2028 分隔)。n14 翻案归 G(真身 `<!ELEMENT
+0node>` 非法名);ibm32n09 翻案归 S(真身 standalone WFC)。6 案 PE 载体
+(1.0 面 n03/n04、ibm79n01/n02、1.1 n21、eduni 002)violation 住外取 PE
+件,PE 展开未实现取不到——留 C 族役并。
+
+**R-B3d 件体 PI 位 text decl 拒**:text decl 只许住件首;外取子集体内
+`<?xml …?>` 形按 P79/2.8 拒(`has_xml_target` 大小写不敏感三字 + 边界
+核——PI 目标 xmlfoo 不咬)。ibm30n01(声明住 `<!ELEMENT` 后)实证。
+
+**R-B3e ibm03v09 反向入账**:件 text decl 缺 P77 必备 encoding 而套件
+判 valid——官方描述自标 "(This test is questionable)",与 dtd07(同由
+判 not-wf,文内自注 encoding mandatory)自相矛盾。引擎站 P77 严格面,
+案入 M 桶(套件数据面)挂上游;B3 前过门 = text decl 未检视的漏读,
+非规范正判。
+
+**读数**:套件 2486/99/2585 → **2510/75/2585**(25 案毕业 + ibm03v09
+反向入账);单元 94/94 → **105/105**(外取件准入 wbtest 14 案);
+`.mbti` 零差(全部新增面私有)。
