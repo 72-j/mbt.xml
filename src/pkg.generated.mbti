@@ -20,7 +20,7 @@ pub fn is_name_start_char_11(Int) -> Bool
 
 pub fn parse(String) -> Result[Document, XmlError]
 
-pub fn parse_edition(String, edition~ : XmlEdition, ns? : NsMode) -> Result[Document, XmlError]
+pub fn parse_edition(String, edition~ : XmlEdition, ns? : NsMode, resolver? : &EntityResolver?) -> Result[Document, XmlError]
 
 // Errors
 pub(all) suberror XmlError {
@@ -39,6 +39,7 @@ pub(all) suberror XmlErrorKind {
   IllegalChar(Int)
   IllegalName(String)
   Structure(String)
+  External(String)
 } derive(Eq)
 pub fn XmlErrorKind::equal(Self, Self) -> Bool
 pub fn XmlErrorKind::not_equal(Self, Self) -> Bool
@@ -129,3 +130,6 @@ pub fn XmlName::not_equal(Self, Self) -> Bool
 // Type aliases
 
 // Traits
+pub(open) trait EntityResolver {
+  fn resolve(Self, String?, String, String?) -> Bytes?
+}

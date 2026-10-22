@@ -7,8 +7,10 @@
 /// 分桶:plain = hard verdicts——valid/invalid → 必解析(invalid = DTD
 /// 有效性违例,非良构层职责);not-wf → 必拒;error = XML 1.0 §1.2 可恢复
 /// 违例 → 双向可过(役E2 勘误:报错即拒与继续解析都在规范符合带内)。
-/// deferred = 五族分诊(逐条可辩护,桶闭钉):A 编码残部 / B 外挂 DTD·实体 /
-/// C PE·条件段 / D 名字·命名空间·字符引用残部 / E 名字段底座词法残部。
+/// deferred = 五族分诊(逐条可辩护,桶闭钉):A 编码残部 / B 外挂 DTD·实体
+/// 残留(T 文本声明闸/P PE 闸/V 版次闸/E 编码闸/S standalone 闸/G 声明闸
+/// /M manifest 版次缺) / C PE·条件段 / D 名字·命名空间·字符引用残部 /
+/// E 名字段底座词法残部。役B2:B 桶 69 案实读,21 案随外挂面毕业入 plain。
 async test "xmlconf suite gate" {
   let tsv_text = @utf8.decode_lossy(
     @fs.read_file("./.xmlconf/xmlconf_manifest.tsv").binary(),
@@ -23,29 +25,49 @@ async test "xmlconf suite gate" {
     // A 编码残部(2):UTF-16 声明档——底座对已解码 String 面做 decl/内容一致性启发(declared UTF-16 but content ASCII/UTF-8)而拒;BOM 已消费,核对权在底座,等底座修或 bytes 入口。japanese×6 役E2 移 plain(error 判词双向)
     "sun/invalid/utf16b.xml", "sun/invalid/utf16l.xml",
     // B 外挂 DTD/实体(69):SYSTEM 外部子集/外部实体内容——引擎不取外挂,判据外。incl* 六例外挂 BOM 案役A1 自 A 改挂;bomboom×3 役E2 移 plain(error 判词双向);001/002 役E2 自 D 改挂(外部子集声明更高版本号,须外取才能判)
-     "eduni/errata-2e/E18.xml", "eduni/errata-2e/E19.xml", "ibm/not-wf/P30/ibm30n01.xml",
-    "ibm/not-wf/P31/ibm31n01.xml", "ibm/not-wf/P61/ibm61n01.xml", "ibm/not-wf/P77/ibm77n03.xml",
-    "ibm/not-wf/P77/ibm77n04.xml", "ibm/not-wf/P79/ibm79n01.xml", "ibm/not-wf/P79/ibm79n02.xml",
-    "ibm/not-wf/p28a/ibm28an01.xml", "ibm/xml-1.1/not-wf/P77/ibm77n02.xml", "ibm/xml-1.1/not-wf/P77/ibm77n03.xml",
-    "ibm/xml-1.1/not-wf/P77/ibm77n14.xml", "ibm/xml-1.1/not-wf/P77/ibm77n21.xml",
-    "ibm/xml-1.1/valid/P03/ibm03v01.xml", "ibm/xml-1.1/valid/P03/ibm03v02.xml", "ibm/xml-1.1/valid/P03/ibm03v03.xml",
-    "ibm/xml-1.1/valid/P03/ibm03v04.xml", "ibm/xml-1.1/valid/P77/ibm77v04.xml", "ibm/xml-1.1/valid/P77/ibm77v05.xml",
-    "ibm/xml-1.1/valid/P77/ibm77v06.xml", "ibm/xml-1.1/valid/P77/ibm77v10.xml", "ibm/xml-1.1/valid/P77/ibm77v11.xml",
-    "ibm/xml-1.1/valid/P77/ibm77v12.xml", "ibm/xml-1.1/valid/P77/ibm77v16.xml", "ibm/xml-1.1/valid/P77/ibm77v17.xml",
-    "ibm/xml-1.1/valid/P77/ibm77v18.xml", "ibm/xml-1.1/valid/P77/ibm77v22.xml", "ibm/xml-1.1/valid/P77/ibm77v23.xml",
-    "ibm/xml-1.1/valid/P77/ibm77v24.xml", "ibm/xml-1.1/valid/P77/ibm77v28.xml", "ibm/xml-1.1/valid/P77/ibm77v29.xml",
-    "ibm/xml-1.1/valid/P77/ibm77v30.xml", "oasis/p09fail1.xml", "oasis/p09fail2.xml",
-    "sun/not-wf/dtd07.xml", "sun/valid/ext01.xml", "sun/valid/ext02.xml", "sun/valid/not-sa03.xml",
-    "xmltest/not-wf/not-sa/001.xml", "xmltest/not-wf/not-sa/002.xml", "xmltest/not-wf/not-sa/003.xml",
-    "xmltest/not-wf/not-sa/004.xml", "xmltest/not-wf/not-sa/006.xml", "xmltest/not-wf/not-sa/007.xml",
-    "xmltest/not-wf/not-sa/008.xml", "xmltest/not-wf/not-sa/009.xml", "xmltest/valid/ext-sa/001.xml",
-    "xmltest/valid/ext-sa/002.xml", "xmltest/valid/ext-sa/003.xml", "xmltest/valid/ext-sa/004.xml",
-    "xmltest/valid/ext-sa/005.xml", "xmltest/valid/ext-sa/006.xml", "xmltest/valid/ext-sa/007.xml",
-    "xmltest/valid/ext-sa/008.xml", "xmltest/valid/ext-sa/009.xml", "xmltest/valid/ext-sa/011.xml",
-    "xmltest/valid/ext-sa/012.xml", "xmltest/valid/ext-sa/013.xml", "xmltest/valid/ext-sa/014.xml",
-    "xmltest/valid/not-sa/031.xml", "eduni/errata-4e/incl8bom.xml", "eduni/errata-4e/incl8bombom.xml",
-    "eduni/errata-4e/inclbom_be.xml", "eduni/errata-4e/inclbom_le.xml", "eduni/errata-4e/inclbombom_be.xml",
-    "eduni/errata-4e/inclbombom_le.xml", "eduni/xml-1.1/001.xml", "eduni/xml-1.1/002.xml",
+    // B 残留(49,役B2 实读分诊;B 桶原 69,20 案随外挂面入 plain):
+    // T 外取件文本声明校验闸(27)——外取子集/实体件首 text decl 的
+    //   语法(缺 encoding/序位/standalone 越权/版本词形)未校验,剥除
+    //   直通 = 违例件被放行。ibm P77 1.1 全系 + 1.0 双案 + P79 extPE
+    //   首件 + P30 序位 + P32 SDDecl 越权 + dtd07 缺 encoding + ext-sa/002
+    //   standalone 越权:
+     "ibm/xml-1.1/not-wf/P77/ibm77n01.xml", "ibm/xml-1.1/not-wf/P77/ibm77n02.xml",
+    "ibm/xml-1.1/not-wf/P77/ibm77n03.xml", "ibm/xml-1.1/not-wf/P77/ibm77n04.xml",
+    "ibm/xml-1.1/not-wf/P77/ibm77n05.xml", "ibm/xml-1.1/not-wf/P77/ibm77n06.xml",
+    "ibm/xml-1.1/not-wf/P77/ibm77n07.xml", "ibm/xml-1.1/not-wf/P77/ibm77n08.xml",
+    "ibm/xml-1.1/not-wf/P77/ibm77n10.xml", "ibm/xml-1.1/not-wf/P77/ibm77n11.xml",
+    "ibm/xml-1.1/not-wf/P77/ibm77n12.xml", "ibm/xml-1.1/not-wf/P77/ibm77n13.xml",
+    "ibm/xml-1.1/not-wf/P77/ibm77n14.xml", "ibm/xml-1.1/not-wf/P77/ibm77n15.xml",
+    "ibm/xml-1.1/not-wf/P77/ibm77n17.xml", "ibm/xml-1.1/not-wf/P77/ibm77n18.xml",
+    "ibm/xml-1.1/not-wf/P77/ibm77n19.xml", "ibm/xml-1.1/not-wf/P77/ibm77n20.xml",
+    "ibm/xml-1.1/not-wf/P77/ibm77n21.xml", "ibm/not-wf/P77/ibm77n03.xml", "ibm/not-wf/P77/ibm77n04.xml",
+    "ibm/not-wf/P79/ibm79n01.xml", "ibm/not-wf/P79/ibm79n02.xml", "ibm/not-wf/P30/ibm30n01.xml",
+    "ibm/not-wf/P32/ibm32n09.xml", "sun/not-wf/dtd07.xml", "xmltest/not-wf/ext-sa/002.xml",
+    // P PE 展开/PE 语法闸(12,C∩B 交叠,PE 役并)——PE 补全声明
+    //   (005/006/E14 的 `<!ATTLIST %e;`)、PE 条件段关键词(014-016
+    //   `<![ %e; [`)、PE 值内 % 尾(p09fail/008/002)、PE 引导声明
+    //   (E18 `%pe; %intpe;`):
+     "xmltest/not-wf/not-sa/002.xml", "xmltest/not-wf/not-sa/008.xml", "oasis/p09fail1.xml",
+    "oasis/p09fail2.xml", "xmltest/valid/not-sa/014.xml", "xmltest/valid/not-sa/015.xml",
+    "xmltest/valid/not-sa/016.xml", "eduni/errata-2e/E18.xml", "xmltest/invalid/005.xml",
+    "xmltest/invalid/006.xml", "xmltest/invalid/not-sa/022.xml", "eduni/errata-2e/E14.xml",
+    // V 外取件版次闸(6)——外取件 text decl 版次与文档版次核对未实现
+    //   (1.1 目录案外取子集声明 1.1 形;E38 = 1.0 文档引 1.1 外取件):
+     "eduni/xml-1.1/001.xml", "eduni/xml-1.1/002.xml", "eduni/xml-1.1/003.xml", "eduni/xml-1.1/004.xml",
+    "eduni/xml-1.1/005.xml", "eduni/errata-2e/E38.xml",
+    // E 外取件编码声明闸(1)——text decl 声明编码与实际字节核对未实现
+    //   (decode 直通 UTF-8 面):
+     "sun/not-wf/encoding07.xml",
+    // S standalone 闸(1)——standalone='yes' 文档引用外取实体未拒
+    //   (2.9 语义闸,validity 面职责):
+     "sun/not-wf/not-sa03.xml",
+    // G 外取子集声明语法闸(1)——ATTLIST 枚举型等声明体语法未过闸
+    //   (过闸跳过策略,语法违例放行):
+     "ibm/not-wf/P68/ibm68n06.xml",
+    // M manifest 版次标注缺(1)——案依 1.1(内容 &#x0001; 经引用
+    //   1.0 拒 1.1 许)而 manifest 第 4 列空 = 两面全查必翻,待 manifest
+    //   数据勘正或版次双向容忍语义立项:
+     "ibm/xml-1.1/valid/P77/ibm77v30.xml",
     // C PE 展开/条件段(39):内部子集 PE 间接展开(`%xx;`→`&#37;zz;` 形)与 INCLUDE/IGNORE 条件段——新能力单独立项
      "eduni/errata-3e/E13.xml", "ibm/not-wf/P62/ibm62n01.xml", "ibm/not-wf/P62/ibm62n02.xml",
     "ibm/not-wf/P62/ibm62n03.xml", "ibm/not-wf/P62/ibm62n04.xml", "ibm/not-wf/P62/ibm62n05.xml",
@@ -66,6 +88,30 @@ async test "xmlconf suite gate" {
     // E 名字段(0,桶空役N1 清):底座 split_qualified_name 名字策略先拒族(首/尾冒号名、组合字符衔接段)已由 NS 模式旗标非 NS 面全数正判入 plain;桶壳保留——新名字域败案先归此再分诊。
 
   ]
+  // 役B2 外挂面:套件树全量预载(async 预载 + 同步 trait 面解耦——
+  // EntityResolver 端口是同步面,取件走内存 store)。R-B1a 本地文件
+  // resolver = 相对 sibling 拼接,无 URI 库;store 键 = 套件根相对径。
+  let store : Map[String, Bytes] = Map([])
+  let root_prefix = "./.xmlconf/xmlconf/"
+  // walk 语义(0.22.4 dir.mbt):按目录回调 f(目录全径, 目录内条目名)——
+  // 条目名含子目录名(对子目录 read_file 即炸,catch 吞之即自然过滤)。
+  @fs.walk("./.xmlconf/xmlconf", async fn(dir_path, entries) {
+    for name in entries {
+      let full = "\{dir_path}/\{name}"
+      try {
+        let bytes = @fs.read_file(full).binary()
+        let key = if full.has_prefix(root_prefix) {
+          full[root_prefix.length():].to_owned()
+        } else {
+          full
+        }
+        store.set(key, bytes)
+      } catch {
+        _ => ()
+      }
+    }
+  })
+
   for row in tsv_text.split("\n") {
     if row.length() == 0 {
       continue
@@ -86,15 +132,22 @@ async test "xmlconf suite gate" {
       continue
     }
     // 役E1 版本面:EDITION 列选适用面("4" → Editions1to4 全表门 / "5" →
-    // Edition5 紧凑表门;缺省 = 全版本适用 = 两面全查)。
+    // Edition5 紧凑表门;缺省 = 全版本适用 = 两面全查)。役B2 勘误:空列
+    // 此前空转判过(faces 零迭代),拨正为两面全查——73% 案(1889/2585)
+    // 从虚读转实读。
     let faces : Array[@moonxml.XmlEdition] = []
-    for token in editions.split(" ") {
-      if token == "4" {
-        faces.push(@moonxml.Editions1to4)
-      } else if token == "5" {
-        faces.push(@moonxml.Edition5)
-      } else {
-        ()
+    if editions == "" {
+      faces.push(@moonxml.Editions1to4)
+      faces.push(@moonxml.Edition5)
+    } else {
+      for token in editions.split(" ") {
+        if token == "4" {
+          faces.push(@moonxml.Editions1to4)
+        } else if token == "5" {
+          faces.push(@moonxml.Edition5)
+        } else {
+          ()
+        }
       }
     }
     let expected_ok = ty == "valid" || ty == "invalid" || ty == "error"
@@ -111,13 +164,20 @@ async test "xmlconf suite gate" {
       continue
     }
     let bytes = @fs.read_file("./.xmlconf/xmlconf/\{path}").binary()
+    let doc_dir = suite_dirname(path)
+    let resolver : &@moonxml.EntityResolver = SuiteResolver::{ store, doc_dir, }
     let outcome_ok = match @moonxml.decode_source(bytes) {
       Err(_) => two_way_ok || expected_ok == false
       Ok(text) => {
         let mut all_faces_match = true
         for face in faces {
           let face_ok = match
-            @moonxml.parse_edition(text, edition=face, ns=ns_mode) {
+            @moonxml.parse_edition(
+              text,
+              edition=face,
+              ns=ns_mode,
+              resolver=Some(resolver),
+            ) {
             Ok(_) => expected_ok
             Err(_) => two_way_ok || expected_ok == false
           }
@@ -150,4 +210,69 @@ async test "xmlconf suite gate" {
   debug(
     "xmlconf: \{passed} passed / \{deferred_count} deferred / \{total} total",
   )
+}
+
+///|
+/// 套件 resolver(役B2,R-B1a 本地文件面):store 全树预载,键 = 套件
+/// 根相对径;doc_dir = 当前案目录;base = 引用方 system_id(外取子集
+/// 内再引用 = 相对该子集拼 sibling)。
+priv struct SuiteResolver {
+  store : Map[String, Bytes]
+  doc_dir : String
+}
+
+///|
+impl @moonxml.EntityResolver for SuiteResolver with fn resolve(
+  self : SuiteResolver,
+  base : String?,
+  system_id : String,
+  _public_id : String?,
+) -> Bytes? {
+  let rel_dir = match base {
+    Some(uri) => suite_dirname(uri)
+    None => ""
+  }
+  self.store.get(suite_join(self.doc_dir, rel_dir, system_id))
+}
+
+///|
+fn suite_dirname(path : String) -> String {
+  let mut last = -1
+  let limit = path.length()
+  for index in 0..<limit {
+    if path[index] == '/' {
+      last = index
+    }
+  }
+  if last < 0 {
+    ""
+  } else {
+    path[:last].to_owned()
+  }
+}
+
+///|
+/// 径拼接归一:'.'/空段去,'..' 弹栈(套件系统 id 的相对语义)。
+fn suite_join(doc_dir : String, rel_dir : String, system_id : String) -> String {
+  let combined = doc_dir + "/" + rel_dir + "/" + system_id
+  let segments : Array[String] = []
+  for segment in combined.split("/") {
+    let name = segment.to_owned()
+    if name == "" || name == "." {
+      continue
+    }
+    if name == ".." {
+      let _ = segments.pop()
+      continue
+    }
+    segments.push(name)
+  }
+  let mut joined = ""
+  for index, segment in segments {
+    if index > 0 {
+      joined = joined + "/"
+    }
+    joined = joined + segment
+  }
+  joined
 }

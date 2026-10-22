@@ -377,14 +377,26 @@ pub fn parse_edition(
   source : String,
   edition~ : XmlEdition,
   ns~ : NsMode = On,
+  resolver~ : &EntityResolver? = None,
 ) -> Result[Document, XmlError] {
   Ok(
+    // 外挂面预组合(役B2):None = 缺省拒(NoExternal 面),原文直通
+    // 零漂移;Some(face) = 取件/装载/预展开,错误重定位账本随行。
     {
-      let document = match ns {
-        On => parse_into(source)
-        Off => parse_into_ns_off(source)
+      let (effective, patches) = match resolver {
+        None => (source, [])
+        Some(face) => prepare_external(source, face)
       }
-      validate_document_names(document, edition)
+      let document = try {
+        let document = match ns {
+          On => parse_into(effective)
+          Off => parse_into_ns_off(effective)
+        }
+        validate_document_names(document, edition)
+        document
+      } catch {
+        base_error => raise relocate_error(base_error, patches, source)
+      }
       document
     },
   ) catch {

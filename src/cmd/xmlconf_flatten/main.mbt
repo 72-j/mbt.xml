@@ -103,6 +103,7 @@ fn xmlconf_error_hint(err : @moonxml.XmlError) -> String {
         IllegalName(message) => "IllegalName(\{message})"
         IllegalChar(codepoint) => "IllegalChar(\{codepoint})"
         Structure(message) => "Structure(\{message})"
+        External(message) => "External(\{message})"
         UnexpectedEof => "UnexpectedEof"
       }
       "At(\{kind_text} @ line \{span.start.line} col \{span.start.column})"

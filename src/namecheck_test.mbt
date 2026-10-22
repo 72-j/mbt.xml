@@ -26,6 +26,7 @@ fn error_to_text(error : @moonxml.XmlErrorKind) -> String {
     @moonxml.IllegalChar(codepoint) => "IllegalChar(\{codepoint})"
     @moonxml.IllegalName(message) => "IllegalName(\{message})"
     @moonxml.Structure(message) => "Structure(\{message})"
+    @moonxml.External(message) => "External(\{message})"
   }
 }
 
