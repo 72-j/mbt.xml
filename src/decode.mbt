@@ -86,7 +86,14 @@ fn decode_8bit_document(
       text
     }
     Some(name) =>
-      raise encoding_error(view, 0, "unsupported encoding '\{name}'")
+      match jis_encoding_of_label(name) {
+        Some(encoding) => {
+          let text = decode_jis(encoding, view)
+          gate_chars(text, declaration.version is Some("1.1"))
+          text
+        }
+        None => raise encoding_error(view, 0, "unsupported encoding '\{name}'")
+      }
   }
 }
 

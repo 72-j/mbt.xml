@@ -143,10 +143,67 @@ test "utf-16 unpaired high surrogate is rejected" {
 }
 
 ///|
-test "declared euc-jp is rejected as unsupported" {
-  let bytes = bytes_of("<?xml version=\"1.0\" encoding=\"euc-jp\"?><a/>")
+test "declared euc-jp decodes jis0208 body" {
+  let parts = bytes_of("<?xml version=\"1.0\" encoding=\"euc-jp\"?><a>")
+  let body : Array[Byte] = [0xA1, 0xA1]
+  for byte in body {
+    parts.push(byte)
+  }
+  for byte in bytes_of("</a>") {
+    parts.push(byte)
+  }
+  match @moonxml.decode_source(Bytes::from_array(parts[:])) {
+    Ok(text) =>
+      assert_eq(
+        text, "<?xml version=\"1.0\" encoding=\"euc-jp\"?><a>\u{3000}</a>",
+      )
+    Err(_) => fail("declared euc-jp must decode (役J1)")
+  }
+}
+
+///|
+test "declared shift_jis decodes kanji body" {
+  let parts = bytes_of("<?xml version=\"1.0\" encoding=\"shift_jis\"?><a>")
+  let body : Array[Byte] = [0x93, 0xFA]
+  for byte in body {
+    parts.push(byte)
+  }
+  for byte in bytes_of("</a>") {
+    parts.push(byte)
+  }
+  match @moonxml.decode_source(Bytes::from_array(parts[:])) {
+    Ok(text) =>
+      assert_eq(
+        text, "<?xml version=\"1.0\" encoding=\"shift_jis\"?><a>日</a>",
+      )
+    Err(_) => fail("declared shift_jis must decode (役J1)")
+  }
+}
+
+///|
+test "declared iso-2022-jp decodes escape-switched body" {
+  let parts = bytes_of("<?xml version=\"1.0\" encoding=\"iso-2022-jp\"?><a>")
+  let body : Array[Byte] = [0x1B, 0x24, 0x42, 0x30, 0x21, 0x1B, 0x28, 0x42]
+  for byte in body {
+    parts.push(byte)
+  }
+  for byte in bytes_of("</a>") {
+    parts.push(byte)
+  }
+  match @moonxml.decode_source(Bytes::from_array(parts[:])) {
+    Ok(text) =>
+      assert_eq(
+        text, "<?xml version=\"1.0\" encoding=\"iso-2022-jp\"?><a>亜</a>",
+      )
+    Err(_) => fail("declared iso-2022-jp must decode (役J1)")
+  }
+}
+
+///|
+test "declared koi8-r is rejected as unsupported" {
+  let bytes = bytes_of("<?xml version=\"1.0\" encoding=\"koi8-r\"?><a/>")
   match @moonxml.decode_source(Bytes::from_array(bytes[:])) {
-    Ok(_) => fail("euc-jp is outside the supported set")
+    Ok(_) => fail("koi8-r is outside the supported set")
     Err(@moonxml.XmlError::At(error~, ..)) =>
       assert_true(error is @moonxml.XmlErrorKind::Encoding(_))
   }
@@ -325,5 +382,28 @@ test "char gate keys on version inside utf-16 documents" {
     Ok(_) => fail("C0 control must be gated in the UTF-16 face too")
     Err(@moonxml.XmlError::At(error~, ..)) =>
       assert_true(error is @moonxml.XmlErrorKind::IllegalChar(0x04))
+  }
+}
+
+///|
+/// 役J1 真解码见证:三套件原件端到端须 Ok(J1 前此三件 =
+/// Err(UnsupportedEncoding);回退即红)。内容指纹自锁版套件文件。
+async test "japanese suite witnesses decode for real" {
+  let eucjp = @fs.read_file("./.xmlconf/xmlconf/japanese/weekly-euc-jp.xml").binary()
+  match @moonxml.decode_source(eucjp) {
+    Ok(text) => assert_true(text.contains("週報サンプル"))
+    Err(_) => fail("weekly-euc-jp must truly decode")
+  }
+  let sjis = @fs.read_file("./.xmlconf/xmlconf/japanese/pr-xml-shift_jis.xml").binary()
+  match @moonxml.decode_source(sjis) {
+    Ok(text) => assert_true(text.contains("拡張可能な"))
+    Err(_) => fail("pr-xml-shift_jis must truly decode")
+  }
+  let iso2022 = @fs.read_file(
+    "./.xmlconf/xmlconf/japanese/pr-xml-iso-2022-jp.xml",
+  ).binary()
+  match @moonxml.decode_source(iso2022) {
+    Ok(text) => assert_true(text.contains("拡張可能な"))
+    Err(_) => fail("pr-xml-iso-2022-jp must truly decode")
   }
 }
