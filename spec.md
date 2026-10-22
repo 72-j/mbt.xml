@@ -27,6 +27,33 @@ gen 层解决的问题是：**XML 方言的"树形状"一旦定型，其类型�
   钉 stubs 声明面 ≡ 骨架调用面——多一（孤儿 stub）少一即红；缺 stub/形失配由
   编译器红（[4021]）。变异探针双类验毒：改名 stub = 编译红；孤儿 stub = 门红
   （2≠1）。发射形经 fmt 复跑哈希不变（正典）。
+- **形状语义裁定（评8 两拍一核，2026-10-22）**：
+  ① **拍1 node 内散文本 = 红**：from_tree 子分派 `_` 臂不再静默——
+  Text/CData 非空白 = Err（`<id>: stray text`）；空白（XML S 产生式
+  #x20 #x9 #xD #xA，含 CR）容忍排版。旧 `_ => ()` 与「未知子元素 = 错」
+  严格性不一致，本拍拨正。
+  ② **拍2 CDATA 叶 = 文本**（卷面显式裁定）：XML infoset 中 CDATA 与
+  文本等价——leaf_text 按 Text|CData 按序拼合；夹非文本子 = 红；零载荷
+  = 红。旧拒绝（恰一 Text 子）是有意的最小机械骨架（非 infoset 立场），
+  真方言 CDATA 常见会整链拒，故升级；canonical 发射仍纯 Text（to_tree
+  不产 CData）。
+  ③ **核3 NS 按原文匹配 = 现状自洽**：分派/attr_find 按 qualified_name，
+  xml: 前缀特判钉 URI；NS 重组方言（RDF/XML）扩充点已核——解析器未知键
+  忽略（向前兼容）+ 行键无闭集门，表加 `namespace_uri` 键 = 纯数据演化、
+  生成器零改。
+- **型别实弹 + 依赖面（用例役，2026-10-22）**：catalog 表上三型别属性
++  （year:Int required / price:Double 0..1 / in_print:Bool required）+
++  pages 型别叶——转换 helper 首次实弹即揭生成器三债：① to_tree 属性面
++  零转换（叶面有 to_string、属性面漏；试点全 String 故从未暴露）——
++  补对称转换（String 直通、型别 to_string）；② push_arm 宽度判据在
++  4 空格内联形上算宽，fmt 把超宽臂体拆自行行后 ≤80 单行放下——改三形
++  判宽（内联 → 拆行 → 尾逗号展开）；③ helper 死形首验：转换面原为
++  从未编译的 `text.view().parse_int()`（StringView 无此方法）——正调形
++  `@string.parse_int/parse_double`（core/string 包自由函数），消费包
++  moon.pkg 依赖面随之 +`moonbitlang/core/string`；Int32 发射拼写随
++  fmt 迁移正典（词表仍收 Int，发射面 bit_type_of 映射）。挂点第一件
++  真语义：stub_validate_book isbn 非空形校验（stubs.mbt，regen 不碰）；
++  转换负例三钉（not an int/double/bool）+ 挂点 Err 前缀透出钉。
 
 ### 1.1 与 M0 底座探针的解耦（R-G2 [定案]）
 

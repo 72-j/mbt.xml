@@ -12,7 +12,11 @@ fn stub_validate_doc(_value : Doc) -> Result[Unit, String] {
 }
 
 ///|
-/// book 元素语义门(缺省直通)
-fn stub_validate_book(_value : Book) -> Result[Unit, String] {
+/// book 元素语义门(第一件真语义,用例役 2026-10-22):isbn 非空形校验。
+/// 表收形状不收策略——值域规则住此,regen 不碰本文件。
+fn stub_validate_book(value : Book) -> Result[Unit, String] {
+  if value.isbn == "" {
+    return Err("isbn must not be empty")
+  }
   Ok(())
 }

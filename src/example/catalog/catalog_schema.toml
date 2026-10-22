@@ -33,10 +33,16 @@ children = [
 [[xml.elements]]
 id = "book"
 kind = "node"
-attrs = [{ name = "isbn", type = "String", required = true }]
+attrs = [
+  { name = "isbn", type = "String", required = true },
+  { name = "year", type = "Int", required = true },       # 型别属性实弹(用例役)
+  { name = "price", type = "Double", required = false },  # 0..1 型别属性(T? 收数)
+  { name = "in_print", type = "Bool", required = true },
+]
 children = [
   { ref = "title" },                  # 恰一
   { ref = "author", repeated = true }, # 0..n
+  { ref = "pages" },                  # 恰一(型别叶)
 ]
 
 [[xml.elements]]
@@ -48,6 +54,11 @@ text_type = "String"                  # 基元词表:String | Int | Double | Boo
 id = "author"
 kind = "leaf"                         # 卷面样例漏行——book 引用它,缺行即红,试点补齐
 text_type = "String"
+
+[[xml.elements]]
+id = "pages"
+kind = "leaf"
+text_type = "Int"                     # 型别叶实弹(叶转换路)
 
 [[xml.elements]]
 id = "meta"

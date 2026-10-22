@@ -20,8 +20,12 @@ pub extend Doc with Eq::{not_equal, equal}
 /// book 元素(机械骨架:字段序 = 表序;基数型:恰一=T / 0..1=T? / 0..n=Array[T])。
 pub(all) struct Book {
   isbn : String
+  year : Int32
+  price : Double?
+  in_print : Bool
   title : String
   author : Array[String]
+  pages : Int32
 } derive(Eq)
 
 ///|
@@ -56,7 +60,18 @@ pub fn doc_from_tree(element : @moonxml.Element) -> Result[Doc, String] {
           return Err("doc: unexpected element \"\{tag}\"")
         }
       }
-      _ => ()
+      _ =>
+        match child {
+          @moonxml.Node::Text(text) =>
+            if xmlschema_is_blank(text) == false {
+              return Err("doc: stray text \"\{text}\"")
+            }
+          @moonxml.Node::CData(text) =>
+            if xmlschema_is_blank(text) == false {
+              return Err("doc: stray text \"\{text}\"")
+            }
+          _ => ()
+        }
     }
   }
   let value = Doc::{ version, lang, book, meta, }
@@ -74,8 +89,33 @@ pub fn book_from_tree(element : @moonxml.Element) -> Result[Book, String] {
     Some(value) => value
     None => return Err("book: missing required attribute \"isbn\"")
   }
+  let year_raw = match xmlschema_attr_find(element, "year") {
+    Some(value) => value
+    None => return Err("book: missing required attribute \"year\"")
+  }
+  let year = match xmlschema_int_of(year_raw) {
+    Ok(value) => value
+    Err(msg) => return Err(msg)
+  }
+  let in_print_raw = match xmlschema_attr_find(element, "in_print") {
+    Some(value) => value
+    None => return Err("book: missing required attribute \"in_print\"")
+  }
+  let in_print = match xmlschema_bool_of(in_print_raw) {
+    Ok(value) => value
+    Err(msg) => return Err(msg)
+  }
+  let price : Double? = match xmlschema_attr_find(element, "price") {
+    Some(raw) =>
+      match xmlschema_double_of(raw) {
+        Ok(value) => Some(value)
+        Err(msg) => return Err(msg)
+      }
+    None => None
+  }
   let mut title : String? = None
   let author : Array[String] = []
+  let mut pages : Int32? = None
   for child in element.children {
     match child {
       @moonxml.Node::Element(child_element) => {
@@ -93,18 +133,53 @@ pub fn book_from_tree(element : @moonxml.Element) -> Result[Book, String] {
             Ok(text) => author.push(text)
             Err(msg) => return Err(msg)
           }
+        } else if tag == "pages" {
+          if pages is Some(_) {
+            return Err("book: repeated child \"pages\"")
+          }
+          match xmlschema_leaf_text(child_element) {
+            Ok(text) =>
+              match xmlschema_int_of(text) {
+                Ok(value) => pages = Some(value)
+                Err(msg) => return Err(msg)
+              }
+            Err(msg) => return Err(msg)
+          }
         } else {
           return Err("book: unexpected element \"\{tag}\"")
         }
       }
-      _ => ()
+      _ =>
+        match child {
+          @moonxml.Node::Text(text) =>
+            if xmlschema_is_blank(text) == false {
+              return Err("book: stray text \"\{text}\"")
+            }
+          @moonxml.Node::CData(text) =>
+            if xmlschema_is_blank(text) == false {
+              return Err("book: stray text \"\{text}\"")
+            }
+          _ => ()
+        }
     }
   }
   let title_value = match title {
     Some(value) => value
     None => return Err("book: missing required child \"title\"")
   }
-  let value = Book::{ isbn, title: title_value, author, }
+  let pages_value = match pages {
+    Some(value) => value
+    None => return Err("book: missing required child \"pages\"")
+  }
+  let value = Book::{
+    isbn,
+    year,
+    price,
+    in_print,
+    title: title_value,
+    author,
+    pages: pages_value,
+  }
   match stub_validate_book(value) {
     Ok(_) => Ok(value)
     Err(msg) => Err("book: \{msg}")
@@ -136,6 +211,15 @@ pub fn Doc::to_tree(self : Doc) -> @moonxml.Element {
 pub fn Book::to_tree(self : Book) -> @moonxml.Element {
   let attributes : Array[@moonxml.Attribute] = []
   attributes.push(xmlschema_make_attribute("isbn", self.isbn))
+  attributes.push(xmlschema_make_attribute("year", self.year.to_string()))
+  match self.price {
+    Some(value) =>
+      attributes.push(xmlschema_make_attribute("price", value.to_string()))
+    None => ()
+  }
+  attributes.push(
+    xmlschema_make_attribute("in_print", self.in_print.to_string()),
+  )
   let children : Array[@moonxml.Node] = []
   children.push(
     @moonxml.Node::Element(xmlschema_make_leaf("title", self.title)),
@@ -143,6 +227,9 @@ pub fn Book::to_tree(self : Book) -> @moonxml.Element {
   for value in self.author {
     children.push(@moonxml.Node::Element(xmlschema_make_leaf("author", value)))
   }
+  children.push(
+    @moonxml.Node::Element(xmlschema_make_leaf("pages", self.pages.to_string())),
+  )
   xmlschema_make_element("book", attributes, children)
 }
 
@@ -196,6 +283,18 @@ fn xmlschema_xml_name(name : String) -> @moonxml.XmlName {
 }
 
 ///|
+/// XML 空白(S 产生式:#x20 #x9 #xD #xA;拍1:node 内空白文本容忍,
+/// 非空白散文本 = 红)。
+fn xmlschema_is_blank(text : String) -> Bool {
+  for ch in text {
+    if !(ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
+      return false
+    }
+  }
+  true
+}
+
+///|
 /// 按标签原文找属性(命中 = 原文值;机械形)。
 fn xmlschema_attr_find(element : @moonxml.Element, wanted : String) -> String? {
   for attribute in element.attributes {
@@ -220,20 +319,31 @@ fn xmlschema_make_attribute(
 }
 
 ///|
-/// 叶取文本:恰一 Text 子(相邻文本解析面已拼接;CDATA/注释不算叶载荷)。
+/// 叶取文本:Text 与 CDATA 同为载荷(卷面裁定 2026-10-22 拍2:XML infoset
+/// 等价;旧拒绝形 = 机械骨架最小面,非 infoset 立场)按序拼接;夹非文本子
+/// = 红;零载荷 = 红。
 fn xmlschema_leaf_text(element : @moonxml.Element) -> Result[String, String] {
-  if element.children.length() != 1 {
+  let parts : Array[String] = []
+  for child in element.children {
+    match child {
+      @moonxml.Node::Text(text) => parts.push(text)
+      @moonxml.Node::CData(text) => parts.push(text)
+      _ =>
+        return Err(
+          "xmlschema: leaf \"\{element.name.qualified_name}\" has a non-text child",
+        )
+    }
+  }
+  if parts.length() == 0 {
     return Err(
-      "xmlschema: leaf \"\{element.name.qualified_name}\" expects exactly one text child",
+      "xmlschema: leaf \"\{element.name.qualified_name}\" expects a text child",
     )
   }
-  match element.children[0] {
-    @moonxml.Node::Text(text) => Ok(text)
-    _ =>
-      Err(
-        "xmlschema: leaf \"\{element.name.qualified_name}\" expects a text child",
-      )
+  let mut joined = ""
+  for part in parts {
+    joined = joined + part
   }
+  Ok(joined)
 }
 
 ///|
@@ -246,6 +356,36 @@ fn xmlschema_make_leaf(tag : String, text : String) -> @moonxml.Element {
     children,
   }
   element
+}
+
+///|
+/// 文本 → Int32(核心转换面,失败 = Result 错;catch 形 = fmt 正典)。
+fn xmlschema_int_of(text : String) -> Result[Int32, String] {
+  let value = @string.parse_int(text) catch {
+    _ => return Err("xmlschema: not an int: \"\{text}\"")
+  }
+  Ok(value)
+}
+
+///|
+/// 文本 → Double(核心转换面,失败 = Result 错;catch 形 = fmt 正典)。
+fn xmlschema_double_of(text : String) -> Result[Double, String] {
+  let value = @string.parse_double(text) catch {
+    _ => return Err("xmlschema: not a double: \"\{text}\"")
+  }
+  Ok(value)
+}
+
+///|
+/// 文本 → Bool(xsd:boolean 词法域 true/false/1/0)。
+fn xmlschema_bool_of(text : String) -> Result[Bool, String] {
+  if text == "true" || text == "1" {
+    Ok(true)
+  } else if text == "false" || text == "0" {
+    Ok(false)
+  } else {
+    Err("xmlschema: not a bool: \"\{text}\"")
+  }
 }
 
 ///|
