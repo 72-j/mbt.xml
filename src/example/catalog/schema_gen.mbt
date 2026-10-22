@@ -1,8 +1,8 @@
 // ===== GENERATED FILE — DO NOT EDIT（生成物禁手写，const.md §7）=====
 // 源表：moonxml/src/example/catalog/catalog_schema.toml（schema 1.0）
 // 再生：moon run skelgen/xmlregen(仓根起跑;改表 → 再生 → 黄金门对拍)
-// 绑定器：skelgen/schema/xmlschema_toml_gen.mbt(parse/validate/emit 三件套)
-// 面:XML 文档形状骨架(树递归结构体 + 双向机械骨架)。值域校验/业务规则手写补(语义不生成)。
+// 绑定器：skelschema/xmlschema_toml_gen.mbt(parse/validate/emit 三件套)
+// 目标包:moonxml/src/example/catalog。面:XML 文档形状骨架(树递归结构体 + 双向机械骨架)。值域校验/业务规则手写补(语义不生成)。
 
 ///|
 /// doc 元素(机械骨架:字段序 = 表序;基数型:恰一=T / 0..1=T? / 0..n=Array[T])。
