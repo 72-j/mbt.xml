@@ -15,7 +15,13 @@ impl EntityResolver for DenyAll with fn resolve(
 ///|
 /// 本地装载上下文 helper(测试件不跨文件赌可见性)。
 fn subset_load_with(resolver : &EntityResolver) -> ExternalLoad {
-  { resolver, table: Map([]), internal_literals: Map([]), consumed: 0, }
+  {
+    resolver,
+    table: Map([]),
+    internal_literals: Map([]),
+    doc_version: None,
+    consumed: 0,
+  }
 }
 
 ///|

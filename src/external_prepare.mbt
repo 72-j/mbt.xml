@@ -52,6 +52,7 @@ fn prepare_external(
         resolver,
         table: Map([]),
         internal_literals: Map([]),
+        doc_version: doctype.doc_version,
         consumed: 0,
       }
       if doctype.subset_start >= 0 {
@@ -60,15 +61,16 @@ fn prepare_external(
       }
       match doctype.system_id {
         Some(sysid) =>
+          // 解析面拒:外取子集不装 → 引用处底座 InvalidEntity 自然拒
+          // (fetch-fail = reject,B1 事实 F2 同款)
           match resolver.resolve(None, sysid, doctype.public_id) {
-            Some(bytes) =>
-              match decode_external(bytes) {
-                Ok(subset_text) =>
-                  load_external_subset(subset_text, Some(sysid), load)
+            Some(bytes) => {
+              let subset_text = match decode_source(bytes) {
+                Ok(raw) => admit_external_text(raw, load.doc_version)
                 Err(why) => raise why
               }
-            // 解析面拒:外取子集不装 → 引用处底座 InvalidEntity 自然拒
-            // (fetch-fail = reject,B1 事实 F2 同款)
+              load_external_subset(subset_text, Some(sysid), load)
+            }
             None => ()
           }
         None => ()

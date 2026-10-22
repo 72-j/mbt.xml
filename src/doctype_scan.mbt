@@ -7,6 +7,9 @@ priv struct DoctypeScan {
   decl_end : Int32
   system_id : String?
   public_id : String?
+  /// 文档 XMLDecl 版次值(役B3 版次闸基准;无 XMLDecl = None = 1.0)。
+  /// 只取值不判官——XMLDecl 语法面归底座。
+  doc_version : String?
   /// 内部子集起点('[' 之后);无子集 = -1
   subset_start : Int32
   /// 内部子集终点(']' 处);无子集 = -1
@@ -19,6 +22,7 @@ priv struct DoctypeScan {
 /// 注释中的 ']' 不误判为子集终点。
 fn scan_doctype(text : String) -> DoctypeScan? {
   let limit = text.length()
+  let doc_version = peek_decl_version(text)
   let mut pos = skip_doctype_space(text, 0)
   while pos < limit {
     let ch = text[pos]
@@ -39,7 +43,7 @@ fn scan_doctype(text : String) -> DoctypeScan? {
         text[pos + 6] == 'Y' &&
         text[pos + 7] == 'P' &&
         text[pos + 8] == 'E' {
-        return scan_doctype_body(text, pos + 9)
+        return scan_doctype_body(text, pos + 9, doc_version)
       }
       // 根元素起始:序区尽,无 doctype
       return None
@@ -56,7 +60,11 @@ fn scan_doctype(text : String) -> DoctypeScan? {
 ///|
 /// <!DOCTYPE 体解析:根名 → ExternalID(SYSTEM/PUBLIC)→ 可选内部子集
 /// → 收口 '>'。畸形(缺名/缺引号/未闭合)一律 None——判官权在底座。
-fn scan_doctype_body(text : String, start : Int32) -> DoctypeScan? {
+fn scan_doctype_body(
+  text : String,
+  start : Int32,
+  doc_version : String?,
+) -> DoctypeScan? {
   let limit = text.length()
   let mut pos = skip_doctype_space(text, start)
   let name_start = pos
@@ -102,6 +110,7 @@ fn scan_doctype_body(text : String, start : Int32) -> DoctypeScan? {
             decl_end: pos + 1,
             system_id,
             public_id,
+            doc_version,
             subset_start,
             subset_end,
           })
@@ -116,6 +125,7 @@ fn scan_doctype_body(text : String, start : Int32) -> DoctypeScan? {
       decl_end: 0,
       system_id,
       public_id,
+      doc_version,
       subset_start: -1,
       subset_end: -1,
     })
@@ -222,11 +232,13 @@ fn has_word(text : String, pos : Int32, word : String) -> Bool {
   if text[pos:pos + word_length].to_owned() != word {
     return false
   }
-  // 边界:词后必须是空白或结构符(引号/'['/'>'/文末)
+  // 边界:词后必须是空白或结构符(引号/'['/'>'/'='/文末;Eq 紧随
+  // version 词——`version='1.1'` 形)
   let after = pos + word_length
   after >= text.length() ||
   is_doctype_stop(text[after]) ||
-  is_doctype_space(text[after])
+  is_doctype_space(text[after]) ||
+  text[after] == '='
 }
 
 ///|
@@ -283,4 +295,44 @@ fn skip_comment(text : String, start : Int32) -> Int32 {
     pos = pos + 1
   }
   limit
+}
+
+///|
+/// XMLDecl 版次值只读取(役B3):`<?xml` + S 起头时,取 version 属性
+/// 引号值;无 XMLDecl/畸形 = None(判官在底座,此处只为版次闸供基准)。
+fn peek_decl_version(text : String) -> String? {
+  if !text.has_prefix("<?xml") {
+    return None
+  }
+  let limit = text.length()
+  if !(limit > 5 && is_doctype_space(text[5])) {
+    return None
+  }
+  let mut cursor : Int32 = 5
+  let mut close : Int32 = -1
+  while cursor + 1 < limit {
+    if text[cursor] == '?' && text[cursor + 1] == '>' {
+      close = cursor
+      break
+    }
+    cursor = cursor + 1
+  }
+  if close < 0 {
+    return None
+  }
+  let head = text[5:close].to_owned()
+  let pos = skip_doctype_space(head, 0)
+  if !has_word(head, pos, "version") {
+    return None
+  }
+  // Eq(S? = S?):词后先越空白与 '=',再读引号值(read_doctype_quoted
+  // 自带前导空白跳)
+  let cursor = skip_doctype_space(head, pos + 7)
+  if cursor >= head.length() || head[cursor] != '=' {
+    return None
+  }
+  match read_doctype_quoted(head, cursor + 1) {
+    Some((value, _)) => Some(value)
+    None => None
+  }
 }

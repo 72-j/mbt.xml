@@ -25,24 +25,32 @@ async test "xmlconf suite gate" {
     // A 编码残部(2):UTF-16 声明档——底座对已解码 String 面做 decl/内容一致性启发(declared UTF-16 but content ASCII/UTF-8)而拒;BOM 已消费,核对权在底座,等底座修或 bytes 入口。japanese×6 役E2 移 plain(error 判词双向)
     "sun/invalid/utf16b.xml", "sun/invalid/utf16l.xml",
     // B 外挂 DTD/实体(69):SYSTEM 外部子集/外部实体内容——引擎不取外挂,判据外。incl* 六例外挂 BOM 案役A1 自 A 改挂;bomboom×3 役E2 移 plain(error 判词双向);001/002 役E2 自 D 改挂(外部子集声明更高版本号,须外取才能判)
-    // B 残留(49,役B2 实读分诊;B 桶原 69,20 案随外挂面入 plain):
-    // T 外取件文本声明校验闸(27)——外取子集/实体件首 text decl 的
-    //   语法(缺 encoding/序位/standalone 越权/版本词形)未校验,剥除
-    //   直通 = 违例件被放行。ibm P77 1.1 全系 + 1.0 双案 + P79 extPE
-    //   首件 + P30 序位 + P32 SDDecl 越权 + dtd07 缺 encoding + ext-sa/002
-    //   standalone 越权:
-     "ibm/xml-1.1/not-wf/P77/ibm77n01.xml", "ibm/xml-1.1/not-wf/P77/ibm77n02.xml",
-    "ibm/xml-1.1/not-wf/P77/ibm77n03.xml", "ibm/xml-1.1/not-wf/P77/ibm77n04.xml",
-    "ibm/xml-1.1/not-wf/P77/ibm77n05.xml", "ibm/xml-1.1/not-wf/P77/ibm77n06.xml",
-    "ibm/xml-1.1/not-wf/P77/ibm77n07.xml", "ibm/xml-1.1/not-wf/P77/ibm77n08.xml",
-    "ibm/xml-1.1/not-wf/P77/ibm77n10.xml", "ibm/xml-1.1/not-wf/P77/ibm77n11.xml",
-    "ibm/xml-1.1/not-wf/P77/ibm77n12.xml", "ibm/xml-1.1/not-wf/P77/ibm77n13.xml",
-    "ibm/xml-1.1/not-wf/P77/ibm77n14.xml", "ibm/xml-1.1/not-wf/P77/ibm77n15.xml",
-    "ibm/xml-1.1/not-wf/P77/ibm77n17.xml", "ibm/xml-1.1/not-wf/P77/ibm77n18.xml",
-    "ibm/xml-1.1/not-wf/P77/ibm77n19.xml", "ibm/xml-1.1/not-wf/P77/ibm77n20.xml",
-    "ibm/xml-1.1/not-wf/P77/ibm77n21.xml", "ibm/not-wf/P77/ibm77n03.xml", "ibm/not-wf/P77/ibm77n04.xml",
-    "ibm/not-wf/P79/ibm79n01.xml", "ibm/not-wf/P79/ibm79n02.xml", "ibm/not-wf/P30/ibm30n01.xml",
-    "ibm/not-wf/P32/ibm32n09.xml", "sun/not-wf/dtd07.xml", "xmltest/not-wf/ext-sa/002.xml",
+    // B 残留(役B3 后 25 = P12 + PE6/G2/S2/E1/M2;原 49,T27+V6 中
+    //   25 案随准入三闸毕业入 plain,ibm03v09 反向入账):
+    //   役B3 准入三闸(R-B3a):text decl 语法闸 + only-later 版次闸 +
+    //   版本键控 Char 门;25 毕业案拒因逐案探针核过 census 闸归属。
+    //   ibm03v09 反向入账:件 text decl 缺 P77 必备 encoding 而套件判
+    //   valid——官方描述自标 "(This test is questionable)",与 dtd07
+    //   (同由判 not-wf,文内自注 encoding 必备)自相矛盾;B3 前过门 =
+    //   text decl 未检视的漏读,非规范正判。
+    // PE 载体(6)——violation 住外取 PE 件内,PE 展开未实现取不到(C 族役并):
+    //   1.0 面 ibm77n03/n04、ibm79n01/n02、1.1 n21、eduni/xml-1.1/002
+     "ibm/xml-1.1/not-wf/P77/ibm77n21.xml", "ibm/not-wf/P77/ibm77n03.xml", "ibm/not-wf/P77/ibm77n04.xml",
+    "ibm/not-wf/P79/ibm79n01.xml", "ibm/not-wf/P79/ibm79n02.xml", "eduni/xml-1.1/002.xml",
+    // G 外取子集声明语法闸(2)——声明体语法未过闸(过闸跳过策略,
+    //   役B3 分诊:ibm77n14 实为 `<!ELEMENT 0node>` 非法名,自 T 归 G):
+     "ibm/not-wf/P68/ibm68n06.xml", "ibm/xml-1.1/not-wf/P77/ibm77n14.xml",
+    // S standalone 闸(2)——standalone='yes' 文档引用外取实体 WFC 未拒
+    //   (2.9 语义闸,validity 面职责;役B3 分诊:ibm32n09 实为 standalone
+    //   WFC,自 T 归 S):
+     "sun/not-wf/not-sa03.xml", "ibm/not-wf/P32/ibm32n09.xml",
+    // E 外取件编码声明闸(1)——text decl 声明编码与实际字节核对未实现
+    //   (decode 直通 UTF-8 面):
+     "sun/not-wf/encoding07.xml",
+    // M manifest/套件数据面(2)——ibm77v30 案依 1.1(内容 &#x0001; 经引用
+    //   1.0 拒 1.1 许)而 manifest 第 4 列空 = 两面全查必翻,待上游勘正;
+    //   ibm03v09 套件自相矛盾(见上):
+     "ibm/xml-1.1/valid/P77/ibm77v30.xml", "ibm/xml-1.1/valid/P03/ibm03v09.xml",
     // P PE 展开/PE 语法闸(12,C∩B 交叠,PE 役并)——PE 补全声明
     //   (005/006/E14 的 `<!ATTLIST %e;`)、PE 条件段关键词(014-016
     //   `<![ %e; [`)、PE 值内 % 尾(p09fail/008/002)、PE 引导声明
@@ -51,23 +59,6 @@ async test "xmlconf suite gate" {
     "oasis/p09fail2.xml", "xmltest/valid/not-sa/014.xml", "xmltest/valid/not-sa/015.xml",
     "xmltest/valid/not-sa/016.xml", "eduni/errata-2e/E18.xml", "xmltest/invalid/005.xml",
     "xmltest/invalid/006.xml", "xmltest/invalid/not-sa/022.xml", "eduni/errata-2e/E14.xml",
-    // V 外取件版次闸(6)——外取件 text decl 版次与文档版次核对未实现
-    //   (1.1 目录案外取子集声明 1.1 形;E38 = 1.0 文档引 1.1 外取件):
-     "eduni/xml-1.1/001.xml", "eduni/xml-1.1/002.xml", "eduni/xml-1.1/003.xml", "eduni/xml-1.1/004.xml",
-    "eduni/xml-1.1/005.xml", "eduni/errata-2e/E38.xml",
-    // E 外取件编码声明闸(1)——text decl 声明编码与实际字节核对未实现
-    //   (decode 直通 UTF-8 面):
-     "sun/not-wf/encoding07.xml",
-    // S standalone 闸(1)——standalone='yes' 文档引用外取实体未拒
-    //   (2.9 语义闸,validity 面职责):
-     "sun/not-wf/not-sa03.xml",
-    // G 外取子集声明语法闸(1)——ATTLIST 枚举型等声明体语法未过闸
-    //   (过闸跳过策略,语法违例放行):
-     "ibm/not-wf/P68/ibm68n06.xml",
-    // M manifest 版次标注缺(1)——案依 1.1(内容 &#x0001; 经引用
-    //   1.0 拒 1.1 许)而 manifest 第 4 列空 = 两面全查必翻,待 manifest
-    //   数据勘正或版次双向容忍语义立项:
-     "ibm/xml-1.1/valid/P77/ibm77v30.xml",
     // C PE 展开/条件段(39):内部子集 PE 间接展开(`%xx;`→`&#37;zz;` 形)与 INCLUDE/IGNORE 条件段——新能力单独立项
      "eduni/errata-3e/E13.xml", "ibm/not-wf/P62/ibm62n01.xml", "ibm/not-wf/P62/ibm62n02.xml",
     "ibm/not-wf/P62/ibm62n03.xml", "ibm/not-wf/P62/ibm62n04.xml", "ibm/not-wf/P62/ibm62n05.xml",

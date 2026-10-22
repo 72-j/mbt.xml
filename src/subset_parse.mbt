@@ -38,6 +38,8 @@ priv struct ExternalLoad {
   /// (传递地)引用到本层收编的外取件,须整体收归本层展开(底座
   /// 只见内部字面量,链半路撞外取名即 InvEnt)。
   internal_literals : Map[String, String]
+  /// 文档版次基准(役B3 版次闸 + Char 门键控;无 XMLDecl = None = 1.0)。
+  doc_version : String?
   mut consumed : Int32
 }
 
@@ -94,6 +96,13 @@ fn parse_declarations(
       continue
     }
     if ch == '<' && text[pos + 1] == '?' {
+      // PI 目标 "xml" 保留(2.8,大小写不计):text decl 只许在件首,
+      // 中部出现即错置(P79 序位,ibm30n01)
+      if has_xml_target(text, pos + 2) {
+        raise external_error(
+          text, pos, "text declaration not allowed in external subset body",
+        )
+      }
       pos = skip_past(text, pos + 2, '?', '>')
       continue
     }
@@ -214,14 +223,9 @@ fn parse_entity_declaration(
         }
         if !is_pe {
           match load.resolver.resolve(base_uri, sysid, public_id) {
-            Some(bytes) =>
-              match decode_external(bytes) {
-                Ok(content) =>
-                  if load.internal_literals.contains(entity_name) {
-                    ()
-                  } else {
-                    load.table.set(entity_name, ExternalPiece(content))
-                  }
+            Some(bytes) => {
+              let content = match decode_source(bytes) {
+                Ok(raw) => admit_external_text(raw, load.doc_version)
                 Err(_) =>
                   raise XmlError::At(
                     error=XmlErrorKind::External(
@@ -230,6 +234,12 @@ fn parse_entity_declaration(
                     span=char_span(text, start),
                   )
               }
+              if load.internal_literals.contains(entity_name) {
+                ()
+              } else {
+                load.table.set(entity_name, ExternalPiece(content))
+              }
+            }
             None => ()
           }
         }
@@ -407,4 +417,32 @@ fn skip_pe_reference(text : String, start : Int32) -> Int32 raise XmlError {
     return pos + 1
   }
   raise external_error(text, start, "unterminated parameter entity reference")
+}
+
+///|
+/// PI 目标保留字探测(2.8):`xml` 三字母大小写不计,后随 S 或 `?>`
+/// 才咬(PI 目标 xmlfoo 之类合法,留给底座)。
+fn has_xml_target(text : String, start : Int32) -> Bool {
+  let limit = text.length()
+  if start + 3 > limit {
+    return false
+  }
+  let word = [(0x78, 0x58), (0x6D, 0x4D), (0x6C, 0x4C)]
+  for index, pair in word {
+    let code = text[start + index].to_int()
+    let (lower, upper) = pair
+    if code != lower && code != upper {
+      return false
+    }
+  }
+  let after = start + 3
+  if after >= limit {
+    return false
+  }
+  let ch = text[after]
+  ch == ' ' ||
+  ch == '\t' ||
+  ch == '\r' ||
+  ch == '\n' ||
+  (ch == '?' && after + 1 < limit && text[after + 1] == '>')
 }
