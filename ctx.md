@@ -473,3 +473,153 @@ PI 位 text decl 拒。定案 R-B3a-e 入 spec 卷二 §6。套件 **2486/99/258
 **操作坑一笔**:python 整块替换的 end 锚若含 `\n`,锚前导空格数须与
 实文严格一致——差 4 空格即把后续行首并进锚、吃掉换行(P 桶被误删,
 门数 12 翻红当场暴露;桶闭钉防呆再立一功)。
+
+## 13. 分册分诊役:deferred 75 案逐案 census(2026-10-22,已关)
+
+B3 后留账 75 案不再按族标签推定,逐案实测:探针复刻门环境(store 预载
++ TSV 五列 + 两面 parse_edition + resolver),对每案跑「摘除后判定」
+(门同款规则:invalid/valid 须解析、not-wf 须拒、error 双向)。读数
+**36 毕业 / 39 留账 / 0 无面**,摘除后门钉双验:**2510/75/2585 →
+2546/39/2585**,单元 110/110。
+
+**分册细账**(案/毕业/留账):ibm 37/22/15、oasis 11/9/2、sun 9/4/5、
+eduni 10/1/9、xmltest 8/0/8。
+
+**三案族勘账**(census 对旧账的翻案):
+
+1. **E 桶(外取件编码声明闸,1)清零**:sun/not-wf/encoding07 实测
+   过——B3 准入三闸上线后,外取件编码声明核对实已覆盖,旧「decode
+   直通 UTF-8 面」注记过时。
+2. **A 桶(2)拒点搬家**:utf16b/utf16l 的 decode 在 A1 后已过,拒点
+   移至 parse 面(5e 面拒,invalid 案须可解析);旧「decl/内容一致性
+   启发拒」注记作废,留账改挂 parse 面勘。
+3. **C 族 39 → 5**:34 案毕业是 B2 外取链的白得——外部子集 PE 展开
+   实已覆盖(PE 间接展开/条件段 cond01/cond02 过),非新能力落地。
+   分族标签会掩白得,案级实测才见真实通过面。
+
+**立项清单**(留账 39 案按处置面四项):
+
+1. **PE/条件段边角**(5):sun decl01(内部子集条件段须拒未拒)/
+   pe02(内部子集 PE 须收未收)/E13/ibm62n03/ibm63n03;
+2. **XML 1.1 名字段/NS 解绑/控制字符**(8):eduni namespaces 1.1
+   003/004(xmlns:p 空串解绑错拒)/xml-1.1 043/054/ibm02v02/03/05
+   (1.1 控制字符经引用)/E50(errata 2e 名字字符);
+3. **外取件闸精度**(22):P12 + PE 载体 6 + G2 + S2——闸已立,
+   位形覆盖未满;
+4. **A 编码 parse 面**(2):UTF-16 invalid 档拒点勘。
+
+M 桶(2)不动:ibm77v30(manifest 版次列空)、ibm03v09(套件自相
+矛盾),候上游勘正。
+
+**操作法一笔**:新桶表机械拼装(路径集从 census 机械提取,新块写后
+断言「块内路径集合 == 留账集合」)——断言当场咬住一处转录错
+(xmltest 014-016 真径 valid/not-sa,凭族印象写成了 not-wf/not-sa)。
+毕业判据 = probe 绿 + 门钉双验,两验缺一不可。
+
+## §14 PE 位形役(2026-10-22)
+
+**战果**:门 2546/39 → **2562/23/2585**(16 案毕业),unit 114/114,
+check 零警告,`.mbti` 零差(全部 priv 面)。毕业案 = 8 计划(P 闸
+005/006/E14/014/015/016/022/E18)+ 8 额外(新机使 PE 载体违例可见:
+ibm77n03/n04、ibm79n01/n02、ibm77n21、xml-1.1/002、not-sa/002、
+decl01 not-wf 正判)。
+
+**机制四件**(subset_parse.mbt,全 priv):
+
+1. **PE 声明立账**:pe_values(字面量值)/ pe_externals(外取 id 随录
+   声明位 base)/ pe_depth 环闸。次序律 = 4.4.8 同律:内部子集 PE 值
+   优先,外取子集同名让位(cond01/cond02 回归实证:外取 `%MAYBE`
+   覆写内部值翻案一处,即修)。
+2. **条件段关键词位形**:`<![ %e; [` 走 parse_conditional_pe——关键词
+   从 pe_values 取,值带 '[' = 关键词+括号一体;体恒原文零移位
+   (INCLUDE 解析体 / IGNORE 跳过体,位形展开不碰 span)。
+3. **声明收口位形**:skip_markup_declaration 引号外 PE 引用——值内
+   顶层 '>' = 声明在值内闭合(005/E14 补全声明形);值无顶层 '>'
+   = 跳引用续扫;未名 PE / 孤 '%' 机械前进防挂。
+4. **声明间引用位形**:reference_pe 升级——外取件取件后按外取子集
+   解析(件内容里 ENTITY 声明落表,E18 链);字面量值 markup 起
+   ('<' 或 '%')按 DTD 片再扫;碎片值机械跳过(pe02 族语义不破)。
+
+**破案一笔(E18 外取链子代基址)**:链 `%pe;` → E18-pe → `%intpe;` →
+`%extpe;` → ent 二取即断且无错。根因 = load_external_subset 直传
+**生 system_id** 当子代基址——`../` 串在 resolver 面把 doc 目录咬掉
+(suite_join 的 ".." 弹栈弹的是 doc 段)。破法 = merge_base_reference
+(RFC 3986 §5.2 merge + 点段折叠):子代基址 = 父基址目录面 + 本件
+system_id 合成,归一成仍对 doc 可解的相对引用;绝对径/scheme 原样
+直传。E18 三跳全通,`ent` 落表展开。
+
+**debug 三层乌龙自警**(役内耗时主因,记账防再犯):
+
+1. 探针 resolver 自带 key 空间错(前缀不符 / 无点段折叠)——链断先疑
+   工具再疑引擎;
+2. grep 截断 + 多测案 debug 流交错 → 读数自相矛盾(同一探针一会
+   3 ASK 一会 2 ASK)——多流输出必打标分 flu(T1|/T2|/BB|),禁 head 截读;
+3. 白盒最小复现(内存桩 + 直调 priv 面)是解这类链断的正径——
+   collect 直调通、prepare_external 全文档断,分叉一次收窄到位;
+   产线临时 debug 钉点(parse_entity_declaration 入口 / fetch 后 /
+   subset 装载入口)同 session 即撤,最后一步才用。
+
+**回归钉四件**(subset_parse_wbtest.mbt):条件段 PE 关键词(INCLUDE/
+IGNORE/bracket-in-value)/ 值内顶层 '>' 收口 / 外取链子代基址
+(E18 形三跳)/ merge_base_reference 单元五形。
+
+**余账**(23 案留账,桶表见 suite 门内注记):
+
+- **配置类可立即清**(候用户令):无——本役余账全数挂外。
+- **外部依赖类**(候用户裁):Milky 底座三簇 9 案(UTF-16 启发 2 /
+  entity-value Char 5 / NS 解绑 2——fork vs upstream PR vs 留)。
+  注意 62n03/63n03 新机下 PARSE-OK-NOW(not-wf 必拒未遂),拒因随
+  新机翻新,是否并入底座簇候裁。
+- **新能力类**(候单独立项):内部子集 PE 展开(E13/pe02,底座 turf);
+  PE 值内 '%' 尾位形(p09fail×2/not-sa 008);S standalone WFC 闸
+  (not-sa03/ibm32n09);G 外取子集声明语法闸(ibm68n06/ibm77n14)。
+- **数据面**:E50 自 D 桶移入 M 桶(errata 2e 名字增补字符 4e 拒
+  5e 许,manifest 版次列空 = 两面全查必翻,非引擎名策略可判)。
+
+## §15 闸补役(2026-10-23)
+
+**战果**:门 2562/23 → **2569/16/2585**(7 案毕业),unit 117/117,
+`.mbti` 零差。B 桶 P/G/S 三族清零;留账 16 = A2(编码)+ C4(内部
+子集 PE 2 + PE 闸边角 2)+ M3(数据面)+ D7(Milky 底座 NS/Char 簇)。
+
+**三门**(余账新能力类七案,mislabel 案一并清):
+
+1. **闸 S(standalone WFC,2 案)**:not-sa03/ibm32n09/ibm68n06(IBM
+   误标 P68,实为 standalone 形)——standalone='yes' + 本表实体正文/
+   属性位展开 = WFC 2.9 Entity Declared,expand_entry 顶层展开点拒。
+   DoctypeScan 增 standalone_yes 捕获(peek_decl_standalone,判官权
+   在底座,只取值)。零误伤根:纯内部文档表空不走预组合,预定义实体
+   不入表。
+2. **闸 P(实体值引用语法,3 案)**:p09fail1/2、not-sa 008——值内
+   孤 '%' / 孤 '&' / 无 ';' 引用 = P09 产生式违例,
+   entity_value_refs_wellformed 只核形不核表(声明面 = VC);非 ASCII
+   码元概认名字符 = 超收侧保守(拒闸宁漏勿误)。
+3. **闸 G(声明名合法性,1 案)**:ibm77n14 `<!ELEMENT 0node>` 数字起
+   名——外取子集不进底座,语法判官在本层;名字按文档版次面选表
+   (edition 贯通 ExternalLoad + name_predicates)。
+
+**误伤一案自警(021/023 位形)**:闸 G 首版把 ATTLIST **名位 PE 引用**
+(`<!ATTLIST %e; "v1">`,名字由 PE 供)误拒——门红 2 案立现,名位
+'%' 旁路(合法性随 PE 展开面)复绿。教训:新闸首跑必全量门验,误伤
+在门里现形,不在探针里——探针只看目标案,门看 2585 案。
+
+**形法三笔**(役内编译器实证,在册坑的再现):
+
+1. 前导 `&&` 续行 while 条件 = ambiguous_precedence 警——谓词提 fn
+   收口(is_hex_digit_unit);
+2. struct mut 字段仅 wbtest 改 = [0015] unused_mut——wbtest 改用记录
+   更新字面量 `{ ..base, standalone_yes: true, }`,字段复常;
+3. wbtest 构造点新字段 = 补 helper(subset_load_with),黑盒调用点
+   同笔跟签名(prepare_external +edition 参)。
+
+**余账(16 案,三分类)**:
+
+- **配置类**:无。
+- **外部依赖类**(候用户裁):Milky 底座两簇 7 案——NS 空串解绑 2
+  (namespace.mbt:154 无条件拒)+ 1.1 控制字符 5(dtd.mbt entity-value
+  char ref 1.0 表);A2 UTF-16 启发 2(reader.mbt:917)。fork vs
+  upstream PR vs 留,候裁。
+- **新能力类**(候单独立项):内部子集 PE 组合(E13/pe02——内部子集
+  展开须重写 doctype 子集面 + SpanPatch 进子集,现账本只覆盖内容区);
+  ibm62n03/63n03 拒因勘(新机下 PARSE-OK-NOW,须查条件段位形细账)。
+- **数据面**:M3 候上游勘正。
