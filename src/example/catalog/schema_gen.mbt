@@ -28,7 +28,8 @@ pub(all) struct Book {
 pub extend Book with Eq::{not_equal, equal}
 
 ///|
-/// doc 元素 → Doc(机械骨架;标签按原文匹配,未知子元素 = 错)。
+/// doc 元素 → Doc(机械骨架;标签按原文匹配,未知子元素 = 错;
+/// 值域/业务规则经 stub_validate_doc 挂点,stubs.mbt 手写)。
 pub fn doc_from_tree(element : @moonxml.Element) -> Result[Doc, String] {
   let version = match xmlschema_attr_find(element, "version") {
     Some(value) => value
@@ -58,11 +59,16 @@ pub fn doc_from_tree(element : @moonxml.Element) -> Result[Doc, String] {
       _ => ()
     }
   }
-  Ok(Doc::{ version, lang, book, meta, })
+  let value = Doc::{ version, lang, book, meta, }
+  match stub_validate_doc(value) {
+    Ok(_) => Ok(value)
+    Err(msg) => Err("doc: \{msg}")
+  }
 }
 
 ///|
-/// book 元素 → Book(机械骨架;标签按原文匹配,未知子元素 = 错)。
+/// book 元素 → Book(机械骨架;标签按原文匹配,未知子元素 = 错;
+/// 值域/业务规则经 stub_validate_book 挂点,stubs.mbt 手写)。
 pub fn book_from_tree(element : @moonxml.Element) -> Result[Book, String] {
   let isbn = match xmlschema_attr_find(element, "isbn") {
     Some(value) => value
@@ -98,7 +104,11 @@ pub fn book_from_tree(element : @moonxml.Element) -> Result[Book, String] {
     Some(value) => value
     None => return Err("book: missing required child \"title\"")
   }
-  Ok(Book::{ isbn, title: title_value, author, })
+  let value = Book::{ isbn, title: title_value, author, }
+  match stub_validate_book(value) {
+    Ok(_) => Ok(value)
+    Err(msg) => Err("book: \{msg}")
+  }
 }
 
 ///|
@@ -236,4 +246,10 @@ fn xmlschema_make_leaf(tag : String, text : String) -> @moonxml.Element {
     children,
   }
   element
+}
+
+///|
+/// 语义挂点名清单(from_tree 调用点数据孪生;接口一致门对表用)。
+pub fn xmlschema_hook_names() -> Array[String] {
+  ["stub_validate_doc", "stub_validate_book"]
 }

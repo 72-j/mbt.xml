@@ -1,3 +1,8 @@
 import {
   "thy1016/moonxml",
 }
+
+import {
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+} for "test"

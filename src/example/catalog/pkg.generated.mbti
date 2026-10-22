@@ -10,6 +10,8 @@ pub fn book_from_tree(@moonxml.Element) -> Result[Book, String]
 
 pub fn doc_from_tree(@moonxml.Element) -> Result[Doc, String]
 
+pub fn xmlschema_hook_names() -> Array[String]
+
 // Errors
 
 // Types and methods

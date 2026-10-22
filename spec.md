@@ -20,6 +20,13 @@ gen 层解决的问题是：**XML 方言的"树形状"一旦定型，其类型�
   `to_tree` 递归下降骨架 + 访问器签名。
 - **语义不生成**：值域校验、业务规则留 `stubs.mbt` 用户填空点（与生成物分文件，
   禁止拼接——moonmat 先例同款）。
+- **挂点机制（评7 落地 2026-10-22）**：骨架逐 node 元素调用 `stub_validate_<id>`
+  （from_tree 组装尾点，Err 带元素前缀透出）；生成器直发 `xmlschema_hook_names()`
+  （调用点数据孪生）；消费包 `stubs.mbt` = 唯一手写语义区（缺省直通体，regen
+  不碰）。接口一致门（catalog_interface_gate_test，jsonld interface_gate 先例）
+  钉 stubs 声明面 ≡ 骨架调用面——多一（孤儿 stub）少一即红；缺 stub/形失配由
+  编译器红（[4021]）。变异探针双类验毒：改名 stub = 编译红；孤儿 stub = 门红
+  （2≠1）。发射形经 fmt 复跑哈希不变（正典）。
 
 ### 1.1 与 M0 底座探针的解耦（R-G2 [定案]）
 
