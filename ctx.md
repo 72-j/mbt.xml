@@ -337,7 +337,104 @@
   (errata 边缘)/006(外部实体);② JIS 三码 gen(真解码能力,套件零
   增量);③ B 69/C 39 残部(重型另立)。
 
-## 9. 换机迁移清单
+## 9. 役J1:JIS 三码 gen(真解码)(2026-10-22,已关)
+
+N1 月台项②(真解码能力,套件零增量——预判成立)。8 位支持集
+utf-8/latin-1 → 扩 JIS 三码:euc-jp(3 标签)/ shift_jis(8)/
+iso-2022-jp(2),判词真源 = 锁版 WHATWG Encoding Standard
+(`.encodings/encoding-standard.html`,SHA256SUMS 三行;§12.1.1 /
+§12.2.1 / §12.3.1 判词 + §4.2 标签表,均自锁版 HTML 逐节提取)。
+
+- **数据面**:JIS X 0208 / JIS X 0212 索引表(WHATWG index,含
+  NEC/IBM 扩充指针;11104 / 7211 槽,槽 0 = 未定义)锁版
+  `.encodings/index-*.txt` → `tools/extract_encoding_tables.py` 直发
+  MoonBit gen 件 `src/jis_tables_gen.mbt`(7730+6073 行)。
+- **R-J1a [定案] 冻结规范数据走窄链**:无人维护面的锁版数据不设
+  TOML 中间形、不进 skelgen(E1 链的成件条件是手维护表;此处真源
+  即 WHATWG 发布物)——链 = extractor → `moon fmt` → 黄金对拍;
+  **fmt 是链段**(数组重排非贪心、不可模拟,再生契约三步,CHAIN-STABLE
+  两轮已验;extractor 直发 `Array[Int32]` 避 fmt 改型)。
+- **判词面**:`src/jisdecode.mbt` 三解码器手写——指数循环 + 引字节
+  状态;Shift_JIS 单字节三段(ASCII|0x80 直映 / 半角片假名 0xA1-0xDF /
+  引字节 0x81-0x9F|0xE0-0xFC)、双字节 pointer =(lead−leadOffset)×188 +
+  byte−offset(leadOffset 按 lead<0xA0 取 0x81/0xC1,offset 按
+  byte<0x7F 取 0x40/0x41)、**EUDC 段 8836-10715 → 0xE000−8836+pointer
+  先于表查**;EUC-JP 0x8E 半角 / 0x8F 转 jis0212(旗用毕即清);
+  ISO-2022-JP 七态机(output 旗钉「转义后须吐码」,连转两次即错;
+  ASCII/Roman 态拒 0x0E/0x0F;Roman 0x5C→¥、0x7E→‾)。spec 的
+  restore-to-ioQueue 省略 = 错误即拒语义下恢复步无观察面。
+  集成:`decode_8bit_document` 声明 match 加 JIS 臂
+  (`jis_encoding_of_label` 判别 → `decode_jis` 分派 → gate_chars 照旧);
+  **全私有面,.mbti 零差**(decode_source 签名不变,消费者零感知)。
+- **门**:套件读数 **2466/119/2585 不动**(预判成立:6 案 japanese
+  役E2 已按 error 双向收编 plain,真解码落地判词不变——本役交付
+  能力非门数);单元 **72/72**(+19 净:wbtest 机制 15 + decode_test
+  集成 4 − 退役 euc-jp 负例 1 + 真解码见证 1);见证钉三套件原件
+  (weekly-euc-jp / pr-xml-shift_jis / pr-xml-iso-2022-jp)端到端
+  须 Ok(J1 前为 Err,回退即红)。
+- **R-J1b [事实] 测试向量两错皆 offset/逃回档**:① EUDC 上界首写
+  差 1——trail ≥0x7F 走 offset 0x41 档,python 复算误用 0x40(F9 FB
+  →10714,真上界 F9 FC→10715);② iso-2022 集成件首写漏逃回——
+  **lead-byte 态吞 ASCII 配对是 spec 正判**(0x21-0x7E 双双入对),
+  须 ESC ( B 逃回 ASCII,真套件文件皆带逃回序。两错皆向量错,
+  解码器行为即 spec。
+- **月台/余账**:A 桶残 2(UTF-16 声明档,底座启发面);B 69 /
+  C 39 重型另立;D 9 底座面。日文三码全收,8 位日文编码面饱和。
+
+## 10. 换机迁移清单
 
 纯 MoonBit 仓（无 C stub）：clone 后 `moon install && moon test` 即可；
 依赖版本以 `moon.mod` import 钉为准（Milky2018/xml@0.6.0 等）。
+
+## 11. 役B2:外挂面实现(2026-10-22,已关)
+
+B 族 69 案闭案役。架构落地见 spec 卷二 §5(R-B2 定案),此处记实态与
+意外发现。
+
+**读数**:套件 **2486/99/2585**(plain 2466→2486,B 桶 69 案 20 案毕业
+入 plain,49 案实读分诊留 deferred);单元 **94/94**(新增 14:resolver
+面 0/decode 4/doctype 4/subset 5/prepare 7 中并去重);`moon check`
+零警零错。
+
+**新件**:`resolver.mbt`(pub(open) trait EntityResolver + 缺省
+None = 不取外件)/`external_decode.mbt`(外取件解码 + text decl 剥
+除)/`doctype_scan.mbt`(序区 DOCTYPE 扫描)/`subset_parse.mbt`(声明
+面收编 + billion-laughs 闸)/`external_prepare.mbt`(预组合 + span
+补丁账本 + 错误重定位);`parse_edition` 增 `resolver~` 参,错误词增
+`External(String)`(外取面独立语义,D-18 先例)。
+
+**意外发现四则**:
+1. **套件门 73% 虚读**:manifest 第 4 列(版次)空 = 1889/2585 案,
+   旧 harness 对空列 faces 零迭代**空转判过**——注释写"缺省两面全查"
+   而代码没跟上,2466 的读数里大半从未实读。役B2 拨正(空列 = 两面
+   全查),134 案实读翻红,逐案分诊后余 48+2 归族留账。教训:**门
+   的闭钉钉的是计数不是实读,改 harness 判据必须先审空转路径**。
+2. **@fs.walk 按目录回调**(0.22.4):回调收 `(目录全径, 目录内条目
+   名)`,条目含子目录名——当文件全径用即对目录 read_file 全炸,catch
+   吞掉后 store 恒空(首版 resolver 全程没取到件,"零漂移"实为死接
+   线)。async 裸语句调用本身会执行,坑在回调语义不在 await。
+3. **注释收口三字组**:`skip_past(t, i+4, '-', '-')` 只咬相邻 `--`,
+   把 `-->` 的 `>` 留给下轮 → "unexpected content"误拒(sa/066 族
+   12 案实证);序区扫描同病(doctype 前有注释即哑火)。专用
+   `skip_comment` 三处统一。**skip_past 只配二字组收口**。
+4. **单文件模式丢 import**:`moon test src/probe_x_test.mbt` 判包失
+   败后 @moonxml 自包导入不可见([4020]);且黑盒 `*_test.mbt` 各件
+   **同命名空间**(与 `_wbtest.mbt` 异伪包相反)——探针 helper 与套
+   件件撞名。探针验证一律走全量跑 + grep。
+
+**实体链所有权闭合**(新知):内部字面量链 a→b(外取形)若留底座,
+底座展开半路撞我层取走的外取名即 InvEnt(ext-sa/012 族根因)。解法 =
+`internal_literals` 值账 + 不动点闭合趟:字面量(传递)引用到本表实体
+即整链收归本层展开;不动链留底座,内部优先不扩权。**attr_face 须穿
+透展开深度**(ibm41n11 实证:间接字面量把外取件带进属性值同属 WFC
+违例,旗标丢一层即静默放行)。
+
+**NoExternal 除名**:B1 拟的缺省拒对象无构造点(缺省走 `None` 径即
+零漂移),对象面反添扫描成本,[0009]/[0001] 双警——除名,缺省语义
+由 parse_edition 的 None 缺省承担。
+
+**B 残留分族**(49 案,桶内逐族注释):T 文本声明校验闸 27(最大族,
+ibm P77 1.1 全系)/P PE 闸 12(C∩B 并 PE 役)/V 外取件版次闸 6/
+E 编码闸 1/S standalone 闸 1/G 声明语法闸 1/M manifest 版次标注缺 1
+(两面冲突待 manifest 勘正)。ibm41n11 翻案教训:闭合趟上线后该案
+从过变挂——**新径上线必须重跑全门,过案不是免检牌**。

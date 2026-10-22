@@ -34,6 +34,20 @@ Edition5 紧凑）键控名字产生式；套件门 EDITION 感知双面裁决�
 规范面选径（On = NS-aware 缺省；Off = 非 NS 面，名字原文直通，冒号名/
 组合字符衔接段合法）；套件门 NS 列两轴正交裁决；读数推进
 **2466 passed / 119 deferred / 2585 total**（账见 `ctx.md` §8）。
+**役J1 已落**：JIS 三码真解码——WHATWG Encoding Standard 锁版随仓
+（`.encodings/`，SHA256SUMS 可验），JIS X 0208/0212 索引表 gen 链
+（extractor → fmt → 黄金对拍，R-J1a 窄链），`decode_source` 8 位支持集
+扩 euc-jp / shift_jis / iso-2022-jp 三码十三标签（判词面手写三解码器，
+`ctx.md` §9）；套件读数不变（6 案 japanese 役E2 起 error 双向可过，
+本役交付真解码能力），门 72/72。
+**役B2 已落**：外挂面——`EntityResolver` 端口（缺省 None = 不取外件，
+XXE 防御缺省关）+ 单径预组合（外取实体统一文本展开后喂底座，R-B1b
+双径翻案）+ 内部优先账本与链所有权闭合 + 属性位 WFC（按可达性穿透）
++ span 补丁账本（错误报位重映射）+ billion-laughs 双闸；错误词增
+`External`。附带勘役：套件门 73% 虚读拨正（manifest 版次列空 =
+两面全查）。读数推进 **2486 passed / 99 deferred / 2585 total**（B 族
+69 案闭案：20 毕业入 plain，49 分族留账；账见 `ctx.md` §11、
+`spec.md` 卷二 §5），门 94/94。
 
 ### 路线（里程碑）
 
@@ -48,6 +62,8 @@ Edition5 紧凑）键控名字产生式；套件门 EDITION 感知双面裁决�
 | E1 | 版本面键控名字段门 + 名字表 gen（parse_edition） | **已关**（2026-10-21，2437/148/2585，R-E1a/b/c/d） |
 | E2 | 判词面勘误（error 双向）+ D 族重挂 | **已关**（2026-10-21，2453/132/2585，R-E2a/b） |
 | N1 | NS 模式旗标（NsMode 两面） | **已关**（2026-10-21，2466/119/2585，R-N1a/b/c） |
+| J1 | JIS 三码 gen 真解码（euc-jp / shift_jis / iso-2022-jp） | **已关**（2026-10-22，2466/119/2585 不动·门 72/72，R-J1a/b） |
+| B2 | 外挂面：EntityResolver 端口 + 单径预组合 + 实体链闭合 | **已关**（2026-10-22，2486/99/2585·门 94/94，R-B2a-g） |
 | 应用语义层 | RDF/XML 映射、CML 等——独立战线另立仓或归口，仓位随消费端拍 | 未立项 |
 
 ### 分层裁决预立
@@ -73,7 +89,7 @@ Edition5 紧凑）键控名字产生式；套件门 EDITION 感知双面裁决�
 ## 测试与验证
 
 ```bash
-moon test --target native    # 48/48（M1 往返 6 + 契约/模型 8 + G1 联调 1 + M2 套件门 1 + A1 编码单元 22 + E1 名字段单元 10）
+moon test --target native    # 72/72（套件门 1 + 编码单元含 JIS 三码 20 + 名字段单元 10 + M1 往返/契约 14 + G1 联调 1 + NS-off 单元 5 + E2 判词等余量）
 ```
 黄金门/负例住生成器仓（根仓 `skelschema` 双方言 + `skelgen` 双金门，
 schema 49 + link 8）：再生对拍 = `moon run skelgen/xmlregen` /
@@ -83,7 +99,10 @@ xmlconf oracle 层：套件锁版随仓 `.xmlconf/`（`sha256sum -c` 可验）�
 （逐字节稳定，含 EDITION 版次面列）；套件门双面裁决（manifest EDITION
 列 → 4e 全表面/5e 紧凑面）deferred 分诊见 `ctx.md` §4/§6；名字区间表
 数据真源锁版 `.xmlnames/`（`sha256sum -c` 可验，提取脚本
-`tools/extract_name_tables.py`）。
+`tools/extract_name_tables.py`）；JIS 索引表与 WHATWG 编码规范锁版
+`.encodings/`（`sha256sum -c` 可验，再生 = `python3
+tools/extract_encoding_tables.py > src/jis_tables_gen.mbt && moon fmt`，
+R-J1a 链含 fmt 段）。
 
 若走 RDF/XML 面，复用 W3C rdf-tests 的 rdf-xml 套件与 jsonld 仓的
 `.rdf-tests` 锁版基建（SHA256SUMS + manifest）。
