@@ -5,9 +5,9 @@
 # 树递归核心:elements 以 id 互引(递归经引用不经嵌套);纯 required 环 = 红。
 # 词表(封闭,validate 把关):kind = node | leaf | any;text_type/attrs.type
 #   = String | Int | Double | Bool(卷面 Raw 词删——树模型无 raw 节点型,§1.2 勘误)。
-# 绑定器:skelgen/schema/xmlschema_toml_gen.mbt(parse/validate/emit 三件套);
-# 再生:moonx moonxml/regen.mbtx(仓根起跑);黄金门 = skelgen/schema
-# xmlschema_toml_gen_test.mbt 逐字节对拍;联调门 = 本包 contract 测试。
+# 绑定器:skelschema/xmlschema_toml_gen.mbt(parse/validate/emit 三件套);
+# 再生:moon run skelgen/xmlregen(仓根起跑);黄金门 = skelgen/
+# xmlschema_link_test.mbt 逐字节对拍;联调门 = 本包 contract 测试。
 # 表头三件 = gen 体例键,非协议字段。
 
 schema_version = "1.0"
