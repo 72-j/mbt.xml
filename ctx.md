@@ -668,3 +668,83 @@ heredoc 中断)——切 python 程序化替换(字节级 assert count==1)后
   `<!ENTITY...>` 经 `%pe;` 在声明位形补全——现认领只覆盖 GE 装表,
   PE 值进声明位形位 = E14/005 家族深水区);内部子集条件段
   (InternalSubset policy 下 conditionalSect = VC 域,候裁)。
+
+
+## §17 役「Milky 13 案三分处置」（2026-10-23）
+
+**裁定**（用户拍方向）：条目清晰、locus 明确、修复手术面小的 → 拟 Milky upstream PR；
+套件数据面自相矛盾的 → 留置观望；fork 只在上游无响应且消费端真需时走（本期候而不用）。
+
+**上游坐标**：底座 = Milky2018/xml@0.6.0（mooncakes 锁版）；locus 全部核自 0.6.0 源
+（registry cache 拆包比对，moonxml 本仓零涉）。
+
+| 桶 | 案 | locus（0.6.0 实测） | 处置 |
+|---|---|---|---|
+| A | sun/invalid/utf16b.xml, utf16l.xml | reader.mbt:918-925 | 拟 PR（包 D） |
+| C | eduni/errata-3e/E13.xml | dtd.mbt:219 | 拟 PR（包 A） |
+| D | eduni/namespaces/1.1/003.xml, 004.xml | namespace.mbt:151-155 | 拟 PR（包 B） |
+| D | eduni/xml-1.1/043.xml, 054.xml, ibm/xml-1.1/valid/P02/ibm02v02|03|05.xml | escape.mbt:172-178 | 拟 PR（包 C） |
+| M | ibm/xml-1.1/valid/P77/ibm77v30.xml, ibm/xml-1.1/valid/P03/ibm03v09.xml, eduni/errata-2e/E50.xml | —（套件数据面） | 留置观望 |
+
+活证据（探针写跑删，已删）：A 桶两件**本带 UTF-16BE BOM**（fe ff 头，旧 iconv 取证吃掉
+BOM 曾误判无 BOM）；四 faces 全拒 `InvalidSyntax("encoding declared as UTF-16 but content
+is ASCII/UTF-8")`。根因：Milky 的 null-byte 嗅探跑在**已解码文本**上——BOM 已消费、
+null 已不在，纯 ASCII 内容的合法 UTF-16 文档必被拒。勘旧注记：A 桶 locus 非 dtd.mbt
+（char 表在 escape.mbt:172），D 桶注记同笔拨正。
+
+### 包 A · E13 — undeclared entity in entity value（1 案）
+
+**Locus**: `src/dtd.mbt:219` `expand_entity_value_with_budget` — `entities.get(name)` 为
+None 即 `raise InvalidEntity("undefined entity reference: ...")`，无任何条件豁免。
+**Spec**: XML 1.0 §4.1 WFC *Entity Declared*——仅当文档无 DTD、或内部子集不含实体引用、
+或引外部子集且 standalone 未标 yes 三条款之一成立时，未声明才是 WFC 违例；PE 出现在
+内部子集即破前两条款（E13 位形），非 standalone 时声明检查须让位。
+**Repro**: `<!DOCTYPE r [<!ENTITY % pe "<!ENTITY e '&#38;undeclared;'>>%pe;><r>&e;</r>` 位形
+（E13.xml 原件，xmlconf 锁版）。**Fix**: 未声明引用在实体值展开位降级为字面保留/跳过，
+按三条款判定是否报错；建议线程化「internal subset contains entity references」旗标 +
+standalone 声明既有解析结果。
+**按语**：修复 = 条件化一处 raise，手术面最小；与 §4.4.4 Included-in-Literal 语义对齐。
+
+### 包 B · NS 1.1 prefixed unbinding（2 案）
+
+**Locus**: `src/namespace.mbt:151-155` — `Some(prefix)` 分支 `uri == ""` 无条件
+`raise InvalidSyntax("namespace prefix cannot be bound to an empty URI")`。
+**Spec**: Namespaces in XML 1.1 §2.2——`xmlns:p=""` 合法（解绑前缀绑定）；1.0 REC 才禁。
+同一函数 default 分支已实现 `scope.remove("")` 解绑语义（1.1 行为），prefixed 分支缺席。
+**Repro**: `<root xmlns:p=""/>`（003.xml/004.xml，manifest 版次 1.1）。**Fix**: 解析器
+持版次旗标（1.1）时 prefixed 空串走 `scope.remove(prefix)`；1.0 保持现拒。
+**按语**：default 分支与 prefixed 分支行为不对称是现成的论证入口；版次旗标 Milky
+reader 已有 version 解析可搭。
+
+### 包 C · XML 1.1 Char via character reference（5 案）
+
+**Locus**: `src/escape.mbt:172-178` `is_valid_xml_char` — XML 1.0 Char 产生式硬编码
+（#x9|xA|xD|#x20-#xD7FF|#xE000-#xFFFD|#x10000-#x10FFFF），`decode_entity` 数字引用位
+无条件套用。
+**Spec**: XML 1.1 §2.2——Char 经**字符引用**放宽至 [#x1-#xD7FF]|[#xE000-#xFFFD]|
+[#x10000-#x10FFFF]（字面出现仍禁；NEL 0x85/0x2028 归行尾属同族生产式）。043/054/
+ibm02v02/03/05 五案 = 控制字符经引用合法位形。
+**Repro**: `<!DOCTYPE r [<!ENTITY e "&#x1;">]><r>&e;</r>` 于 version="1.1" 文档（套件
+原件）。**Fix**: `unescape`/`decode_entity` 增 edition 参数（1.1 时引用位用放宽域），
+字面校验路径不动。
+**按语**：放宽**只**适用引用位——恰是 decode_entity 所在；改动面 = 一个布尔穿线。
+
+### 包 D · UTF-16 declared + ASCII content 误杀（2 案）
+
+**Locus**: `src/reader.mbt:918-925` — XML decl 校验位：`self.input[0] != '\u{FEFF}'`
+且 `input` 全 ASCII（长度 <100）即拒。`self.input` 是**解码后文本**：真 UTF-16 输入经
+解码 BOM 已消费、null 字节已不在——嗅探探的属性在解码后不可能存在，恒误伤。
+**Spec**: XML 1.0 §4.3.3/附录 F——UTF-16 实体须带 BOM，检测在**字节面**；decl 与
+内容编码一致性对已转码输入无从谈起。
+**Repro**: BOM(fe ff) + UTF-16BE 编码的 `<?xml version='1.0' encoding='UTF-16'?>\n<root/>\n`
+（sun/invalid/utf16b.xml，98 字节）——任一 ASCII 内容 UTF-16 文档皆拒。
+**Fix**: 该检查移到字节解码前（BOM 缺席 + decl UTF-16 才报错），解码后文本上的
+null-byte 启发删除；或给已转码输入（external transcoded）一条诚实通路。
+**按语**：`length() < 100` 长度门槛说明作者已知启发脆；字节面判定是唯一诚实形。
+
+### 收尾状态
+
+- 桶注记五处落 xmlconf_suite_test.mbt（纯注释，读数不变：2572/13/2585）。
+- 四包文本（英文体可直贴 GitHub issue/PR）+ 本表 = 提交材料；**投递动作候用户拍**
+  （外发=发布，上游 repo = github.com/Milky2018/xml，GH 走 socks5h 代理）。
+- fork 判据挂账：PR 投递后无响应且消费端真需 → 再议 fork；本期不动。

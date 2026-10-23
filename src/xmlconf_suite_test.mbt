@@ -29,14 +29,20 @@ async test "xmlconf suite gate" {
     // 役PE组合(2026-10-23):内部子集 PE 组合立(PE 值 char-ref 引用位
     // 收口 + PE 载 GE 声明本层认领)+ 子集 PI 闸(目标名核 + ?> 收口)。
     // pe02/ibm62n03/ibm63n03 三案毕业,13 案留账。
+    // 役三分处置(2026-10-23):13 案全落账——10 案拟 Milky upstream PR(A2/C1/D7,
+    // 证据四 locus 见 ctx §17 四包),3 案(M 桶套件数据面)留置观望;fork 候而不用。
     // A 编码残部(2):UTF-16 invalid 档——census 勘账:A1 后 decode 已过,
     // 拒点移至 parse 面(5e 面拒,invalid 案须可解析);旧「decl/内容一致性
     // 启发拒」注记作废。japanese×6 役E2 移 plain(error 判词双向)。
+    //   处置=拟 Milky PR:活证据翻案——件本带 UTF-16BE BOM,reader.mbt:918
+    //   null-byte 嗅探跑在已解码文本上(BOM 已消费、null 已不在)必误伤;
+    //   ASCII 内容的合法 UTF-16 文档无条件被拒。ctx §17 包 D。
     "sun/invalid/utf16b.xml", "sun/invalid/utf16l.xml",
     // C PE/条件段残留(1):E13 = 底座语义账——内部子集 PE 组合本层已立
     //   (役PE组合,pe02 链全通),残 = 未声明实体豁免(spec 4.1 WFC
-    //   Entity Declared 的 PE-refs 豁免:底座 Milky 无条件拒未声明实体,
-    //   fork/upstream 候裁,随 Milky 9 案同桶)。
+    //   Entity Declared 的 PE-refs 豁免:底座 Milky 无条件拒未声明实体。
+    //   处置=拟 Milky PR(dtd.mbt:219 expand_entity_value 无条件 raise,
+    //   §4.1 WFC 三条款豁免,ctx §17 包 A)。
      "eduni/errata-3e/E13.xml",
     // M manifest/套件数据面(3,上游自相矛盾,候上游勘正)——ibm77v30
     //   案依 1.1(&#x0001; 经引用 1.0 拒 1.1 许)而 manifest 版次列空 =
@@ -44,13 +50,19 @@ async test "xmlconf suite gate" {
     //   官方自标 "(This test is questionable)";E50(errata 2e 名字增补
     //   字符 4e 面拒 5e 面许,manifest 版次列空 = 两面全查必翻,自 D 桶
     //   移入——非引擎名策略可判,是数据面矛盾):
+    //   处置=三案留置观望(套件数据面自相矛盾,非引擎病;套件锁版 2013,
+    //   候上游勘正,不拟 PR)。
      "ibm/xml-1.1/valid/P77/ibm77v30.xml", "ibm/xml-1.1/valid/P03/ibm03v09.xml",
     "eduni/errata-2e/E50.xml",
     // D 名字/命名空间/字符引用残留(7):NS 1.1 前缀解绑错拒(003/004,
     //   xmlns:p 空串 1.1 合法,Milky namespace.mbt 无条件拒空 URI)/
-    //   1.1 控制字符经引用合法(043/054/ibm02v02/03/05,Milky dtd.mbt
-    //   entity-value char ref 1.0 表)。役E2 移出 008/009/055-057/001/002;
+    //   1.1 控制字符经引用合法(043/054/ibm02v02/03/05;勘:locus 实为
+    //   escape.mbt:172 is_valid_xml_char——1.0 Char 表硬编码,decode_entity
+    //   位,非 dtd.mbt)。役E2 移出 008/009/055-057/001/002;
     //   役N1 移出冒号名 5(NS 模式旗标非 NS 面正判)。
+    //   处置=拟 Milky PR 两包:namespace.mbt:151(prefixed 空串无条件拒,
+    //   NS 1.1 §2.2 解绑合法,ctx §17 包 B)+ escape.mbt:172(1.1 经引用
+    //   放宽 Char 域,ctx §17 包 C)。
      "eduni/namespaces/1.1/003.xml", "eduni/namespaces/1.1/004.xml", "eduni/xml-1.1/043.xml",
     "eduni/xml-1.1/054.xml", "ibm/xml-1.1/valid/P02/ibm02v02.xml", "ibm/xml-1.1/valid/P02/ibm02v03.xml",
     "ibm/xml-1.1/valid/P02/ibm02v05.xml",
