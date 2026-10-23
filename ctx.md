@@ -824,3 +824,58 @@ native 的 Some 装箱成本远低于预估（P4 刀的 moonttl 红利在 XML �
 真热点嫌疑 = 实体机器（ref-queue 16384 = 715ns/ref，unescape/子 reader 重建）
 与 StringBuilder 每文本节点构造——候 perf 火焰图另役。分支留库作实验记录，
 不推不远。
+
+### §18.2 数字字符引用快径刀（2026-10-23，上游 pr/charref-fastpath）
+
+perf 役开局验家伙：perf/valgrind 双缺（WSL2），但**不需要**——既有 bench 已喊出
+热点：ref-queue 16384 = 715ns/引用（82KB 文档 11.75ms），纯文本 180MB/s——
+实体路径每字节贵 ~1000×，刀向钉死数字字符引用。
+
+**刀形**（`Reader::try_scan_numeric_char_ref`，read_text `'#'` 臂头）：
+前瞻只读扫描（input 直索引不动 pos），`&#NN;`/`&#xHH;` 全合法（≥1 位数字、
+`;` 收口、≤0x10FFFF、is_valid_xml_char）才一次性 commit 推进（advance 逐字符
+簿记同原路径）；**一步不合返 None 原样落回慢径**——`&#;`/`&#X41;`/`&#0;`/
+代理区/越界/未收口全走原 read_while+unescape，错误消息逐字节保真。
+跳掉的分配：read_while SB+闭包+to_string、"&"+name+";" 双 concat、
+unescape 的 to_array 全文重扫+substring+decode+SB ≈ 8-10 次/引用。
+`in_entity_content` 两态同形（decoded 面原路径也走 unescape，只差
+consume_entity_output 补偿——快径照抄）；`in_reference` 唯一消费点
+（177 行行尾归一化门）臂头已设、emit 处清，快径期无观察点。
+
+**读数**（交错 A/B/A'，`moon bench --target native`，上游自带 bench）：
+
+| bench | 基线 B | 快径 A | A' 复跑 | 判 |
+|---|---|---|---|---|
+| reference queue 16384 | 11.68ms ±0.73 | **3.95ms ±0.55** | 3.94ms ±0.59 | **2.96×（−66%），带完全不交叠** |
+| large document 2 MiB text | 12.32ms | 11.68ms | 12.82ms | 对照零伤（带交叠=机器态噪声） |
+| nested entity markup | 15.67ms | 15.82ms | 16.14ms | 对照零伤（named 面本刀不触碰） |
+
+per-ref 715ns → 241ns。A' 逐位复现 A。门：1821/1821 绿 + deny-warn 0 +
+`.mbti` 零差（priv fn 不外漏）。分支 pr/charref-fastpath（基 1e1defd），
+未提交未推。上一役 micro 刀（pr/reader-hotloop）噪声内不投的教训在此役
+兑现为正面读数：**先找到真热点（每字节 1000× 不对称）再下刀**。
+
+### §18.3 named 实体双小刀（2026-10-23，同分支续）
+
+**刀 2a 纯文本值直出**：`try_plain_entity_value(content)` 顶级纯函数——值无
+`&`/`<`/`\r`、全字符过 is_valid_xml_content_char、非空（空值在慢径是
+"malformed entity replacement text" 错，雷点）时跳 `parse_entity_content`
+的**子 Reader 全量重建**，直出 `Text(content)`（零拷贝引用共享）。
+**预算雷**：首版两红（output budget 双测）——计费点不在 Some 臂，在
+**advance 里**（`in_entity_content && !in_reference` 逐字符 consume(1)，
+子 Reader 逐字读替换文本即逐字计费）。修法=快径迭代数码点，push 前
+`consume_entity_output(code_points)`（先判后扣同原语义，超限同消息；
+raise 后预算无观察面）。按码点非 UTF-16 长度（对齐子 Reader advance
+计费口径）。递归/深度守卫不复制——不符即落慢径由慢径守卫报。
+**刀 2b 预定义五件 match 直出**：`"lt"=>"<"…` 替 `unescape("&"+name+";")`
+的串拼+全文重扫；catch-all 保留 undefined-entity 原错（消息/raise 位逐字）。
+is_predefined_entity 有 dtd.mbt 第二用点，不 dead。consume_entity_output
+照调（预算面不变）。
+
+**读数**（交错中撞机器态漂移：ref-queue 同码三轮 3.46/6.74/4.45ms 波段，
+2MiB text 全轮稳 11.7-12.2 锚——**绝对读数本轮污染，比值法定谳**）：
+同轮 nested/text 比 = 基线 1.27-1.35 vs 三刀 1.06-1.20，带不交叠，
+**nested 相对改善 ~12%**（bench 为嵌套链，纯文本值仅尾部命中，量级合理）。
+绝对数候静窗复测再投。门：1821/1821 + deny-warn 0 + `.mbti` 零差。
+self 未用警（unused_value deny-warn 红）→ try_plain_entity_value 收顶级
+纯函数（不碰 Reader 态，诚实形）。diff reader.mbt +81/−27（含第一刀）。
