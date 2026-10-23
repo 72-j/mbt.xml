@@ -783,3 +783,30 @@ null-byte 启发删除；或给已转码输入（external transcoded）一条诚
   "accepts 0 arg(s), received 1"）；api.github.com 经代理超时 → gh 安装走
   releases 302 定版 + `-C -` 断点续传（v2.103.0 落 `~/.local/bin`）；投递前置 =
   Windows 侧代理进程（TCP 1080 通断是第一判点）。
+
+## §18 性能勘役+折叠层一刀（2026-10-23）
+
+**勘役（只勘未改）**：管道 = Milky Reader 扫描 → 事件数组物化 → moonxml 折叠成树。
+探针口径 = 合成语料 1.62MB/8000 元素/168,007 事件，`@async.now()` 墙钟，预热 1 +
+5 轮轮内交错（jsonld 役P1/M0 同款），release native。三层拆账（基线中位）：
+raw Reader **~72ms（60%）** / +NS **~82ms（8%）** / +moonxml 折叠 **~120ms（32%）**。
+优化候选排序：① 折叠层 append_text O(n²) 拼接（自家）② 事件数组直拉（自家）
+③ Reader 逐字 Option 装箱热环（上游，moonttl P4 同族，走上游 PR 渠道）④ NS 8% 不动。
+
+**折叠层一刀已落**（两刀并一役，纯内部重构，`.mbti` 零差）：
+
+1. `append_text` 逐段 `previous + content` 重拼（O(n²) 向量）→ **段列表惰性收口**
+   `flush_pending_text`：单段零拷贝直通、多段一次 StringBuilder 会合；结构事件前
+   `if !(event.kind is @xml.Text(_))` 统一 flush，EOF 臂 flush+break（尾文本不再丢）。
+2. `read_events_until_eof` 事件数组物化（168k 箱全落再折叠）→ **`read_event()` 直拉
+   流式折叠**（`for ;;` + 逐事件折叠，NamespaceReader/Reader 均有 pub 单拉口，
+   零上游改动）。两折叠面（NS/ns_off）同刀。
+
+**读数**（同协议两跑，N 跑定稳）：wrap 全链 **119–126 → 96–104ms（−17%±3，带不交
+叠）**；对照组 raw（71–76→75±噪声）与 ns（82–85→86±噪声）同带佐证机态未漂。
+内存面 = 168k 事件箱不再整批驻留（直拉即弃）。门 = deny-warn 0 + 模块全域
+120/120 + 套件 2572/13/2585（deferred 13 未动）。
+
+**余账**：上游 Reader 逐字环刀（候选③）候拍——与 Milky PR A/C 同渠道排队；
+`moon test --profile`（Linux perf）可作动刀火焰图入口。勘役探针已依律删净
+（写-跑-删同会话）。

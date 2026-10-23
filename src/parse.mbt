@@ -8,15 +8,35 @@ priv struct ElementFrame {
 
 ///|
 /// 相邻 Text 事件拼接:底座按实体边界切分多段,消费方须自行拼(契约一)。
-fn append_text(nodes : Array[Node], content : String) -> Unit {
-  let tail_index = nodes.length() - 1
-  if tail_index >= 0 {
-    match nodes[tail_index] {
-      Text(previous) => nodes[tail_index] = Text(previous + content)
-      _ => nodes.push(Text(content))
+/// 段列表惰性收口——单段零拷贝直通,多段一次 StringBuilder 会合
+/// (替代逐段 `previous + content` 的 O(n²) 重拼;结构事件/EOF 时 flush)。
+fn flush_pending_text(pending : Array[String], target : Array[Node]) -> Unit {
+  if pending.length() == 1 {
+    target.push(Text(pending[0]))
+  } else if pending.length() > 1 {
+    let joined = StringBuilder()
+    for chunk in pending {
+      joined.write_string(chunk)
     }
+    target.push(Text(joined.to_string()))
+  }
+  pending.clear()
+}
+
+///|
+/// 当前文本落点(栈顶子节点,根前序,根后序——与折叠臂同一选路)。
+fn active_text_nodes(
+  stack : Array[ElementFrame],
+  prologue : Array[Node],
+  root_slot : Array[Element],
+  epilogue : Array[Node],
+) -> Array[Node] {
+  if stack.length() > 0 {
+    stack[stack.length() - 1].children
+  } else if root_slot.length() == 0 {
+    prologue
   } else {
-    nodes.push(Text(content))
+    epilogue
   }
 }
 
@@ -112,16 +132,23 @@ fn attach_element(
 /// 根槽空 = 根前;根槽有根且栈空 = 根后。
 fn parse_into(source : String) -> Document raise XmlError {
   let reader = @xml.NamespaceReader::from_string(source)
-  let events = reader.read_events_until_eof() catch {
-    base_error => raise translate_error(base_error)
-  }
   let mut declaration : XmlDecl? = None
   let mut doctype : String? = None
   let prologue : Array[Node] = []
   let epilogue : Array[Node] = []
   let root_slot : Array[Element] = []
   let stack : Array[ElementFrame] = []
-  for event in events {
+  let pending_text : Array[String] = []
+  for ;; {
+    let event = reader.read_event() catch {
+      base_error => raise translate_error(base_error)
+    }
+    if !(event.kind is @xml.Text(_)) {
+      flush_pending_text(
+        pending_text,
+        active_text_nodes(stack, prologue, root_slot, epilogue),
+      )
+    }
     match event.kind {
       @xml.Decl(version~, encoding~, standalone~) => {
         if declaration is Some(_) {
@@ -151,14 +178,7 @@ fn parse_into(source : String) -> Document raise XmlError {
         } else {
           epilogue.push(Node::PI(target~, data~))
         }
-      @xml.Text(content) =>
-        if stack.length() > 0 {
-          append_text(stack[stack.length() - 1].children, content)
-        } else if root_slot.length() == 0 {
-          append_text(prologue, content)
-        } else {
-          append_text(epilogue, content)
-        }
+      @xml.Text(content) => pending_text.push(content)
       @xml.CData(content) =>
         if stack.length() > 0 {
           stack[stack.length() - 1].children.push(Node::CData(content))
@@ -198,7 +218,7 @@ fn parse_into(source : String) -> Document raise XmlError {
           None =>
             raise structure_error(event.span, "end tag without matching start")
         }
-      @xml.Eof => ()
+      @xml.Eof => break
     }
   }
   if root_slot.length() == 0 {
@@ -220,16 +240,23 @@ fn parse_into(source : String) -> Document raise XmlError {
 /// 事件序/根槽/拼接与 NS 面共用同一套助手(同一良构层语义)。
 fn parse_into_ns_off(source : String) -> Document raise XmlError {
   let reader = @xml.Reader::from_string(source)
-  let events = reader.read_events_until_eof() catch {
-    base_error => raise translate_error(base_error)
-  }
   let mut declaration : XmlDecl? = None
   let mut doctype : String? = None
   let prologue : Array[Node] = []
   let epilogue : Array[Node] = []
   let root_slot : Array[Element] = []
   let stack : Array[ElementFrame] = []
-  for event in events {
+  let pending_text : Array[String] = []
+  for ;; {
+    let event = reader.read_event() catch {
+      base_error => raise translate_error(base_error)
+    }
+    if !(event.kind is @xml.Text(_)) {
+      flush_pending_text(
+        pending_text,
+        active_text_nodes(stack, prologue, root_slot, epilogue),
+      )
+    }
     match event.kind {
       @xml.Decl(version~, encoding~, standalone~) => {
         if declaration is Some(_) {
@@ -259,14 +286,7 @@ fn parse_into_ns_off(source : String) -> Document raise XmlError {
         } else {
           epilogue.push(Node::PI(target~, data~))
         }
-      @xml.Text(content) =>
-        if stack.length() > 0 {
-          append_text(stack[stack.length() - 1].children, content)
-        } else if root_slot.length() == 0 {
-          append_text(prologue, content)
-        } else {
-          append_text(epilogue, content)
-        }
+      @xml.Text(content) => pending_text.push(content)
       @xml.CData(content) =>
         if stack.length() > 0 {
           stack[stack.length() - 1].children.push(Node::CData(content))
@@ -306,7 +326,7 @@ fn parse_into_ns_off(source : String) -> Document raise XmlError {
           None =>
             raise structure_error(event.span, "end tag without matching start")
         }
-      @xml.Eof => ()
+      @xml.Eof => break
     }
   }
   if root_slot.length() == 0 {
