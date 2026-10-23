@@ -748,3 +748,27 @@ null-byte 启发删除；或给已转码输入（external transcoded）一条诚
 - 四包文本（英文体可直贴 GitHub issue/PR）+ 本表 = 提交材料；**投递动作候用户拍**
   （外发=发布，上游 repo = github.com/Milky2018/xml，GH 走 socks5h 代理）。
 - fork 判据挂账：PR 投递后无响应且消费端真需 → 再议 fork；本期不动。
+
+
+### 施工勘正（.mingspace 施工役回录，2026-10-23）
+
+上游 PR 档案施工役（并行役；档案住 `moonxml/.mingspace/`，git 忽略面）回录三则
+勘正 + 坐标面：
+
+1. **上游真身拨正**：上游仓 = `moonbit-community/xml-mbt`
+   （github.com/moonbit-community/xml-mbt）。本节上文所记
+   `github.com/Milky2018/xml` 是 mooncakes 包名拼形，GitHub 无此仓（404）。
+   PR 目标分支 `main`（0.6.1+，四 locus 在 main 均在）。
+2. **包 A locus 拨正**：E13 实拒点在**内容位**（reader.mbt `entities.get`
+   None 臂），非本节包 A 所记 dtd.mbt:219（实体值位）；同形两处均修。豁免旗 =
+   「子集含 `%pe;` 引用 + 非 standalone」双字段线程。
+3. **包 C 扩面**：054.xml 套件注释自供语法/意图间隙并判 valid——实体膨胀进
+   内容的控制字须在**内容字面校验位**同步放宽（1.1）；注释/PI 保持严格。又
+   0x7F（DEL）在 1.0 本属合法（#x20-#xD7FF），1.0 负例须取真受限字（如 0x01）。
+
+施工面：四分支（`pr/entity-value-undeclared-bypass` 40dfc98 /
+`pr/ns11-prefix-unbinding` ba8ab02 / `pr/xml11-char-reference` 2690e58 /
+`pr/utf16-declaration-heuristic` 7e0fa15；读数 1826/1826 + 1824/1824 + 1826/1826 +
+1824/1824，基线 1821）+ 各目录 `patch`（git am 自包含）；克隆在
+`~/upstream/xml-mbt`（工作区外，bitbang 三仓零沾染）。四份 PR.md 已追加中文
+译文节（英文原文在前，直贴面不动）。投递仍候用户令（外发=发布）。
