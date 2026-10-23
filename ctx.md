@@ -772,3 +772,14 @@ null-byte 启发删除；或给已转码输入（external transcoded）一条诚
 1824/1824，基线 1821）+ 各目录 `patch`（git am 自包含）；克隆在
 `~/upstream/xml-mbt`（工作区外，bitbang 三仓零沾染）。四份 PR.md 已追加中文
 译文节（英文原文在前，直贴面不动）。投递仍候用户令（外发=发布）。
+
+### 投递回录（2026-10-23）
+
+- **B/D 已投**：PR #13（B 包，`pr/ns11-prefix-unbinding` ba8ab02）+ PR #14
+  （D 包，`pr/utf16-declaration-heuristic` 7e0fa15），均 OPEN，目标
+  `moonbit-community/xml-mbt@main`。fork = `72-j/xml-mbt`（账号 72-j，token 走
+  `GH_TOKEN` env，代理 socks5h://172.27.208.1:1080）。A/C 待令（序 B→D→A→C）。
+- 工具面坑账：`gh auth login --with-token` 不收位置参数（令牌走 stdin，arg 形报
+  "accepts 0 arg(s), received 1"）；api.github.com 经代理超时 → gh 安装走
+  releases 302 定版 + `-C -` 断点续传（v2.103.0 落 `~/.local/bin`）；投递前置 =
+  Windows 侧代理进程（TCP 1080 通断是第一判点）。
