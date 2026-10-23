@@ -879,3 +879,18 @@ is_predefined_entity 有 dtd.mbt 第二用点，不 dead。consume_entity_output
 绝对数候静窗复测再投。门：1821/1821 + deny-warn 0 + `.mbti` 零差。
 self 未用警（unused_value deny-warn 红）→ try_plain_entity_value 收顶级
 纯函数（不碰 Reader 态，诚实形）。diff reader.mbt +81/−27（含第一刀）。
+
+### §18.4 双刀绝对读数定谳（2026-10-23 续，五轮堆积判）
+
+静窗复测两轮（Q1/Q2）：机器态持续波浪（nested 11.85→13.83，σ 0.9-1.9），
+单轮交错抓不到静窗——改**轮次堆积判**：基线码 nested 跨四轮全稳
+15.67-16.14（早晨静窗 B1 + numeric 刀轮 A/A'，numeric 不触碰 nested 面=
+基线对照），三刀码跨五轮全落 11.85-14.31（Q1/Q2/A1/A3/A4，跨波峰波谷）。
+**两带不交叠（N=5 vs N=4）→ 双刀 nested −9~−26%，中位 ~17%**，绝对数
+定谳，替代 §18.3 比值法临时读数（~12% 低估——污染轮拉低）。
+
+**B2 整轮作废**：基线码 ref-queue 读 4.95ms（真值 11.68）——stash 后
+读数与两套码全不吻合，判构建缓存混合态（stash 改文件构建未正确失效）。
+教训：**stash/checkout 换码跑 bench 后，首读数与任一码的已知带都不吻合
+即整轮作废，先冷跑复核再采数**（同「regen 后首跑红=陈旧二进制假象」族）。
+text 锚全轮稳（11.44-13.33，九轮），机器态波浪只打实体 corpus。
