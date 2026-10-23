@@ -623,3 +623,48 @@ IGNORE/bracket-in-value)/ 值内顶层 '>' 收口 / 外取链子代基址
   展开须重写 doctype 子集面 + SpanPatch 进子集,现账本只覆盖内容区);
   ibm62n03/63n03 拒因勘(新机下 PARSE-OK-NOW,须查条件段位形细账)。
 - **数据面**:M3 候上游勘正。
+
+## §16 役PE组合(2026-10-23)
+
+**战果**:xmlconf 门 2569/16/2585 → **2572/13/2585**(pe02/ibm62n03/
+ibm63n03 三案毕业),unit 118→121;`.mbti` 零差。C 桶只剩 E13(迁底座桶)。
+
+**机制三件**(全 priv,subset_parse.mbt):
+
+1. **子集 PI 闸**(ibm62n03/63n03):`skip_pi_declaration`——P79
+   PITarget ::= Name(`<?[` 目标 `[` 非名首即拒)+ `?>` 收口扫描
+   (目标后自由数据区不核,只找收口;无收口 = not-wf)。名谓词按版次
+   面选表(闸 G 同径)。**首版误伤 311 案自警**:初版闸了数据区
+   (skip_doctype_space 后即索 `?>`)= P85/errata-4e PI 带内容族全数
+   误拒——PI 数据区是自由内容,闸只核目标+收口两点。全量门当场现形
+   (2585 案),探针只看目标案看不出来,闸 G 教训重演。
+2. **PE 值 char-ref 引用位收口**(pe02 链第一跳):`pe_value_char_refs`
+   + `char_ref_code_point`——PE 值存储保持 raw(声明位不展,4.4.8
+   bypass 组),**引用位展开时只解 `&#..;` 形**(`&name;` 保持原样);
+   码点域防护(代理区/>0x10FFFF 拒)。十进制基位 bug 一笔:`&#60;`
+   曾按 ×16 解(6×16=96='`'),链断在解码——十进制 ×10 十六进制 ×16。
+3. **PE 载 GE 声明本层认领**(pe02 链第二跳):parse_entity_declaration
+   InternalSubset 臂按 `pe_depth > 0` 分型——PE 值里产的 GE 声明 = 底座
+   盲区(底座只见 raw 子集,PE 声明它不认),本层认领装表(first-wins:
+   internal_literals/table 同名在前 = 让位);pe_depth == 0 直接字面量
+   照旧 internal_literals(底座自持不变)。
+
+**E13 迁桶裁定**:残点 = `&ent2;` 未声明实体豁免(spec 4.1 WFC Entity
+Declared 的 PE-refs 豁免:DTD 有 PE 引用则未声明实体降为 VC)——这是
+底座 Milky 语义(无条件拒未声明实体),非本层可修;迁 Milky 桶(9 案
+同族,fork/upstream 候裁)。pe02 证明本层链路已通,残点单摆浮搁。
+
+**debug 乌龙再添两笔**:(1) 探针 resolver 少拼 doc_dir → 外取 DTD 取
+不到 = 假绿 OK 判词,读数怪异先核探针自身键空间(役卷自警三犯);
+(2) 本役 Edit/长内容生成通道多次走样(占位符切片、路径咬空格、
+heredoc 中断)——切 python 程序化替换(字节级 assert count==1)后
+零走样,**长 MoonBit+CJK 内容一律走 python 分块,禁整文件重写**。
+
+**余账三分类**:
+- **配置类(可立即清)**:无。
+- **外部依赖类(候外部/候裁)**:E13 + Milky 9 案(底座语义面,fork/
+  upstream PR/留,候用户裁);M3 数据面候上游。
+- **新能力类(候单独立项)**:内部子集 PE 值**声明位**展开(PE 值内
+  `<!ENTITY...>` 经 `%pe;` 在声明位形补全——现认领只覆盖 GE 装表,
+  PE 值进声明位形位 = E14/005 家族深水区);内部子集条件段
+  (InternalSubset policy 下 conditionalSect = VC 域,候裁)。
