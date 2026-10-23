@@ -810,3 +810,17 @@ raw Reader **~72ms（60%）** / +NS **~82ms（8%）** / +moonxml 折叠 **~120ms
 **余账**：上游 Reader 逐字环刀（候选③）候拍——与 Milky PR A/C 同渠道排队；
 `moon test --profile`（Linux perf）可作动刀火焰图入口。勘役探针已依律删净
 （写-跑-删同会话）。
+
+**上游 Reader 逐字环刀（同日实验役，分支留库不投）**：`~/upstream/xml-mbt`
+分支 `pr/reader-hotloop`（7e9c6c3，基于 main@1e1defd）：advance_bounded 核
+（Option 拆核）+ 五热环直引下标（skip_whitespace×2/read_while/read_name/
+read_text 主环——原每内容字 peek+advance 双 Some 装箱）+ 名字符 BMP 表
+（15 比较链→一次查表，`*_class` 链保留为表源真身，星域码点走范围回退）。
+门 = 上游 1821/1821 同数 + deny-warn 0。**判读 = 不发 PR**：上游自带 bench
+交错 A/B（2×2 轮）带全交叠；扫描层探针 bench（names 60k/text 2MB）min-of-N
+差 −2~3%，带仍交叠——按「读数不交叠才下结论」纪律不构成可投读数。MoonBit
+native 的 Some 装箱成本远低于预估（P4 刀的 moonttl 红利在 XML 底座不复现——
+那边词法占端到端 ~19% 且 battery 口径；XML 底座扫描占比同量级但装箱非热点）。
+真热点嫌疑 = 实体机器（ref-queue 16384 = 715ns/ref，unescape/子 reader 重建）
+与 StringBuilder 每文本节点构造——候 perf 火焰图另役。分支留库作实验记录，
+不推不远。
