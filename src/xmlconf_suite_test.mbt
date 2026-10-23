@@ -26,16 +26,18 @@ async test "xmlconf suite gate" {
     // 链子代基址合成(16 案毕业);三门上线——闸 S(standalone WFC,2)/
     // 闸 P(实体值引用语法,3)/ 闸 G(声明名合法性,1)+ PE 载体额外 1
     // (ibm68n06 实为 standalone 形)= 又 7 案毕业,B 桶 P/G/S 清零。
-    // 16 案留账。
+    // 役PE组合(2026-10-23):内部子集 PE 组合立(PE 值 char-ref 引用位
+    // 收口 + PE 载 GE 声明本层认领)+ 子集 PI 闸(目标名核 + ?> 收口)。
+    // pe02/ibm62n03/ibm63n03 三案毕业,13 案留账。
     // A 编码残部(2):UTF-16 invalid 档——census 勘账:A1 后 decode 已过,
     // 拒点移至 parse 面(5e 面拒,invalid 案须可解析);旧「decl/内容一致性
     // 启发拒」注记作废。japanese×6 役E2 移 plain(error 判词双向)。
     "sun/invalid/utf16b.xml", "sun/invalid/utf16l.xml",
-    // C PE/条件段残留(4):内部子集 PE 展开未立(E13/pe02,底座 turf,
-    //   候独立役)/ ibm62n03、ibm63n03(PE 闸边角,新机下 PARSE-OK-NOW,
-    //   not-wf 必拒未遂——拒因随新机翻新,留账待分诊):
-     "eduni/errata-3e/E13.xml", "ibm/not-wf/P62/ibm62n03.xml", "ibm/not-wf/P63/ibm63n03.xml",
-    "sun/valid/pe02.xml",
+    // C PE/条件段残留(1):E13 = 底座语义账——内部子集 PE 组合本层已立
+    //   (役PE组合,pe02 链全通),残 = 未声明实体豁免(spec 4.1 WFC
+    //   Entity Declared 的 PE-refs 豁免:底座 Milky 无条件拒未声明实体,
+    //   fork/upstream 候裁,随 Milky 9 案同桶)。
+     "eduni/errata-3e/E13.xml",
     // M manifest/套件数据面(3,上游自相矛盾,候上游勘正)——ibm77v30
     //   案依 1.1(&#x0001; 经引用 1.0 拒 1.1 许)而 manifest 版次列空 =
     //   两面全查必翻;ibm03v09 件缺 P77 必备 encoding 而套件判 valid,

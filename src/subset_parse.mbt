@@ -130,7 +130,7 @@ fn parse_declarations(
           text, pos, "text declaration not allowed in external subset body",
         )
       }
-      pos = skip_past(text, pos + 2, '?', '>')
+      pos = skip_pi_declaration(text, pos, load)
       continue
     }
     if ch == '<' &&
@@ -304,7 +304,18 @@ fn parse_entity_declaration(
               } else {
                 load.table.set(entity_name, InternalText(value))
               }
-            InternalSubset => load.internal_literals.set(entity_name, value)
+            InternalSubset =>
+              if load.pe_depth > 0 {
+                // PE 值里产的 GE 声明 = 本层认领装表
+                // (first-wins:直接声明在前 = 让位)
+                if load.internal_literals.contains(entity_name) == false {
+                  if load.table.contains(entity_name) == false {
+                    load.table.set(entity_name, InternalText(value))
+                  }
+                }
+              } else {
+                load.internal_literals.set(entity_name, value)
+              }
           }
           // PE 声明立账(役PE位形):值入 pe_values,供条件段关键词位 /
           // 声明内部收口 / 声明间引用三处位形展开。次序律 = 4.4.8 同律:
@@ -659,6 +670,39 @@ fn gate_declaration_name(
 }
 
 ///|
+/// DTD 子集 PI 闸:PI 目标须是名字(P79 PITarget ::= Name——`[` 非名
+/// 首即拒,ibm62n03/ibm63n03 族),且须有 `?>` 收口(未闭合 PI 吞声明
+/// = not-wf)。目标名按版次面谓词选表(闸 G 同径)。
+fn skip_pi_declaration(
+  text : String,
+  start : Int32,
+  load : ExternalLoad,
+) -> Int32 raise XmlError {
+  let limit = text.length()
+  let (name_start_ok, name_char_ok) = name_predicates(
+    load.edition,
+    load.doc_version == Some("1.1"),
+  )
+  let target_start = start + 2
+  if target_start >= limit ||
+    name_start_ok(text[target_start].to_int()) == false {
+    raise external_error(text, start, "PI target must be a name in DTD subset")
+  }
+  let mut pos = target_start + 1
+  while pos < limit && name_char_ok(text[pos].to_int()) {
+    pos = pos + 1
+  }
+  // PI 数据区 = 自由内容(P79),不核;只找 `?>` 收口
+  while pos + 1 < limit {
+    if text[pos] == '?' && text[pos + 1] == '>' {
+      return pos + 2
+    }
+    pos = pos + 1
+  }
+  raise external_error(text, start, "PI not terminated in DTD subset")
+}
+
+///|
 /// ATTLIST/ELEMENT/NOTATION 过闸跳过:quote 态感知找到收口 '>';
 /// 未闭合 = External 错(声明面拒因)。引号外 PE 引用按值收口
 /// (役PE位形,005/E14 补全声明位形)。
@@ -811,7 +855,10 @@ fn reference_pe(
   }
   match load.pe_values.get(name) {
     Some(value) => {
-      let head = value.trim_start()
+      // char refs included at reference time (spec 4.4.8 步2):只解
+      // '&#..;' 形;'&name;' 引用保持 bypass 原样。
+      let decoded = pe_value_char_refs(value)
+      let head = decoded.trim_start()
       if head.length() > 0 && (head[0] == '<' || head[0] == '%') {
         if load.pe_depth >= EXTERNAL_EXPANSION_DEPTH {
           raise external_error(
@@ -821,7 +868,7 @@ fn reference_pe(
           )
         }
         load.pe_depth = load.pe_depth + 1
-        parse_declarations(value, base_uri, load, policy)
+        parse_declarations(decoded, base_uri, load, policy)
         load.pe_depth = load.pe_depth - 1
       }
       ref_end
@@ -891,6 +938,74 @@ fn normalize_dot_segments(path : String) -> String {
     joined = joined + segment
   }
   joined
+}
+
+///|
+/// 单 char ref 解码形:`&#D+;`/`&#xH+;` → (码点, 分号后位)。无数字/
+/// 无分号/非数字单元 = None(闸 P 声明位已拒形残,此处双保险)。
+fn char_ref_code_point(value : String, start : Int32) -> (Int32, Int32)? {
+  let limit = value.length()
+  let is_hex = start + 2 < limit && value[start + 2] == 'x'
+  let number_base : Int32 = if is_hex { 16 } else { 10 }
+  let mut pos = if is_hex { start + 3 } else { start + 2 }
+  let mut code_point : Int32 = 0
+  let mut digit_count : Int32 = 0
+  while pos < limit {
+    let unit = value[pos]
+    if unit == ';' {
+      if digit_count == 0 {
+        return None
+      }
+      return Some((code_point, pos + 1))
+    }
+    let digit : Int32 = if unit >= 0x30 && unit <= 0x39 {
+      unit.to_int() - 0x30
+    } else if is_hex && unit >= 0x41 && unit <= 0x46 {
+      unit.to_int() - 0x37
+    } else if is_hex && unit >= 0x61 && unit <= 0x66 {
+      unit.to_int() - 0x57
+    } else {
+      return None
+    }
+    code_point = code_point * number_base + digit
+    digit_count = digit_count + 1
+    pos = pos + 1
+  }
+  None
+}
+
+///|
+/// PE 值 char-ref 收口(役PE组合):PE 值在引用位展开时 char refs 即时
+/// 包含(spec 4.4.8 步2)——只解 `&#..;` 形,`&name;` 引用保持 bypass
+/// 原样(4.4.8 bypass 组)。码点域防护:代理区/>0x10FFFF 即拒(spec
+/// 4.1 CharRef 域律;1.1 控制字符经引用面 = D 桶另账)。
+fn pe_value_char_refs(value : String) -> String raise XmlError {
+  let limit = value.length()
+  let out = StringBuilder()
+  let mut i : Int32 = 0
+  while i < limit {
+    let unit = value[i]
+    if unit == '&' && i + 1 < limit && value[i + 1] == '#' {
+      match char_ref_code_point(value, i) {
+        Some((code_point, next)) => {
+          if (code_point >= 0xD800 && code_point <= 0xDFFF) ||
+            code_point > 0x10FFFF {
+            raise external_error(
+              value, i, "char ref to surrogate/out-of-range code point in PE value",
+            )
+          }
+          let unit_char = Int32::unsafe_to_char(code_point)
+          out.write_char(unit_char)
+          i = next
+          continue
+        }
+        None => ()
+      }
+    }
+    let _ = out.write_char(unit.to_int().unsafe_to_char())
+    i = i + 1
+  }
+  out.to_string()
 }
 
 ///|

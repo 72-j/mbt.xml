@@ -319,3 +319,72 @@ test "standalone yes rejects table entity expansion" {
     Err(_) => fail("non-standalone expansion must pass")
   }
 }
+
+///|
+/// 役PE组合钉:pe02 形端到端——双层 PE 链(xx → %zz; → zz → GE 声明)
+/// + char-ref 绕行,PE 载 GE 声明本层认领落表。
+test "pe-carried entity claims table" {
+  let load = subset_load_with(DenyAll::{ })
+  let subset = "<!ENTITY % xx '&#37;zz;'>" +
+    "<!ENTITY % zz '&#60;!ENTITY tricky \"error-prone\" >' >" +
+    "%xx;"
+  match subset_outcome(() => collect_internal_external_entities(subset, load)) {
+    Ok(_) =>
+      match load.table.get("tricky") {
+        Some(InternalText(value)) => assert_eq(value, "error-prone")
+        _ => fail("PE-carried entity must claim table")
+      }
+    Err(_) => fail("pe02 shape must load")
+  }
+}
+
+///|
+/// 役PE组合钉:PE 值 char-ref 引用位收口——十进制/十六进制/bypass
+/// 形(&name; 不解,4.4.8 bypass 组)。断言在 catch 外(役账律)。
+test "pe value char refs decode" {
+  let results : Array[String] = []
+  match
+    subset_outcome(() => {
+      results.push(pe_value_char_refs("&#37;zz;"))
+      results.push(pe_value_char_refs("&#x3C;!E>"))
+      results.push(pe_value_char_refs("plain"))
+      results.push(pe_value_char_refs("a&amp;b"))
+    }) {
+    Ok(_) => ()
+    Err(_) => fail("decode must not raise")
+  }
+  assert_eq(results[0], "%zz;")
+  assert_eq(results[1], "<!E>")
+  assert_eq(results[2], "plain")
+  assert_eq(results[3], "a&amp;b")
+}
+
+///|
+/// 役PE组合钉·闸 PI:目标非名(`<?[`)拒(ibm62n03/63n03 位形);正形
+/// 带数据区过;未闭合拒。
+test "subset PI gate" {
+  let load = subset_load_with(DenyAll::{ })
+  let bad = "<?[INCLUDE[<!ELEMENT r ANY>]]>"
+  match subset_outcome(() => load_external_subset(bad, None, load)) {
+    Ok(_) => fail("PI with bracket target must reject")
+    Err(At(error=XmlErrorKind::External(_), ..)) => ()
+    Err(_) => fail("unexpected error kind")
+  }
+  let load2 = subset_load_with(DenyAll::{ })
+  let good = "<?t this is content ?><!ENTITY e \"v\">"
+  match subset_outcome(() => load_external_subset(good, None, load2)) {
+    Ok(_) =>
+      match load2.table.get("e") {
+        Some(InternalText(value)) => assert_eq(value, "v")
+        _ => fail("PI must not eat following declaration")
+      }
+    Err(_) => fail("PI with content must pass")
+  }
+  let load3 = subset_load_with(DenyAll::{ })
+  let unterminated = "<?target <!ELEMENT r ANY>"
+  match subset_outcome(() => load_external_subset(unterminated, None, load3)) {
+    Ok(_) => fail("unterminated PI must reject")
+    Err(At(error=XmlErrorKind::External(_), ..)) => ()
+    Err(_) => fail("unexpected error kind")
+  }
+}
