@@ -2,6 +2,12 @@
 package "thy1016/moonxml/rdf"
 
 // Values
+pub fn parse_rdf_xml(String) -> Result[Dataset, String]
+
+pub fn parse_rdf_xml_with_base(String, base~ : String) -> Result[Dataset, String]
+
+pub fn resolve_reference(String, String) -> String
+
 pub fn suite_cases() -> Array[SuiteCase]
 
 // Errors

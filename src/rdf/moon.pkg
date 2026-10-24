@@ -1,3 +1,14 @@
 // rdf：RDF 1.1/1.2 XML 语法解析包（thy1016/moonxml 模块内；仓定位 = rdf 的 xml 解析库）。
-// 数据模型手写（rdfxml.mbt）；分派骨架 gen.mbt 与判例表 case_table_gen.mbt 均为
-// 生成物（生成链住 bitbang：skelgen/rdfxml_gen + opself/rdfxml_casegen，黄金门逐字节对拍）。
+// 数据模型手写（rdfxml.mbt）；主链映射手写（mapper.mbt）；分派骨架 gen.mbt 与
+// 判例表 case_table_gen.mbt 均为生成物（生成链住 bitbang：skelgen/rdfxml_gen +
+// opself/rdfxml_casegen，黄金门逐字节对拍）。
+
+import {
+  "thy1016/moonxml",
+}
+
+import {
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+  "moonbitlang/core/encoding/utf8",
+} for "test"
