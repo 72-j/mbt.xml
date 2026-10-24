@@ -171,7 +171,9 @@ moon test --target native
 
 - 本项目代码采用 Apache License 2.0（见 `LICENSE`）。
 - `.xmlconf/` 内的 W3C 测试文件、`.xmlnames/` 内的 W3C 推荐标准快照按
-  W3C 文档许可分发，`.encodings/` 内的 WHATWG 索引表按 CC BY 4.0 分发；
-  原始文件逐字节未修改，来源与许可细目见 `THIRD_PARTY_NOTICES.md`。
+  W3C 文档许可分发，`.encodings/` 内的 WHATWG 索引表按 CC BY 4.0 分发，
+  `src/rdf/.rdf-tests/` 内的 W3C RDF 测试文件按 W3C Test Suite License /
+  3-clause BSD 双许可分发；原始文件逐字节未修改，来源与许可细目见
+  `THIRD_PARTY_NOTICES.md`。
 - 无背书声明：上文套件通过计数是本项目自测结果，只表示本实现能通过相应
   用例，不代表 W3C、WHATWG 认证、合规认定或任何形式的背书。
