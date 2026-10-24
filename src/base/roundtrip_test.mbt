@@ -7,10 +7,10 @@
 /// 字符串定点:canonical(parse(canonical(parse(s)))) ≡ canonical(parse(s))。
 /// 树等价另测(定点抓不住系统性丢节点,如全量吞注释)。
 fn round_trips(source : String) -> Bool {
-  match @moonxml.parse(source) {
+  match @base.parse(source) {
     Ok(document) => {
       let first_pass = document.to_xml()
-      match @moonxml.parse(first_pass) {
+      match @base.parse(first_pass) {
         Ok(reparsed) => reparsed.to_xml() == first_pass
         Err(_) => false
       }
@@ -22,9 +22,9 @@ fn round_trips(source : String) -> Bool {
 ///|
 /// 树等价:parse(s) ≡ parse(to_xml(parse(s)))。
 fn trees_survive(source : String) -> Bool {
-  match @moonxml.parse(source) {
+  match @base.parse(source) {
     Ok(document) =>
-      match @moonxml.parse(document.to_xml()) {
+      match @base.parse(document.to_xml()) {
         Ok(reparsed) => document == reparsed
         Err(_) => false
       }
@@ -42,7 +42,7 @@ test "roundtrip/nested" {
 ///|
 test "roundtrip/decl+doctype+entities" {
   let source = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE doc [<!ENTITY greeting \"hello\">]><doc>&greeting; &amp; &lt;tag&gt;</doc>"
-  let document = match @moonxml.parse(source) {
+  let document = match @base.parse(source) {
     Ok(document) => document
     Err(_) => fail("parse failed: entity corpus must be well-formed")
   }

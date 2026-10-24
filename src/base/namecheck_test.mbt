@@ -5,29 +5,28 @@
 /// 施工账：ctx.md §6（役E1）。
 
 ///|
-fn kind_of(result : Result[@moonxml.Document, @moonxml.XmlError]) -> String {
+fn kind_of(result : Result[@base.Document, @base.XmlError]) -> String {
   match result {
     Ok(_) => "ok"
-    Err(At(error=@moonxml.IllegalName(message), ..)) =>
-      "IllegalName(\{message})"
+    Err(At(error=@base.IllegalName(message), ..)) => "IllegalName(\{message})"
     Err(At(error~, ..)) => "kind:\{error_to_text(error)}"
   }
 }
 
 ///|
-fn error_to_text(error : @moonxml.XmlErrorKind) -> String {
+fn error_to_text(error : @base.XmlErrorKind) -> String {
   match error {
-    @moonxml.UnexpectedEof => "UnexpectedEof"
-    @moonxml.InvalidSyntax(message) => "InvalidSyntax(\{message})"
-    @moonxml.UnmatchedTag(expected~, found~) =>
+    @base.UnexpectedEof => "UnexpectedEof"
+    @base.InvalidSyntax(message) => "InvalidSyntax(\{message})"
+    @base.UnmatchedTag(expected~, found~) =>
       "UnmatchedTag(\{expected},\{found})"
-    @moonxml.InvalidAttribute(message) => "InvalidAttribute(\{message})"
-    @moonxml.InvalidEntity(message) => "InvalidEntity(\{message})"
-    @moonxml.Encoding(message) => "Encoding(\{message})"
-    @moonxml.IllegalChar(codepoint) => "IllegalChar(\{codepoint})"
-    @moonxml.IllegalName(message) => "IllegalName(\{message})"
-    @moonxml.Structure(message) => "Structure(\{message})"
-    @moonxml.External(message) => "External(\{message})"
+    @base.InvalidAttribute(message) => "InvalidAttribute(\{message})"
+    @base.InvalidEntity(message) => "InvalidEntity(\{message})"
+    @base.Encoding(message) => "Encoding(\{message})"
+    @base.IllegalChar(codepoint) => "IllegalChar(\{codepoint})"
+    @base.IllegalName(message) => "IllegalName(\{message})"
+    @base.Structure(message) => "Structure(\{message})"
+    @base.External(message) => "External(\{message})"
   }
 }
 
@@ -36,36 +35,30 @@ test "PI target: U+0132 rejected on editions 1-4, accepted on edition 5" {
   // 套件对样:ibm/not-wf/P85/ibm85n03(2-4 版判词)vs errata-4e/ibm85n03(5 版判词)
   let source = "<?\u{0132} pi data?><doc/>"
   let old_face = kind_of(
-    @moonxml.parse_edition(source, edition=@moonxml.Editions1to4),
+    @base.parse_edition(source, edition=@base.Editions1to4),
   )
   assert_true(old_face.contains("IllegalName"))
   assert_true(old_face.contains("#x132"))
   assert_true(old_face.contains("start character"))
-  assert_eq(
-    kind_of(@moonxml.parse_edition(source, edition=@moonxml.Edition5)),
-    "ok",
-  )
+  assert_eq(kind_of(@base.parse_edition(source, edition=@base.Edition5)), "ok")
 }
 
 ///|
 test "element name: long s rejected on editions 1-4, accepted on edition 5" {
   let source = "<egg\u{017F}/>"
   assert_true(
-    kind_of(@moonxml.parse_edition(source, edition=@moonxml.Editions1to4)).contains(
+    kind_of(@base.parse_edition(source, edition=@base.Editions1to4)).contains(
       "IllegalName",
     ),
   )
-  assert_eq(
-    kind_of(@moonxml.parse_edition(source, edition=@moonxml.Edition5)),
-    "ok",
-  )
+  assert_eq(kind_of(@base.parse_edition(source, edition=@base.Edition5)), "ok")
 }
 
 ///|
 test "middle dot is a 1.0 NameChar (Extender) in editions 1-4" {
   let source = "<a\u{00B7}/>"
   assert_eq(
-    kind_of(@moonxml.parse_edition(source, edition=@moonxml.Editions1to4)),
+    kind_of(@base.parse_edition(source, edition=@base.Editions1to4)),
     "ok",
   )
 }
@@ -75,8 +68,8 @@ test "combining char start: rejected at base wordface before the gate" {
   // 5e/1.1 紧凑表首字不含组合字符——底座 split_qualified_name 先拒(InvalidSyntax),
   // 门不可达;门只在 ≤4e 面新增拒绝(5e 面门 ⊆ 底座,零新增)。
   let source = "<\u{0300}x/>"
-  match @moonxml.parse_edition(source, edition=@moonxml.Editions1to4) {
-    Err(At(error=@moonxml.InvalidSyntax(_), ..)) => ()
+  match @base.parse_edition(source, edition=@base.Editions1to4) {
+    Err(At(error=@base.InvalidSyntax(_), ..)) => ()
     other => fail("expected base InvalidSyntax, got \{kind_of(other)}")
   }
 }
@@ -85,20 +78,17 @@ test "combining char start: rejected at base wordface before the gate" {
 test "version 1.1 document ignores edition knob (compact tables always)" {
   let source = "<?xml version=\"1.1\"?><?\u{0132} pi?><egg\u{017F}/>"
   assert_eq(
-    kind_of(@moonxml.parse_edition(source, edition=@moonxml.Editions1to4)),
+    kind_of(@base.parse_edition(source, edition=@base.Editions1to4)),
     "ok",
   )
-  assert_eq(
-    kind_of(@moonxml.parse_edition(source, edition=@moonxml.Edition5)),
-    "ok",
-  )
+  assert_eq(kind_of(@base.parse_edition(source, edition=@base.Edition5)), "ok")
 }
 
 ///|
 test "no declaration defaults to 1.0 face" {
   let source = "<?\u{0132} pi?><doc/>"
   assert_true(
-    kind_of(@moonxml.parse_edition(source, edition=@moonxml.Editions1to4)).contains(
+    kind_of(@base.parse_edition(source, edition=@base.Editions1to4)).contains(
       "IllegalName",
     ),
   )
@@ -108,31 +98,27 @@ test "no declaration defaults to 1.0 face" {
 test "attribute name gated on both faces" {
   let source = "<doc a\u{0132}=\"v\"/>"
   assert_true(
-    kind_of(@moonxml.parse_edition(source, edition=@moonxml.Editions1to4)).contains(
+    kind_of(@base.parse_edition(source, edition=@base.Editions1to4)).contains(
       "IllegalName",
     ),
   )
-  assert_eq(
-    kind_of(@moonxml.parse_edition(source, edition=@moonxml.Edition5)),
-    "ok",
-  )
+  assert_eq(kind_of(@base.parse_edition(source, edition=@base.Edition5)), "ok")
 }
 
 ///|
 test "parse equals parse_edition at edition 5 (default face)" {
   let source = "<?xml version=\"1.0\"?><doc a=\"b\">text</doc>"
   assert_true(
-    @moonxml.parse(source) ==
-    @moonxml.parse_edition(source, edition=@moonxml.Edition5),
+    @base.parse(source) == @base.parse_edition(source, edition=@base.Edition5),
   )
 }
 
 ///|
 test "wordface message pins the offending name text" {
   let source = "<?\u{0132}x?><doc/>"
-  match @moonxml.parse_edition(source, edition=@moonxml.Editions1to4) {
+  match @base.parse_edition(source, edition=@base.Editions1to4) {
     Ok(_) => fail("must reject")
-    Err(At(error=@moonxml.IllegalName(message), ..)) =>
+    Err(At(error=@base.IllegalName(message), ..)) =>
       assert_true(message.contains("\"\u{0132}x\""))
     Err(other) =>
       match other {
@@ -145,13 +131,10 @@ test "wordface message pins the offending name text" {
 test "names legal in both faces pass (namespace-qualified forms)" {
   let source = "<a:b xmlns:a=\"urn:x\" xml:lang=\"en\"><c.d-e_f/></a:b>"
   assert_eq(
-    kind_of(@moonxml.parse_edition(source, edition=@moonxml.Editions1to4)),
+    kind_of(@base.parse_edition(source, edition=@base.Editions1to4)),
     "ok",
   )
-  assert_eq(
-    kind_of(@moonxml.parse_edition(source, edition=@moonxml.Edition5)),
-    "ok",
-  )
+  assert_eq(kind_of(@base.parse_edition(source, edition=@base.Edition5)), "ok")
 }
 
 ///|
@@ -164,11 +147,7 @@ test "ns-off: colon names accepted (element, attribute, PI target)" {
   let source = "<?PITarget: with colon?><:lead a:b=\"v\" tail:=\"w\"><x:y/></:lead>"
   assert_eq(
     kind_of(
-      @moonxml.parse_edition(
-        source,
-        edition=@moonxml.Editions1to4,
-        ns=@moonxml.Off,
-      ),
+      @base.parse_edition(source, edition=@base.Editions1to4, ns=@base.Off),
     ),
     "ok",
   )
@@ -180,11 +159,7 @@ test "ns-off: combining char after colon accepted on 4e face" {
   let source = "<A.-:\u{0300}\u{00B7}/>"
   assert_eq(
     kind_of(
-      @moonxml.parse_edition(
-        source,
-        edition=@moonxml.Editions1to4,
-        ns=@moonxml.Off,
-      ),
+      @base.parse_edition(source, edition=@base.Editions1to4, ns=@base.Off),
     ),
     "ok",
   )
@@ -193,8 +168,7 @@ test "ns-off: combining char after colon accepted on 4e face" {
 ///|
 test "ns-off: xmlns is an ordinary attribute kept in place" {
   let source = "<doc xmlns=\"urn:d\" a=\"1\" xmlns:p=\"urn:p\"/>"
-  match
-    @moonxml.parse_edition(source, edition=@moonxml.Edition5, ns=@moonxml.Off) {
+  match @base.parse_edition(source, edition=@base.Edition5, ns=@base.Off) {
     Ok(document) => {
       let attributes = document.root.attributes
       assert_eq(attributes.length(), 3)
@@ -214,9 +188,7 @@ test "ns-off: xmlns is an ordinary attribute kept in place" {
 test "ns-off: unbound prefix accepted (no NS resolution)" {
   let source = "<p:doc p:attr=\"v\"/>"
   assert_eq(
-    kind_of(
-      @moonxml.parse_edition(source, edition=@moonxml.Edition5, ns=@moonxml.Off),
-    ),
+    kind_of(@base.parse_edition(source, edition=@base.Edition5, ns=@base.Off)),
     "ok",
   )
 }
@@ -224,18 +196,15 @@ test "ns-off: unbound prefix accepted (no NS resolution)" {
 ///|
 test "ns-on unchanged: unbound prefix still rejected" {
   let source = "<p:doc/>"
-  match
-    @moonxml.parse_edition(source, edition=@moonxml.Edition5, ns=@moonxml.On) {
-    Err(At(error=@moonxml.InvalidSyntax(message), ..)) =>
+  match @base.parse_edition(source, edition=@base.Edition5, ns=@base.On) {
+    Err(At(error=@base.InvalidSyntax(message), ..)) =>
       assert_true(message.contains("undeclared namespace prefix"))
     other => fail("ns-on must reject unbound prefix: \{other_is_err(other)}")
   }
 }
 
 ///|
-fn other_is_err(
-  result : Result[@moonxml.Document, @moonxml.XmlError],
-) -> String {
+fn other_is_err(result : Result[@base.Document, @base.XmlError]) -> String {
   match result {
     Ok(_) => "parsed ok"
     Err(At(error~, ..)) => error_to_text(error)

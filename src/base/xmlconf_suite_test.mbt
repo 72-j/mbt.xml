@@ -81,7 +81,7 @@ async test "xmlconf suite gate" {
     let editions = parts[3].to_owned()
     // NS 列：Namespaces in XML 套件只对命名空间感知处理器适用，余者按
     // 非 NS 面判——两轴正交（EDITION 选版本面，NS 选规范面）。
-    let ns_mode = if parts[4] == "ns" { @moonxml.On } else { @moonxml.Off }
+    let ns_mode = if parts[4] == "ns" { @base.On } else { @base.Off }
     total += 1
     if deferred.contains(path) {
       deferred_count += 1
@@ -89,16 +89,16 @@ async test "xmlconf suite gate" {
     }
     // EDITION 列选版本面（"4" = Editions1to4 全表 / "5" = Edition5 紧凑 /
     // 空 = 两面全查）。空列必须落到"两面全查"：曾因 faces 零迭代而空转判过。
-    let faces : Array[@moonxml.XmlEdition] = []
+    let faces : Array[@base.XmlEdition] = []
     if editions == "" {
-      faces.push(@moonxml.Editions1to4)
-      faces.push(@moonxml.Edition5)
+      faces.push(@base.Editions1to4)
+      faces.push(@base.Edition5)
     } else {
       for token in editions.split(" ") {
         if token == "4" {
-          faces.push(@moonxml.Editions1to4)
+          faces.push(@base.Editions1to4)
         } else if token == "5" {
-          faces.push(@moonxml.Edition5)
+          faces.push(@base.Edition5)
         } else {
           ()
         }
@@ -118,14 +118,14 @@ async test "xmlconf suite gate" {
     }
     let bytes = @fs.read_file("./.xmlconf/xmlconf/\{path}").binary()
     let doc_dir = suite_dirname(path)
-    let resolver : &@moonxml.EntityResolver = SuiteResolver::{ store, doc_dir, }
-    let outcome_ok = match @moonxml.decode_source(bytes) {
+    let resolver : &@base.EntityResolver = SuiteResolver::{ store, doc_dir, }
+    let outcome_ok = match @base.decode_source(bytes) {
       Err(_) => two_way_ok || expected_ok == false
       Ok(text) => {
         let mut all_faces_match = true
         for face in faces {
           let face_ok = match
-            @moonxml.parse_edition(
+            @base.parse_edition(
               text,
               edition=face,
               ns=ns_mode,
@@ -175,7 +175,7 @@ priv struct SuiteResolver {
 }
 
 ///|
-impl @moonxml.EntityResolver for SuiteResolver with fn resolve(
+impl @base.EntityResolver for SuiteResolver with fn resolve(
   self : SuiteResolver,
   base : String?,
   system_id : String,

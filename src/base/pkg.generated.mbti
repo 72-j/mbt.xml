@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "thy1016/moonxml"
+package "thy1016/moonxml/base"
 
 // Values
 pub fn decode_source(Bytes) -> Result[String, XmlError]
