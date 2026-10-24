@@ -4,6 +4,10 @@
 拉取式解析、强类型文档模型（DOM 树）、规范化序列化与编码前端，另含
 XML 1.0 版次面 / 1.1 键控、外部实体解析端口与 billion-laughs 防护。
 
+本仓与 `thy1016/moonttl`（Turtle / TriG / N-Triples / N-Quads 解析）、
+`thy1016/jsonld`（JSON-LD 1.1 通用库）同属 RDF 解析库项目族——
+XML 底座为族内 RDF/XML 映射等消费方向而建，工程纪律与体例一脉相承。
+
 ## 特性
 
 - 规范型文档模型：`Document` / `Element` / `Node` 强类型树，`to_xml`
