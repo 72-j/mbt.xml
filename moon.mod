@@ -11,7 +11,7 @@ repository = "https://www.gitlink.org.cn/thy7/mbt.xml"
 
 license = "Apache-2.0"
 
-keywords = [ "xml", "parser", "dom" ]
+keywords = [ "rdf", "xml" ]
 
 description = "MoonBit XML base: spec-shaped document model, namespace-aware pull parsing with BOM/encoding detection, canonical serialization, and W3C XML Conformance coverage."
 
