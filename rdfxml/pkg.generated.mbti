@@ -1,0 +1,77 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "thy1016/rdfxml"
+
+// Values
+pub fn suite_cases() -> Array[SuiteCase]
+
+// Errors
+
+// Types and methods
+pub(all) struct Dataset {
+  quads : Array[Quad]
+}
+
+pub(all) struct Quad {
+  subject : Term
+  predicate : Term
+  object : Term
+  graph : Term?
+}
+
+pub(all) enum RdfXmlElementTerm {
+  RdfRDF
+  RdfDescription
+  RdfLi
+  RdfAbout
+  RdfID
+  RdfNodeID
+  RdfResource
+  RdfDatatype
+  RdfParseType
+  Resource
+  Literal
+  Collection
+  XmlLang
+  XmlBase
+}
+pub fn RdfXmlElementTerm::family(Self) -> String
+pub fn RdfXmlElementTerm::handler(Self) -> String?
+pub fn RdfXmlElementTerm::name(Self) -> String
+
+pub(all) enum RdfXmlStep {
+  DocumentEntry
+  NodeElementEnter
+  NodeElementSubject
+  NodeElementTyped
+  PropertyElementForm
+  PropertyElementResource
+  PropertyElementParseType
+  ParseTypeResource
+  ParseTypeLiteral
+  ParseTypeCollection
+  PropertyElementLiteral
+  EmitQuad
+}
+pub fn RdfXmlStep::dispatch(Self, String) -> Self?
+pub fn RdfXmlStep::handler(Self) -> String?
+pub fn RdfXmlStep::id(Self) -> String
+pub fn RdfXmlStep::next_step(Self) -> Self?
+
+pub(all) struct SuiteCase {
+  family : String
+  name : String
+  kind : String
+  approval : String
+  action : String
+  result : String?
+}
+
+pub(all) enum Term {
+  Iri(String)
+  BNode(String)
+  Literal(String, String?, String?)
+}
+
+// Type aliases
+
+// Traits
