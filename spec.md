@@ -11,7 +11,7 @@
 ### 1. 定位裁定（R-G1 [定案]）
 
 gen 层解决的问题是：**XML 方言的"树形状"一旦定型，其类型化包装、解析下降、
-序列化上升全是机械骨架**——按 moonrdb gen 哲学（"gen 生成骨架，不生成语义；
+序列化上升全是机械骨架**——按同门引擎的 gen 哲学（"gen 生成骨架，不生成语义；
 表收形状，不收策略"；进表四问）把这些骨架收进 TOML 表、由生成器发射。
 
 - **TOML 表** = 人维护面：方言作者描述"我的 XML 长什么样"（元素树 + 属性 + 文本形）。
@@ -37,23 +37,31 @@ gen 层解决的问题是：**XML 方言的"树形状"一旦定型，其类型�
   = 红。旧拒绝（恰一 Text 子）是有意的最小机械骨架（非 infoset 立场），
   真方言 CDATA 常见会整链拒，故升级；canonical 发射仍纯 Text（to_tree
   不产 CData）。
-  ③ **核3 NS 按原文匹配 = 现状自洽**：分派/attr_find 按 qualified_name，
-  xml: 前缀特判钉 URI；NS 重组方言（RDF/XML）扩充点已核——解析器未知键
-  忽略（向前兼容）+ 行键无闭集门，表加 `namespace_uri` 键 = 纯数据演化、
-  生成器零改。
-- **型别实弹 + 依赖面（用例役，2026-10-22）**：catalog 表上三型别属性
-+  （year:Int required / price:Double 0..1 / in_print:Bool required）+
-+  pages 型别叶——转换 helper 首次实弹即揭生成器三债：① to_tree 属性面
-+  零转换（叶面有 to_string、属性面漏；试点全 String 故从未暴露）——
-+  补对称转换（String 直通、型别 to_string）；② push_arm 宽度判据在
-+  4 空格内联形上算宽，fmt 把超宽臂体拆自行行后 ≤80 单行放下——改三形
-+  判宽（内联 → 拆行 → 尾逗号展开）；③ helper 死形首验：转换面原为
-+  从未编译的 `text.view().parse_int()`（StringView 无此方法）——正调形
-+  `@string.parse_int/parse_double`（core/string 包自由函数），消费包
-+  moon.pkg 依赖面随之 +`moonbitlang/core/string`；Int32 发射拼写随
-+  fmt 迁移正典（词表仍收 Int，发射面 bit_type_of 映射）。挂点第一件
-+  真语义：stub_validate_book isbn 非空形校验（stubs.mbt，regen 不碰）；
-+  转换负例三钉（not an int/double/bool）+ 挂点 Err 前缀透出钉。
+  ③ **核3 NS 按原文匹配 = 现状自洽**:分派/attr_find 按 qualified_name,
+  xml: 前缀特判钉 URI;NS 重组方言(RDF/XML)扩充点已核——解析器未知键
+  忽略(向前兼容),表加 `namespace_uri` 键不破旧表。
+  ④ **D3 namespace_uri 键落地(2026-10-23,勘③「生成器零改」预判)**:
+  向前兼容机制(未知键忽略)成立,键的语义面仍是生成器实作——解析两行
+  (元素/属性)可选键;匹配面按 (uri, local) 键控(`attr_find_ns` + 子
+  分派 URI 条件),构造面 XmlName 携带 URI(`make_{element,leaf,attribute}_ns`
+  按用量条件发射);validate 空串红 / any 携 ns 红 / 重名改 (uri, xml_name)
+  配对键(同名异域放行)。**边界两则**:序列化面仍写 qualified_name,
+  xmlns 声明发射(前缀策略)随真 NS 重方言另拍;ns 行发射的 fmt 幂等
+  锚定随首张 NS 表金门做(嵌套表达式折行 = fmt 递归形,R-G1a 经验法;
+  试点表 ns 自由,产物零差已 regen 重写机械证明)。
+- **型别实弹 + 依赖面(用例役,2026-10-22)**:catalog 表上三型别属性
+  (year:Int required / price:Double 0..1 / in_print:Bool required)+
+  pages 型别叶——转换 helper 首次实弹即揭生成器三债:① to_tree 属性面
+  零转换(叶面有 to_string、属性面漏;试点全 String 故从未暴露)——
+  补对称转换(String 直通、型别 to_string);② push_arm 宽度判据在
+  4 空格内联形上算宽,fmt 把超宽臂体拆自行行后 ≤80 单行放下——改三形
+  判宽(内联 → 拆行 → 尾逗号展开);③ helper 死形首验:转换面原为
+  从未编译的 `text.view().parse_int()`(StringView 无此方法)——正调形
+  `@string.parse_int/parse_double`(core/string 包自由函数),消费包
+  moon.pkg 依赖面随之 +`moonbitlang/core/string`;Int32 发射拼写随
+  fmt 迁移正典(词表仍收 Int,发射面 bit_type_of 映射)。挂点第一件
+  真语义:stub_validate_book isbn 非空形校验(stubs.mbt,regen 不碰);
+  转换负例三钉(not an int/double/bool)+ 挂点 Err 前缀透出钉。
 
 ### 1.1 与 M0 底座探针的解耦（R-G2 [定案]）
 
@@ -63,7 +71,7 @@ M0 换底座只改**树适配层**（底座事件/树 → `Node`），gen 面零
 
 ### 1.2 TOML 字段设计（树递归形状表）
 
-体例键三件（对位 moonrdb 全表统一）：`schema_version` / `generator` / `target_package`。
+体例键三件（对位同门全表统一）：`schema_version` / `generator` / `target_package`。
 面界（scope 门）：**本表只许 `[xml]`（含 `[[xml.elements]]`）节**。
 
 ```toml
@@ -115,7 +123,7 @@ id = "meta"
 kind = "any"                          # 通配子树（保留原始 Node）——逃生门，慎用
 ```
 
-**字段设计四原则**（每条挂 moonrdb 先例）：
+**字段设计四原则**（每条挂同门先例）：
 
 1. **名实分立**：`id`（MoonBit 名源）与 `xml_name`（标签名）分立——
    同 `vector_ffi.toml` 的 `c_name`/`moon_name` 分立。
@@ -238,7 +246,7 @@ DTD/实体——引擎不取外挂,判据外」。本卷记论证与裁定;实�
   缺省实现 NoExternal(None)——现状语义零漂移;套件门注入仓内本地
   文件 resolver(相对 sibling 路径拼接,无 URI 库)。**本仓不携网络
   resolver**;网络面=消费方实现者自担(XXE 防御 = 缺省关 + 底座
-  entity_expansion_remaining 预算闸,策略对齐 moonrdb D-18 消费端
+  entity_expansion_remaining 预算闸,策略对齐同门 D-18 消费端
   政策参数先例,禁止污染编解码——此处=解析错误语义)。
 - **R-B1b [定案] 实体双径**:无标记外取实体 → DocType 截点注入
   entities(F2 缝);**注入前 contains-check,已存在即跳过**——底座

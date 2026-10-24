@@ -90,7 +90,7 @@ XXE 防御缺省关）+ 单径预组合（外取实体统一文本展开后喂�
   R-G2 适配层收口）。
 - 工程纪律：通用 MoonBit 纪律由工作区根 `AGENTS.md` 级联；仓内卷族
   spec.md 已立（gen 层设计卷一），const / ctx / todo 随 M0 立卷——
-  先例见 `jsonld/`、`moonrdb/`。
+  先例见同门 `jsonld/` 仓。
 
 ## 安装
 
@@ -120,5 +120,9 @@ R-J1a 链含 fmt 段）。
 
 ## 许可证
 
-Apache License, Version 2.0。vendor 的第三方源码保持其原许可证并随目录附
-原文与出处档（先例：moonmat 的 `cxsparse/PROVENANCE.md`）。
+Apache License, Version 2.0（全文见 `LICENSE`）。Copyright 2026 thy1016。
+
+第三方语料与依赖的来源/许可见 `THIRD_PARTY_NOTICES.md`：`.xmlconf/`（W3C XML
+Conformance Suite，xmlts20130923）· `.xmlnames/`（W3C XML 1.0 4e / 1.1 2e 推荐
+标准快照）· `.encodings/`（WHATWG Encoding Standard 索引表，CC BY 4.0）——
+三者均**原样锁版随仓**，校验和见各自 `SHA256SUMS`。
