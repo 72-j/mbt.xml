@@ -27,6 +27,8 @@ XML 1.0 版次面 / 1.1 键控、外部实体解析端口与 billion-laughs 防�
 - 强类型错误面：`XmlError` 携带精确 `SourceSpan`（行 / 列 / 字节偏移）。
 - W3C 一致性：XML Conformance Suite（xmlts20130923）自测
   2572 passed / 13 deferred / 0 failed。
+- RDF/XML 映射层：`@rdf` 子包——RDF 1.1 全语法面 + RDF 1.2 三元词 /
+  注解 / 方向字面量，W3C RDF/XML 套件 197 案全判全绿。
 
 ## 安装
 
@@ -37,7 +39,8 @@ moon add thy1016/moonxml
 ```
 
 再在用到它的包的 `moon.pkg` `import` 块中添加 `"thy1016/moonxml"`，
-代码内以 `@moonxml` 前缀使用。
+代码内以 `@moonxml` 前缀使用。RDF/XML 面（`@rdf` 前缀）另加
+`"thy1016/moonxml/rdf"`。
 
 ## 快速上手
 
@@ -91,6 +94,28 @@ match @moonxml.decode_source(bytes) {
 // 返回 None 表示拒取；构造时经 parse_edition 的 resolver 参数注入。
 ```
 
+### RDF/XML 解析
+
+```moonbit
+// RDF 1.1/1.2 XML → Dataset（Quad{subject, predicate, object, graph}）
+match @rdf.parse_rdf_xml(xml) {
+  Ok(dataset) =>
+    for quad in dataset.quads {
+      println(quad.predicate)
+    }
+  Err(msg) => println(msg)
+}
+// 带基准 IRI（xml:base 相对引用解析锚）
+match @rdf.parse_rdf_xml_with_base(xml, base="https://example.org/doc") {
+  Ok(dataset) => println(dataset.quads.length())
+  Err(msg) => println(msg)
+}
+```
+
+`Term` = `Iri` / `BNode` / `Literal`（词形 + 语言标签 + 数据类型 + 方向
+四槽，RDF 1.2 方向字面量 `@lang--dir`）/ `TripleTerm`（RDF 1.2
+`<<(s p o)>>` 三元词，嵌套允许）。
+
 ## API 总览
 
 | 入口 | 作用 |
@@ -100,6 +125,9 @@ match @moonxml.decode_source(bytes) {
 | `decode_source` | `Bytes` → 文本（BOM 嗅探 + 声明面编码决策） |
 | `Document::to_xml` | 规范化序列化（往返稳定形） |
 | `is_name_start_char_11` 等 | 名字产生式区间表谓词（1.0 四版次 / 1.1 双面） |
+| `@rdf.parse_rdf_xml` | RDF/XML 字符串 → `Dataset` |
+| `@rdf.parse_rdf_xml_with_base` | 同上 + 基准 IRI（相对引用解析锚） |
+| `@rdf.resolve_reference` | RFC 3986 相对引用解析（`//` 网络路径 / 片不继承） |
 
 ## 错误面
 
@@ -128,11 +156,14 @@ moon test --target native
 | 面 | 读数 |
 |---|---|
 | W3C XML Conformance（xmlts20130923，2585 案） | 2572 passed / 13 deferred / 0 failed |
-| 单元与契约门 | 120 / 120 |
+| W3C RDF/XML 套件（rdf11+rdf12，197 案） | 197 judged / 0 deferred / 0 failed |
+| 单元与契约门 | 126 / 126 |
 
 测试语料锁版随仓：`.xmlconf/`（W3C XML Conformance Suite，由
 `SHA256SUMS` 锁定）、`.xmlnames/`（W3C XML 1.0 4e / 1.1 2e 推荐标准
-快照）、`.encodings/`（WHATWG Encoding Standard 索引表）。
+快照）、`.encodings/`（WHATWG Encoding Standard 索引表）、
+`src/rdf/.rdf-tests/`（W3C RDF/XML 套件 rdf11/rdf12 分册，出处注记
+见 `src/rdf/.rdf-tests/SOURCE.md`）。
 
 版本沿革见 `CHANGELOG.md`。
 

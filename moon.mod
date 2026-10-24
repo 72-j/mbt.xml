@@ -5,7 +5,7 @@
 
 name = "thy1016/moonxml"
 
-version = "0.1.0"
+version = "0.2.0"
 
 repository = "https://www.gitlink.org.cn/thy7/mbt.xml"
 

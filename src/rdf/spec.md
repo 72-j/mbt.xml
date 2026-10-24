@@ -76,7 +76,7 @@ jsonld（JSON-LD 1.1，官套 1437）、moonxml（XML 1.0/1.1 基座，xmlts
 | X1 | 立户（moon.mod / git 形 / moon.work 成员关系）+ 数据模型（Term/Quad，N-Quads 同构词形）+ moonxml 接入 + 套件 harness（manifest.ttl 解析——moonttl 自吃狗粮——桶账骨架 + 语料随仓锁版 SHA256SUMS） | 现状读数入账 |
 | X2 | 主链映射：node/property 元素走树 + rdf:about/ID/nodeID + 属性属性 + xml:lang / xml:base 栈 + QName 展开 | 正例主链绿 |
 | X3 | 语义难点：parseType Resource / Literal / Collection + rdf:li 容器成员序号 + reification + datatype 面 | 全正例 |
-| X4 | 负例逐案（约 41 案）+ .nt 数据集对拍门 | 套件闭包 pin |
+| X4 | ~~负例逐案（约 41 案）+ .nt 数据集对拍门~~（X2/X3 桶宪法吸收讫：负例全判 plain must-Err + .nt 多重集对拍 bnode 双射 + 绝对计数 pin 197/197/0） | 套件闭包 pin ✓ |
 | X5 | 收官：README 家族体例 + 发布预备 + mooncakes 上架候令 | RELEASE:PASS |
 
 每役出 commit（一句话主题）；役前 `git status` 快照，役毕即入。

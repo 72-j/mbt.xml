@@ -3,6 +3,40 @@
 本文件面向**使用者**，记录每版对外可见的变化（API / 行为 / 兼容性 / 工程）。
 判据与规范细节见 `spec.md`（本仓规范卷）。
 
+## 0.2.0（2026-10-24）
+
+新增 RDF/XML 映射层子包：RDF 1.1 全语法面 + RDF 1.2 扩展，以 W3C
+RDF/XML 一致性套件（rdf11/rdf12 分册，197 案）作判词真源。
+
+### 对外 API
+
+- **新子包 `thy1016/moonxml/rdf`**（`@rdf` 前缀）：
+  - `parse_rdf_xml` / `parse_rdf_xml_with_base`（基准 IRI 锚定相对
+    引用解析）；`resolve_reference`（RFC 3986：`//` 网络路径取裸
+    scheme、fragment 不继承）。
+  - **`Term` 模型**：`Iri` / `BNode` / `Literal`（词形、语言标签、
+    数据类型、方向四槽——RDF 1.2 方向字面量 `@lang--dir`）/
+    `TripleTerm`（RDF 1.2 `<<(s p o)>>` 三元词，嵌套允许）。
+  - `Quad { subject, predicate, object, graph }` + `Dataset`；
+    `suite_cases()`（197 案判例表，生成面）。
+- 语法覆盖：node/property 元素、属性属性、rdf:ID/nodeID/about、
+  rdf:li 容器拨号、parseType 四形（Resource / Literal（XMLLiteral
+  规范序列化）/ Collection / Triple）、具化（rdf:ID 四元组）与
+  RDF 1.2 注解（rdf:annotation / annotationNodeID → reifies）、
+  ITS `its:dir` 方向字面量、rdf:version 版本门（元素级生效）。
+
+### 一致性读数
+
+- W3C RDF/XML 套件（rdf11 166 案 + rdf12 31 案 = 197 案）：
+  **197 judged / 0 deferred / 0 failed**（组桶判定 + .nt 多重集对拍，
+  bnode 双射回溯含三元词下潜）。
+- XML Conformance 不变：2572 passed / 13 deferred / 0 failed；
+  本仓测试 **126/126**。
+
+### 兼容性
+
+- 0.1.0 消费面零变更：底座 API 未动，rdf 为纯新增子包。
+
 ## 0.1.0（2026-10-24）
 
 首个发布版：MoonBit 的 XML 底座——自有规范型数据模型 + 拉取式解析 +
