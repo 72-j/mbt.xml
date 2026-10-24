@@ -1,0 +1,140 @@
+# mbt.xml CI —— static（Linux 一次）+ test（3 OS 矩阵）
+#
+# 分工（同族口径，moonttl 系）：
+#   · static（仅 Linux）= 静态门：`check --deny-warn` / `fmt --warn` 零 offender /
+#     `.mbti` 漂移。字节级比对只在单平台做（Windows 检出可能 CRLF，会误报）。
+#   · test（3 OS）= 只跑 `check --deny-warn` + `test`，不写盘。
+#
+# 依赖口径（2026-10-24）：本仓曾因**探针包 src/probe** 引 XMLParser@0.2.6（精确钉
+# quickcheck@0.14.0，旧形 moon.mod.json）⇒ 净检出装不上依赖。探针移出后，moon.mod
+# 只剩 Milky2018/xml@0.6.0 + moonbitlang/async@0.22.4（均 Apache-2.0）⇒ 净检出可解析。
+name: Test
+
+on:
+  push:
+  pull_request:
+
+# 同一 ref 的旧运行自动取消：省 runner，也避免排队导致的"看着像随机失败"
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: Static gates (check --deny-warn / fmt --warn / .mbti drift)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Moon env (Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc libssl-dev
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Verify MoonBit installation
+        run: |
+          moon --version
+          moon version --all
+
+      - name: Moon update
+        run: moon update
+
+      - name: Check (--deny-warn)
+        run: moon check --deny-warn
+
+      - name: Format gate (report only, never writes)
+        run: |
+          offenders="$(moon fmt --warn 2>&1 | sed -n 's/^File not formatted: //p')"
+          if [ -n "$offenders" ]; then
+            echo "::error::以下文件未按仓内口径格式化——本地跑 moon fmt 后同笔提交："
+            printf '%s\n' "$offenders"
+            exit 1
+          fi
+          echo "fmt 零 offender ✓"
+
+      - name: Interface drift gate (.mbti)
+        run: |
+          moon info
+          if ! git diff --quiet; then
+            echo "::error::.mbti 与源码漂移——本地跑 moon info 后同笔提交（CI 不代改）"
+            git diff --stat
+            exit 1
+          fi
+          echo ".mbti 零漂移 ✓"
+
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Moon env (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc libssl-dev
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Setup Moon env (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
+          brew install gcc openssl
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Setup MoonBit (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -Command "irm https://cli.moonbitlang.com/install/powershell.ps1 | iex"
+          $moonPath = "$env:USERPROFILE\.moon\bin"
+          echo "$moonPath" | Out-File -FilePath $env:GITHUB_PATH -Append
+          $env:Path += ";$moonPath"
+          moon --version
+
+      - name: Setup MSYS2 + MinGW + openssl (Windows)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: false
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-openssl
+
+      - name: Verify MoonBit installation
+        run: |
+          moon --version
+          moon version --all
+
+      - name: Moon update
+        run: moon update
+
+      - name: Check (--deny-warn)
+        run: moon check --deny-warn
+
+      - name: Test
+        run: moon test
