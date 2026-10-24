@@ -1,4 +1,8 @@
 ///|
+/// 子集解析白盒测试：闸 P / G / S / PI 与 PE 组合的正反例。
+/// 施工账：ctx.md §14–§16（役PE；R-B1d 声明面）。
+
+///|
 /// 拒取件 resolver(本地测试面:一切外取件 None)。
 priv struct DenyAll {}
 
@@ -67,7 +71,7 @@ test "internal subset literal entity skipped" {
 }
 
 ///|
-/// 子集装载单元:声明残渣 = External 错(R-B1d 拒因落声明面)。
+/// 子集装载单元：声明后的残渣按声明面拒（External 错）。
 test "subset junk rejected" {
   let load = subset_load_with(DenyAll::{ })
   let subset = "<!ENTITY open \"A\"> junk >"
@@ -108,9 +112,8 @@ test "unterminated entity value rejects" {
 }
 
 ///|
-/// 役PE位形钉:条件段关键词位 = PE 引用形(`<![ %e; [`),关键词从
-/// pe_values 取(014/015/022 位形);值带 '[' = 关键词+括号一体
-/// (bracket-in-value)。体恒原文零移位。
+/// 条件段关键词位可以是 PE 引用（`<![ %e; [`）：关键词从 pe_values 取；
+/// 值可自带 `[`（与关键词一体）。体保持原文，零位移。
 test "conditional PE keyword gates body" {
   let load = subset_load_with(DenyAll::{ })
   load.pe_values.set("e", "INCLUDE")
@@ -144,9 +147,8 @@ test "conditional PE keyword gates body" {
 }
 
 ///|
-/// 役PE位形钉:声明残段收口 = PE 值内顶层 '>'(005/E14 位形:
-/// `(#PCDATA)>` 补全 ELEMENT 声明)——收口后声明间残段不追,后续
-/// 声明照常解析。
+/// 声明残段可用 PE 值内顶层 `>` 结束（如 `(#PCDATA)>` 补全 ELEMENT 声明）；
+/// 结束后不再追声明间残段，后续声明照常解析。
 test "PE value top-level gt closes declaration" {
   let load = subset_load_with(DenyAll::{ })
   load.pe_values.set("e", "(#PCDATA)>")
@@ -201,9 +203,9 @@ impl EntityResolver for ChainResolver with fn resolve(
 }
 
 ///|
-/// 役PE位形钉:E18 外取 PE 链——子代声明基址 = merge 合成(RFC 3986
-/// 径面),`../` 链三跳后孙代实体落表(直传生 system_id 时 resolver
-/// 面的 ".." 会咬掉 doc 目录,孙代取件落空 = 本役实证破形)。
+/// 外取 PE 链：子代声明基址按 RFC 3986 路径规则合成；`../` 三跳后孙代实体落表。
+/// （直接传原始 system_id 时，resolver 的 `..` 会吃掉 doc 目录 ⇒ 孙代取件落空；
+/// 这是本测试要复现的破形。）
 test "external PE chain resolves child base" {
   let store : Map[String, String] = Map([
     (
@@ -242,8 +244,8 @@ test "merge_base_reference unit shapes" {
 }
 
 ///|
-/// 闸补役钉·闸 P(实体值引用语法):孤 '%' / 孤 '&' / 无 ';' 引用
-/// = P09 产生式违例;正形('%pe;'/'&#60;'/'&amp;')照常装载。
+/// 闸 P（实体值引用语法）：孤 `%` / 孤 `&` / 无 `;` 的引用违反 P09 产生式；
+/// 正形（`%pe;` / `&#60;` / `&amp;`）照常装载。
 test "entity value reference syntax gate" {
   let load = subset_load_with(DenyAll::{ })
   let bad = "<!ENTITY e \"100%\">"
@@ -268,8 +270,8 @@ test "entity value reference syntax gate" {
 }
 
 ///|
-/// 闸补役钉·闸 G(声明名合法性):`<!ELEMENT 0node>` 数字起名 = 拒;
-/// 正名 / 名位 PE 引用(021/023 位形)照旧过闸。
+/// 闸 G（声明名合法性）：`<!ELEMENT 0node>` 数字起名 = 拒；
+/// 合法名字与名字位的 PE 引用照旧过闸。
 test "declaration name validity gate" {
   let load = subset_load_with(DenyAll::{ })
   let bad = "<!ELEMENT 0node EMPTY>"
@@ -294,8 +296,8 @@ test "declaration name validity gate" {
 }
 
 ///|
-/// 闸补役钉·闸 S(standalone WFC):standalone='yes' + 本表实体正文位
-/// 展开即拒(WFC 2.9 Entity Declared);standalone 缺省不拦。
+/// 闸 S（standalone WFC）：`standalone='yes'` 时在正文位展开本表实体即拒
+/// （WFC 2.9 Entity Declared）；缺省 standalone 不拦。
 test "standalone yes rejects table entity expansion" {
   let load = { ..subset_load_with(DenyAll::{ }), standalone_yes: true, }
   load.table.set("ext", ExternalPiece("X"))
@@ -321,8 +323,8 @@ test "standalone yes rejects table entity expansion" {
 }
 
 ///|
-/// 役PE组合钉:pe02 形端到端——双层 PE 链(xx → %zz; → zz → GE 声明)
-/// + char-ref 绕行,PE 载 GE 声明本层认领落表。
+/// PE 组合端到端：双层 PE 链（xx → `%zz;` → zz → GE 声明）+ char-ref 绕行；
+/// PE 携带的 GE 声明由本层认领并落表。
 test "pe-carried entity claims table" {
   let load = subset_load_with(DenyAll::{ })
   let subset = "<!ENTITY % xx '&#37;zz;'>" +
@@ -339,8 +341,8 @@ test "pe-carried entity claims table" {
 }
 
 ///|
-/// 役PE组合钉:PE 值 char-ref 引用位收口——十进制/十六进制/bypass
-/// 形(&name; 不解,4.4.8 bypass 组)。断言在 catch 外(役账律)。
+/// PE 值 char-ref 在引用位处理：十进制 / 十六进制解析，`&name;` 保持 bypass。
+/// 断言放在 catch 外（避免吞掉断言失败）。
 test "pe value char refs decode" {
   let results : Array[String] = []
   match
@@ -360,8 +362,7 @@ test "pe value char refs decode" {
 }
 
 ///|
-/// 役PE组合钉·闸 PI:目标非名(`<?[`)拒(ibm62n03/63n03 位形);正形
-/// 带数据区过;未闭合拒。
+/// 闸 PI：目标不是名字（`<?[`）即拒；正形带数据区可过；未闭合即拒。
 test "subset PI gate" {
   let load = subset_load_with(DenyAll::{ })
   let bad = "<?[INCLUDE[<!ELEMENT r ANY>]]>"

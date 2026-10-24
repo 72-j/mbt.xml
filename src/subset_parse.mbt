@@ -1,22 +1,22 @@
 ///|
-/// 子集声明解析(役B2,R-B1d):外取子集/内部子集的 WF 级声明收编——
-/// ENTITY 表装载(外取实体取件走 resolver),ATTLIST/ELEMENT/NOTATION
-/// 语法过闸(quote 态感知跳过)。拒因落声明面 = not-wf 族(dtd07 等)
-/// 的正判 locus。条件段 INCLUDE 解析 / IGNORE 跳过。
-/// 役PE位形(2026-10-22)升级:PE 声明立账(字面量值 pe_values / 外取件
-/// pe_externals);声明间 PE 引用按账处理(外取件取件按声明解析,字面量
-/// 值形备则按 DTD 片再扫);条件段关键词位 PE 展开(`<![ %e; [`);声明
-/// 内部 PE 收口位形(值含顶层 '>' 补全声明)。仍不展开:PE 值往内容区
-/// 的直接注入(内部子集展开面,pe02/E13 族,候独立役)。
+/// 子集声明解析：收编外部/内部子集里的声明——
+/// · ENTITY 表装载（外取实体经 resolver 取件）；
+/// · ATTLIST/ELEMENT/NOTATION 语法过闸（引号态感知跳过）。
+/// 声明面的拒因记作 not-wf 族（dtd07 等的正判落点）；条件段 INCLUDE 解析、IGNORE 跳过。
+///
+/// 参数实体（PE）面：声明立账（字面量值 / 外取件址），声明间引用按账处理，
+/// 条件段关键词位展开（`<![ %e; [`），声明内部按值内顶层 `>` 补全。
+/// 尚未展开：PE 值直接注入内容区（内部子集展开面）。
+/// 施工账：ctx.md §11（役B2）· §12（役B3）· §14–§16（役PE 位形 / 闸补 / 组合）；
+/// R-B1d = 声明面拒因。
 const EXTERNAL_EXPANSION_DEPTH : Int32 = 32
 
 ///|
 const EXTERNAL_EXPANSION_BUDGET : Int32 = 1000000
 
 ///|
-/// 声明所在子集面:ExternalSubset = 字面量 ENTITY 也归我表(base 看不到
-/// 外取子集);InternalSubset = 字面量实体底座自持(内部优先,R-B1b),
-/// 只收编外取形(文件取件 base 不管)。
+/// 声明所在子集面：ExternalSubset = 字面量 ENTITY 也归本表（base 看不到外取子集）；
+/// InternalSubset = 字面量实体归底座（内部优先），本层只收编外取形。
 priv enum DeclPolicy {
   ExternalSubset
   InternalSubset
@@ -32,9 +32,8 @@ priv enum ExternalEntityEntry {
 }
 
 ///|
-/// 外取 PE 件址(役PE位形):引用位取件用。相对 system_id 按**声明位**
-/// base 解(spec 4.2 相对径归属声明所在件,非引用位——%intpe 从别件
-/// 引用时 %extpe 仍按其声明件解)。
+/// 外取 PE 件址（引用位取件用）：相对 system_id 按**声明位** base 解
+/// （规范 4.2：相对路径归属声明所在件，而不是引用位）。
 priv struct PeExternalId {
   base : String?
   system_id : String
@@ -52,15 +51,14 @@ priv struct ExternalLoad {
   /// (传递地)引用到本层收编的外取件,须整体收归本层展开(底座
   /// 只见内部字面量,链半路撞外取名即 InvEnt)。
   internal_literals : Map[String, String]
-  /// PE 声明账(役PE位形):字面量 PE 值(名 → 值原文)与外取 PE 件址
-  /// (名 → 件 id)。条件段关键词位 / 声明内部收口 / 声明间引用三处
-  /// 位形的展开源。PE 账与一般实体表分账——PE 是 DTD 机械面,不进
-  /// 内容展开(内部优先律只辖一般实体)。
+  /// PE 声明账：字面量 PE 值（名 → 原文）与外取件址（名 → 件 id）。
+  /// 条件段关键词位 / 声明内部结束位 / 声明间引用三处都从这里取。
+  /// PE 单独记账，不进内容区展开（内部优先律只辖一般实体）。
   pe_values : Map[String, String]
   pe_externals : Map[String, PeExternalId]
   /// PE 引用递归深度闸(%x "%x;" 形自指防御)。
   mut pe_depth : Int32
-  /// 文档版次基准(役B3 版次闸 + Char 门键控;无 XMLDecl = None = 1.0)。
+  /// 文档版次基准（Char 门与名字表键控用；无 XMLDecl = None = 1.0）。
   doc_version : String?
   /// standalone=='yes'(闸 S,闸补役):正文/属性位展开本表实体即拒
   /// (WFC 2.9 Entity Declared——外取件声明实体被引用,standalone 越权)。
@@ -250,11 +248,10 @@ fn entity_value_refs_wellformed(value : String) -> Bool {
 }
 
 ///|
-/// ENTITY 声明:名 → 字面量值 / 外取 id(SYSTEM|PUBLIC [+ NDATA])。
-/// 字面量:ExternalSubset 归我表;InternalSubset 底座自持(跳过);
-/// PE 声明两态皆不展开(接受不收编)。外取形:取件 None = 不声明
-/// (引用处底座 InvalidEntity 自然拒 = fetch-fail reject);取件有
-/// 但解码败 = External 错(件破即拒,R-B1d)。
+/// ENTITY 声明：名 → 字面量值 / 外取 id（SYSTEM|PUBLIC [+ NDATA]）。
+/// 字面量：ExternalSubset 归本表；InternalSubset 归底座（跳过）；PE 声明两态都不展开。
+/// 外取形：取件为 None = 视作未声明（引用处底座自然拒）；取件成功但解码失败 =
+/// External 错（件破即拒）。
 fn parse_entity_declaration(
   text : String,
   start : Int32,
@@ -317,10 +314,8 @@ fn parse_entity_declaration(
                 load.internal_literals.set(entity_name, value)
               }
           }
-          // PE 声明立账(役PE位形):值入 pe_values,供条件段关键词位 /
-          // 声明内部收口 / 声明间引用三处位形展开。次序律 = 4.4.8 同律:
-          // 内部子集 PE 值优先,外取子集同名声明让位(内部子集内后者覆
-          // 前;外取子集内先到先得——门级保守)。
+          // PE 声明立账：值入 pe_values，供条件段关键词位 / 声明内部结束位 /
+          // 声明间引用三处展开。次序律同规范 4.4.8：内部子集 PE 值优先。
         } else if policy is InternalSubset ||
           load.pe_values.contains(entity_name) == false {
           load.pe_values.set(entity_name, value)
@@ -385,8 +380,7 @@ fn parse_entity_declaration(
             None => ()
           }
         } else {
-          // 外取 PE 立账(役PE位形):引用位才取件(spec 按需读),件址
-          // 随录声明位 base(E18 链:%extpe 从别件引用仍按其声明件解)。
+          // 外取 PE 立账：引用位才取件（按需读），件址随声明位 base 录。
           load.pe_externals.set(entity_name, PeExternalId::{
             base: base_uri,
             system_id: sysid,
@@ -420,9 +414,9 @@ fn parse_entity_declaration(
 }
 
 ///|
-/// 条件段:<![INCLUDE[ ... ]]> 解析体 / <![IGNORE[ ... ]]> 跳过体;
-/// 关键词不备 = External 错。体以嵌套感知的 "]]>" 收口。关键词位是
-/// PE 引用(`<![ %e; [` 形)走 parse_conditional_pe 展开位。
+/// 条件段：`<![INCLUDE[ … ]]>` 解析体 / `<![IGNORE[ … ]]>` 跳过体；
+/// 关键词不备 = External 错；体以嵌套感知的 `]]>` 结束。
+/// 关键词位若是 PE 引用（`<![ %e; [` 形），走 parse_conditional_pe。
 fn parse_conditional(
   text : String,
   start : Int32,
@@ -476,10 +470,9 @@ fn parse_conditional(
 }
 
 ///|
-/// 条件段 PE 关键词位形(役PE位形):关键词流 = PE 值(前置)+ 引用后
-/// 原文(续);'[' 可来自值内(022 形 `%e` = "INCLUDE[")或原文。
-/// 展开不落盘——体仍住原文,收口扫描与错误报位零位移;值内 '[' 之后
-/// 的残段不入流(门级保真,严于门位形不在此过)。
+/// 条件段 PE 关键词位：关键词流 = PE 值（前置）+ 引用后原文（续）；
+/// `[` 可来自值内（如 `%e` = "INCLUDE["）或原文。
+/// 展开不落盘——体仍住原文，结束扫描与报位零位移。
 fn parse_conditional_pe(
   text : String,
   start : Int32,
@@ -670,9 +663,8 @@ fn gate_declaration_name(
 }
 
 ///|
-/// DTD 子集 PI 闸:PI 目标须是名字(P79 PITarget ::= Name——`[` 非名
-/// 首即拒,ibm62n03/ibm63n03 族),且须有 `?>` 收口(未闭合 PI 吞声明
-/// = not-wf)。目标名按版次面谓词选表(闸 G 同径)。
+/// DTD 子集 PI 闸：PI 目标须是名字（规范 P79；`[` 等非名字首即拒），
+/// 且须有 `?>` 结束（未闭合 = not-wf）。目标名按版次选表。
 fn skip_pi_declaration(
   text : String,
   start : Int32,
@@ -692,7 +684,7 @@ fn skip_pi_declaration(
   while pos < limit && name_char_ok(text[pos].to_int()) {
     pos = pos + 1
   }
-  // PI 数据区 = 自由内容(P79),不核;只找 `?>` 收口
+  // PI 数据区 = 自由内容（P79），不核；只找 `?>` 结束
   while pos + 1 < limit {
     if text[pos] == '?' && text[pos + 1] == '>' {
       return pos + 2
@@ -703,9 +695,8 @@ fn skip_pi_declaration(
 }
 
 ///|
-/// ATTLIST/ELEMENT/NOTATION 过闸跳过:quote 态感知找到收口 '>';
-/// 未闭合 = External 错(声明面拒因)。引号外 PE 引用按值收口
-/// (役PE位形,005/E14 补全声明位形)。
+/// ATTLIST/ELEMENT/NOTATION 过闸跳过：引号态感知找到结束位 `>`；
+/// 未闭合 = External 错；引号外的 PE 引用按值结束。
 fn skip_markup_declaration(
   text : String,
   start : Int32,
@@ -766,7 +757,7 @@ fn skip_markup_declaration(
 }
 
 ///|
-/// PE 值内顶层 '>' 探测(quote 态感知——值内引号串里的 '>' 不收口)。
+/// PE 值内顶层 '>' 探测（引号态感知——值内引号串里的 '>' 不算结束）。
 fn value_has_top_level_gt(value : String) -> Bool {
   let limit = value.length()
   let mut i : Int32 = 0
@@ -806,10 +797,9 @@ fn pe_reference_end(text : String, start : Int32) -> (String, Int32)? {
 }
 
 ///|
-/// 声明间 PE 引用(役PE位形升级):外取件取件后按外取子集解析(E18 链:
-/// 件内容里的 ENTITY 声明落表);字面量值形备(markup 起 = '<' 或续引
-/// PE = '%')按 DTD 片再扫,碎片值('&37;' 转义注入形,pe02 族)保持
-/// 机械跳过。未名 PE = 机械跳过(原语义);自指/环 = 深度闸拒。
+/// 声明间 PE 引用：外取件取回后按外取子集解析（件内 ENTITY 声明落表）；
+/// 字面量值按 DTD 片段再扫（markup 起 = `<` 或续引 PE = `%`），碎片值
+/// （`&37;` 转义注入形）保持机械跳过。未定义 PE = 跳过；自指/环 = 深度闸拒。
 fn reference_pe(
   text : String,
   start : Int32,
@@ -975,10 +965,8 @@ fn char_ref_code_point(value : String, start : Int32) -> (Int32, Int32)? {
 }
 
 ///|
-/// PE 值 char-ref 收口(役PE组合):PE 值在引用位展开时 char refs 即时
-/// 包含(spec 4.4.8 步2)——只解 `&#..;` 形,`&name;` 引用保持 bypass
-/// 原样(4.4.8 bypass 组)。码点域防护:代理区/>0x10FFFF 即拒(spec
-/// 4.1 CharRef 域律;1.1 控制字符经引用面 = D 桶另账)。
+/// PE 值 char-ref 处理：PE 值在引用位展开时即时解析 `&#…;`（规范 4.4.8 步 2），
+/// `&name;` 引用保持 bypass 原样。码点域防护：代理区 / >0x10FFFF 即拒。
 fn pe_value_char_refs(value : String) -> String raise XmlError {
   let limit = value.length()
   let out = StringBuilder()
