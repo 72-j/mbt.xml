@@ -20,3 +20,7 @@ __pycache__/
 # PR 档案,投递定案后按出口归档)。
 .mingspace/
 
+
+# 役卷本地不入库(裸名;*.ctx.md/*.todo.md 同族,2026-10-12 拍)。
+ctx.md
+todo.md

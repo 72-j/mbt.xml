@@ -1,6 +1,6 @@
 # mbt.xml CI —— static（Linux 一次）+ test（3 OS 矩阵）
 #
-# 分工（同族口径，moonttl 系）：
+# 分工：
 #   · static（仅 Linux）= 静态门：`check --deny-warn` / `fmt --warn` 零 offender /
 #     `.mbti` 漂移。字节级比对只在单平台做（Windows 检出可能 CRLF，会误报）。
 #   · test（3 OS）= 只跑 `check --deny-warn` + `test`，不写盘。

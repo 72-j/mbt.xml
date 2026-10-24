@@ -1,7 +1,7 @@
 // MoonBit module manifest — mbt.xml
-// 定位：XML 底座仓——M0 探针已拍板（R-X1）：底座 = Milky2018/xml@0.6.0
-//       （StAX 式拉取 + NamespaceReader + Writer）；下一役 M1 = Node 适配层。
-//       仓位裁定与分层评估见主仓 moonmat/requirements.md §二（2026-10-10）。
+// 定位：XML 底座仓。引擎底座 = Milky2018/xml@0.6.0（StAX 式拉取 +
+// NamespaceReader + Writer）；本仓在其上提供规范型文档模型（Node 适配层）、
+// 编码前端与 W3C 一致性套件门。
 
 name = "thy1016/moonxml"
 
