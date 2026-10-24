@@ -42,6 +42,12 @@ jsonld（JSON-LD 1.1，官套 1437）、moonxml（XML 1.0/1.1 基座，xmlts
 ## 3. 定案（2026-10-24 五条全拍，含细化）
 
 - **D-1 落位**：新顶层独立模块 `rdfxml`（`thy1016/rdfxml`）。
+  **〔拨正 2026-10-24〕**随并入 mbt.xml 仓后两拨，以末拨为准：
+  目录 `rdfxml/` → `src/rdf/`（对齐 src/ 口径）；用户拍「不需要做成
+  模块，只是一个文件夹」——**rdf = thy1016/moonxml 模块内的包**（非
+  独立模块，moon.work 单成员），模块名 `thy1016/moonxml`，定位 =
+  rdf 的 xml 解析库。D-1 原独立模块/独立发布面就此取代；「零 C 依赖」
+  面不变。
   理由：家族先例 jsonld 与 moonttl 是**格式一致**而非代码耦合；
   住 moonttl 否决双理由——迫使 submodule 引 moonxml 依赖改变其
   依赖姿态 + **污染 moonttl 依赖图**。

@@ -9,7 +9,7 @@
 - 许可：随 `LICENSE.md` 双许可（W3C Test Suite License + 3-clause
   BSD），本仓分发保留其全文与各 README 内许可指针。
 - 完整性：`SHA256SUMS`（371 项，模块根相对路径）钉死收编面；复核：
-  `cd rdfxml && sha256sum -c .rdf-tests/SHA256SUMS`（2026-10-24 收编
+  `cd src/rdf && sha256sum -c .rdf-tests/SHA256SUMS`（2026-10-24 收编
   验 371/371 OK）。
 - manifest 落账：rdf11 166 案（126 TestXMLEval + 40
   TestXMLNegativeSyntax）+ rdf12 31 案（全 TestXMLEval，dir/tt/an 三

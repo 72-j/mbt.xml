@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "thy1016/rdfxml"
+package "thy1016/moonxml/rdf"
 
 // Values
 pub fn suite_cases() -> Array[SuiteCase]
