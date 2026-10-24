@@ -1,6 +1,6 @@
 ///|
 /// 联调门:parse → from_tree → to_tree → 再 parse → from_tree——
-/// 值级等价 + 字符串定点(生成骨架正确性由消费端真链路钉,spec 卷一完成门)。
+/// 值级等价 + 字符串定点（生成骨架的正确性由消费端真链路验证；spec 卷一完成门）。
 test "catalog roundtrip via generated skeleton" {
   let source = "<?xml version=\"1.0\"?><catalog version=\"2.1\" xml:lang=\"en\"><book isbn=\"i1\" year=\"2020\" in_print=\"true\"><title>t1</title><author>a1</author><author>a2</author><pages>320</pages></book><book isbn=\"i2\" year=\"1999\" price=\"42.8\" in_print=\"false\"><title>t2</title><author>a3</author><pages>288</pages></book><meta><marker/></meta></catalog>"
   let document = match @moonxml.parse(source) {
@@ -87,8 +87,8 @@ test "catalog CDATA leaf is text payload" {
 }
 
 ///|
-/// 用例役(2026-10-22):型别转换负例三钉——词法域外值 = 红,错误消息
-/// 带 helper 域标(xmlschema: not an int/double/bool)。
+/// 类型转换负例三条：词法域外值 = 红，错误消息带 helper 域标
+/// （xmlschema: not an int/double/bool）。
 test "catalog typed conversion failures are red" {
   // int 词法域外:year="abc"
   let bad_int = match

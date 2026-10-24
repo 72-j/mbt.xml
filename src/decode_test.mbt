@@ -1,7 +1,8 @@
 ///|
-/// 役A1 单元门:编码前端 + 版本键控 Char 门。
-/// 套件级读数在 xmlconf_suite_test;本件钉机制单元
+/// 单元门：编码前端 + 版本键控 Char 门。
+/// 套件级读数在 xmlconf_suite_test；本件覆盖机制单元
 /// (BOM 嗅探/严格 UTF-8/UTF-16 代理/支持编码集/冲突/两版 Char 表)。
+/// 施工账：ctx.md §5（役A1）。
 
 ///|
 fn bytes_of(input : String) -> Array[Byte] {
@@ -386,8 +387,9 @@ test "char gate keys on version inside utf-16 documents" {
 }
 
 ///|
-/// 役J1 真解码见证:三套件原件端到端须 Ok(J1 前此三件 =
-/// Err(UnsupportedEncoding);回退即红)。内容指纹自锁版套件文件。
+/// 真解码见证：三套件原件端到端必须 Ok（实现前这三件是
+/// Err(UnsupportedEncoding)；回退即红）。内容指纹取自固定版本套件文件。
+/// 施工账：ctx.md §9（役J1）。
 async test "japanese suite witnesses decode for real" {
   let eucjp = @fs.read_file("./.xmlconf/xmlconf/japanese/weekly-euc-jp.xml").binary()
   match @moonxml.decode_source(eucjp) {

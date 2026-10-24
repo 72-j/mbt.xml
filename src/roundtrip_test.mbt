@@ -1,6 +1,7 @@
 ///|
-/// 役M1 往返门:parse → to_xml → re-parse 字符串定点 + 树等价。
-/// 语料对位 ctx §1 M0 探针八例(well-formed 族)。
+/// 往返门：parse → to_xml → re-parse 字符串定点 + 树等价。
+/// 语料对位 ctx.md §1 的 M0 探针八例（well-formed 族）。
+/// 施工账：ctx.md §2（役M1）· §1（M0 探针）。
 
 ///|
 /// 字符串定点:canonical(parse(canonical(parse(s)))) ≡ canonical(parse(s))。

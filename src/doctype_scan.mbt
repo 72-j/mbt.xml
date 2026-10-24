@@ -1,14 +1,15 @@
 ///|
-/// DOCTYPE 序区扫描(役B2):底座 DocType 事件只带根名(F1),SYSTEM/
-/// PUBLIC id 与内部子集界由本扫描自持提取。返回 None = 无 doctype 或
-/// 序区畸形(后者留给底座报错——本扫描只取件,不做判官)。
+/// DOCTYPE 序区扫描：底座的 DocType 事件只带根名，SYSTEM/PUBLIC id 与
+/// 内部子集边界由本扫描自行提取。返回 None = 无 doctype 或序区畸形
+/// （畸形留给底座报错——本扫描只取件，不做判官）。
+/// 施工账：ctx.md §11（役B2）。
 priv struct DoctypeScan {
-  /// 声明收口 '>' 之后(预组合恢复内容扫描处)
+  /// 声明结束（'>'）之后（预组合恢复内容扫描处）
   decl_end : Int32
   system_id : String?
   public_id : String?
-  /// 文档 XMLDecl 版次值(役B3 版次闸基准;无 XMLDecl = None = 1.0)。
-  /// 只取值不判官——XMLDecl 语法面归底座。
+  /// 文档 XMLDecl 的版次值（版次闸基准；无 XMLDecl = None = 1.0）。
+  /// 只取值不判官——XMLDecl 语法面归底座。施工账：ctx.md §12（役B3）。
   doc_version : String?
   /// 内部子集起点('[' 之后);无子集 = -1
   subset_start : Int32
@@ -62,7 +63,7 @@ fn scan_doctype(text : String) -> DoctypeScan? {
 
 ///|
 /// <!DOCTYPE 体解析:根名 → ExternalID(SYSTEM/PUBLIC)→ 可选内部子集
-/// → 收口 '>'。畸形(缺名/缺引号/未闭合)一律 None——判官权在底座。
+/// → 结束于 '>'。畸形（缺名 / 缺引号 / 未闭合）一律 None——判官权在底座。
 fn scan_doctype_body(
   text : String,
   start : Int32,
@@ -142,7 +143,7 @@ fn scan_doctype_body(
 
 ///|
 /// 子集括号配对:quote 态(单双引号字面量)与注释态感知;'|"' 值内
-/// 与注释内的 ']' 不收口。返回 ']' 处位;未闭合 = None。
+/// 与注释内的 ']' 不结束。返回 ']' 处位；未闭合 = None。
 fn scan_subset_end(text : String, start : Int32) -> Int32? {
   let limit = text.length()
   let mut pos = start
@@ -288,7 +289,7 @@ fn skip_past(
 }
 
 ///|
-/// 注释跳扫(三字组 `-->` 收口;skip_past 二字组吃不住注释——`--`
+/// 注释跳扫（以三字组 `-->` 结束；skip_past 的二字组吃不掉注释——`--`
 /// 后还余 `>`,下轮咬 `>` 报 unexpected content)。未闭合 = 文末
 /// (容错扫描,判官在底座)。
 fn skip_comment(text : String, start : Int32) -> Int32 {
@@ -304,8 +305,8 @@ fn skip_comment(text : String, start : Int32) -> Int32 {
 }
 
 ///|
-/// XMLDecl 版次值只读取(役B3):`<?xml` + S 起头时,取 version 属性
-/// 引号值;无 XMLDecl/畸形 = None(判官在底座,此处只为版次闸供基准)。
+/// XMLDecl 版次值只读取：`<?xml` + 空白起头时，取 version 属性的引号值；
+/// 无 XMLDecl / 畸形 = None（判官在底座，此处只为版次闸供基准）。
 fn peek_decl_version(text : String) -> String? {
   if !text.has_prefix("<?xml") {
     return None

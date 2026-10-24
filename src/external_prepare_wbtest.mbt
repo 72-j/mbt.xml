@@ -154,9 +154,9 @@ fn prepare_outcome(
 }
 
 ///|
-/// 链所有权闭合(役B2):内部字面量链 a→b(外取形)整链收归本层——
-/// 组合面 &a; 展开到底,底座不再见 &b;(半路 InvEnt 根因)。c 不动链,
-/// 留底座(内部优先不扩权)。
+/// 链所有权闭合：内部字面量链 a→b（外取形）整链收归本层——组合面 &a;
+/// 展开到底，底座不再见 &b;（半路 InvEnt 的根因）。c 不动链，留给底座
+/// （内部优先不扩权）。施工账：ctx.md §11（役B2）。
 test "internal literal chain claims external entity" {
   let source = "<!DOCTYPE r [<!ENTITY a \"&b;\"><!ENTITY b SYSTEM \"b.ent\"><!ENTITY c \"(ic)\">]><r>&a;&c;</r>"
   let resolver = map_resolver_of([("b.ent", "(B)")])
@@ -171,8 +171,8 @@ test "internal literal chain claims external entity" {
 }
 
 ///|
-/// 链闭合负钉:不动链的内部字面量不收归(a→b 皆内部)——&a; 原样
-/// 留底座;外取件 x 照常收编展开。两轴互不越界。
+/// 链闭合负例：不动链的内部字面量不收归（a→b 皆内部）——&a; 原样留底座；
+/// 外取件 x 照常收编展开。两轴互不越界。
 test "unclaimed internal literal stays with base" {
   let source = "<!DOCTYPE r [<!ENTITY a \"&b;\"><!ENTITY b \"(ib)\"><!ENTITY x SYSTEM \"x.ent\">]><r>&a;&x;</r>"
   let resolver = map_resolver_of([("x.ent", "(X)")])

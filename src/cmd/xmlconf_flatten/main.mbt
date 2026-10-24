@@ -2,12 +2,13 @@
 /// xmlconf_flatten —— W3C XML Conformance Suite(xmlts20130923)清单扁平化:
 /// 官方聚合清单 xmlconf.xml 用 DTD 外部参数实体聚合 21 本分册(外挂实体
 /// 面超出 @moonxml 解析层),本命令按「组→分册」映射逐册用 @moonxml 自解析
-/// (dogfood),产锁版 TSV:TYPE \t base+URI \t ID \t EDITION \t NS(保持
+/// (dogfood)，产出带校验和的 TSV：TYPE \t base+URI \t ID \t EDITION \t NS（保持
 /// 册序,再生逐字节稳定;EDITION/NS 缺省 = 空串 = 全版本适用/非 NS 面)。
-/// 运行:moon run cmd/xmlconf_flatten(cwd = moonxml 仓根)。
+/// 运行：moon run cmd/xmlconf_flatten（cwd = moonxml 仓根）。
+/// 施工账：ctx.md §4（役M2）· §6（役E1）· §8（役N1）。
 
 ///|
-/// 分册→基准径映射(摘自 xmlconf.xml 聚合体,套件 2013 锁版后不动)。
+/// 分册→基准径映射（摘自 xmlconf.xml 聚合体；套件 2013 版固定后不再变动）。
 let manifest_table : Array[(String, String)] = [
   ("xmltest/xmltest.xml", "xmltest/"),
   ("japanese/japanese.xml", "japanese/"),
@@ -57,11 +58,11 @@ fn collect_tests(
           let uri = attribute_of(sub, "URI")
           let ty = attribute_of(sub, "TYPE")
           let id = attribute_of(sub, "ID")
-          // EDITION 属性(役E1):测试适用的 XML 1.0 版次面("1 2 3 4" / "5";
-          // 缺省 = 全版本适用)。套件官方裁决模型:处理器按面选子集。
+          // EDITION 属性：测试适用的 XML 1.0 版次面（"1 2 3 4" / "5"；
+          // 缺省 = 全版本适用）。套件的裁决模型是"处理器按面选子集"。
           let edition = attribute_of(sub, "EDITION")
-          // NS 列(役N1):Namespaces in XML 测试只对 NS-aware 处理器适用
-          // (官方套件把 NS 测试独立成节)——按分册径标 "ns",余者空 = 非 NS 面。
+          // NS 列：Namespaces in XML 测试只对命名空间感知处理器适用
+          // （官方套件把 NS 测试独立成节）——按分册径标 "ns"，余者空 = 非 NS 面。
           let ns = if base.has_prefix("eduni/namespaces/") { "ns" } else { "" }
           rows.push("\{ty}\t\{base}\{uri}\t\{id}\t\{edition}\t\{ns}")
         }
@@ -131,7 +132,7 @@ async fn main {
     joined = "\{joined}\{row}\n"
   }
   @fs.write_file("./.xmlconf/xmlconf_manifest.tsv", joined)
-  // 分型计数读数(锁版后由 harness 钉)
+  // 分型计数读数（固定后由 harness 断言）
   let mut valid_count = 0
   let mut invalid_count = 0
   let mut not_wf_count = 0

@@ -1,15 +1,16 @@
 ///|
-/// 名字段门(役E1,R-E1b/R-E1c):版本键控 × 版本面键控的名字产生式校验。
-/// 数据面 = name_tables_gen.mbt(gen 直发区间表 + 谓词);本件只写拼装语义
-/// (1.0 Letter = BaseChar|Ideographic、Name/NameChar 组合)与树面行走。
-/// 口径:
+/// 名字段门：按文档版本与版本面选表的 XML 名字产生式校验。
+/// 数据面 = `name_tables_gen.mbt`（生成器直发区间表 + 谓词）；本件只写拼装语义
+/// （1.0 Letter = BaseChar|Ideographic、Name/NameChar 组合）与树面行走。
+/// 规则：
 /// - version="1.1" 文档恒走 1.1 紧凑表(产生式 [4]/[5]),版本面选择无关;
 /// - version="1.0"/无声明文档按 [XmlEdition] 选表:Editions1to4 = 4e 全表
 ///   (BaseChar/Ideographic/CombiningChar/Digit/Extender,产生式 [85]-[89],
 ///   套件 EDITION="1 2 3 4" 面判词所据);Edition5 = 5e 紧凑表(与 1.1 同形,
 ///   套件 EDITION="5" 面判词所据;亦即 parse 缺省面 = 现行底座行为)。
-/// 门位:树建后全量行走(DOCTYPE 名/PI 目标/元素名/属性名)——M2 实证内部
-/// 子集 PI 事件落 prologue/epilogue,树面可见,漏拒族全在此收。
+/// 门位：树建后全量行走（DOCTYPE 名 / PI 目标 / 元素名 / 属性名）——内部子集的
+/// PI 事件落在 prologue/epilogue，树面可见，漏拒都出在这里。
+/// 施工账：ctx.md §6（役E1，R-E1b/R-E1c）。
 
 ///|
 /// XML 1.0 版本面(套件 EDITION 语义:测试按适用版次标注,处理器按面选子集)。
@@ -100,7 +101,7 @@ fn name_violation_of(
 }
 
 ///|
-/// 名字段错(树不带 span——R-M1 定案,零位报;消息含码点与名字原文)。
+/// 名字段错：树不带 span，故零位报；消息含码点与名字原文。
 fn name_error(message : String) -> XmlError {
   XmlError::At(error=XmlErrorKind::IllegalName(message), span={
     start: { offset: 0, line: 1, column: 1, },

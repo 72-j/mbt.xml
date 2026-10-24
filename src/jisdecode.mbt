@@ -1,13 +1,14 @@
 ///|
-/// JIS 三码解码(役J1):Shift_JIS / EUC-JP / ISO-2022-JP,判词面真源 =
-/// 锁版 WHATWG Encoding Standard(.encodings/encoding-standard.html
-/// §12.1.1 / §12.2.1 / §12.3.1;标签映射 §4.2)。数据面 =
-/// jis_tables_gen.mbt(jis0208_index / jis0212_index,槽 0 = 未定义)。
-/// 错误即拒:spec 的 restore-to-ioQueue 只服务容错续解,本引擎错误面
-/// 无续解语义,恢复步省略(错误位置 = 违例字节)。
+/// JIS 三码解码：Shift_JIS / EUC-JP / ISO-2022-JP。判词真源 = 锁版 WHATWG
+/// Encoding Standard（`.encodings/encoding-standard.html` §12.1.1 / §12.2.1 /
+/// §12.3.1；标签映射 §4.2）。数据面 = `jis_tables_gen.mbt`（jis0208_index /
+/// jis0212_index，槽 0 = 未定义）。
+/// 错误即拒：规范的 restore-to-ioQueue 只服务容错续解，本引擎无续解语义，
+/// 故省略恢复步（错误位置 = 违例字节）。
+/// 施工账：ctx.md §9（役J1）。
 
 ///|
-/// JIS 编码判别(声明名已 lowercase;§4.2 名→编码映射逐标签收口)。
+/// JIS 编码判别（声明名已小写；§4.2 名→编码映射逐标签处理）。
 priv enum JisEncoding {
   ShiftJis
   EucJp
@@ -188,7 +189,7 @@ priv enum Jis2022State {
 ///|
 /// ISO-2022-JP(§12.2.1):转义序 切换状态(ESC ( B→ASCII、
 /// ESC ( J→Roman(0x5C→¥、0x7E→‾)、ESC ( I→半角片假名、ESC $ @|B→
-/// 双字节 jis0208 对 0x21-0x7E);output 旗钉"转义后须吐码"——连转两次
+/// 双字节 jis0208 对 0x21-0x7E）；输出断言"转义后须吐码"——连转两次
 /// 即错;ASCII/Roman 态 0x0E/0x0F 拒。终态 TrailByte/EscapeStart/Escape
 /// 收尾 = 截断拒。
 fn decode_iso_2022_jp(view : BytesView) -> String raise XmlError {

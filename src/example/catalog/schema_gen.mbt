@@ -249,7 +249,8 @@ fn xmlschema_make_element(
 }
 
 ///|
-/// 标签名 → XmlName(xml: 前缀钉规范 URI——与解析面对齐;其余前缀不解析 URI,表按原文匹配)。
+/// 标签名 → XmlName（`xml:` 前缀固定为规范 URI，与解析面对齐；其余前缀不解析
+/// URI，表按原文匹配）。
 fn xmlschema_xml_name(name : String) -> @moonxml.XmlName {
   let colon : (String, String)? = match name.split_once(":") {
     Some(pair) => Some((pair.0.to_owned(), pair.1.to_owned()))

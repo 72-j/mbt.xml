@@ -29,7 +29,7 @@ test "admit plain utf-8 passes" {
 }
 
 ///|
-/// 准入单元:BOM + 完整 text decl 剥除(BOM 容错 = R-B1d)。
+/// 准入单元：BOM + 完整 text decl 剥除（BOM 容错）。
 test "admit strips BOM and text decl" {
   let bytes = ext_bytes([
     0xEF, 0xBB, 0xBF, // UTF-8 BOM
@@ -147,7 +147,7 @@ test "nel separator under 1.0 document rejects" {
 }
 
 ///|
-/// T 闸:NEL 分隔符在 1.1 文档面 = 合法(S 1.1 增 #x85/#x2028;校准钉)。
+/// T 闸：NEL 分隔符在 1.1 文档面 = 合法（S 1.1 增 #x85/#x2028；校准例）。
 test "nel separator under 1.1 document accepts" {
   match
     admit_outcome("<?xml version='1.1' \u{85} encoding='UTF-8'?>", Some("1.1")) {
@@ -168,7 +168,7 @@ test "literal control char in body rejects" {
 }
 
 ///|
-/// Char 门:字符引用 = ASCII 文本,天然放行(ibm77v22-29 校准钉)。
+/// Char 门：字符引用 = ASCII 文本，天然放行（ibm77v22-29 校准例）。
 test "char reference passes char gate" {
   match
     admit_outcome(

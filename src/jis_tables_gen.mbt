@@ -1,7 +1,7 @@
 // ===== GENERATED FILE — DO NOT EDIT(生成物禁手写,const.md §7)=====
-// 源表:.encodings/ 锁版(WHATWG Encoding Standard 索引,SHA256SUMS 可验)
+// 源表：.encodings/ 固定版本（WHATWG Encoding Standard 索引，SHA256SUMS 可验）
 // 再生:python3 tools/extract_encoding_tables.py > src/jis_tables_gen.mbt
-//       (仓根起跑;再生 → moon fmt → 黄金门字节对拍)
+//       （仓根起跑；再生 → moon fmt → 黄金门字节对拍）
 // 面:JIS 解码数据面。指针公式与状态机(shift_jis/euc-jp 换算、
 // iso-2022-jp 转义序列)手写于 jisdecode.mbt,不在此表。
 

@@ -1,7 +1,8 @@
 ///|
-/// 役E1 名字段门单元(黑盒,pub 面用):版本面键控(4e 全表 vs 5e 紧凑)、
-/// 版本键控(1.1 文档不受版本面影响)、树面全查(PI/元素/属性)、
-/// 词表钉实报形(IllegalName 消息含码点)。
+/// 名字段门单元（黑盒，走 pub 面）：版本面键控（4e 全表 vs 5e 紧凑）、
+/// 版本键控（1.1 文档不受版本面影响）、树面全查（PI/元素/属性）、
+/// 报错形（IllegalName 消息含码点）。
+/// 施工账：ctx.md §6（役E1）。
 
 ///|
 fn kind_of(result : Result[@moonxml.Document, @moonxml.XmlError]) -> String {
@@ -154,8 +155,9 @@ test "names legal in both faces pass (namespace-qualified forms)" {
 }
 
 ///|
-/// 役N1 NS 模式旗标:非 NS 面(名字原文直通/xmlns 即普通属性/无前缀解析)
-/// 与 NS-on 面的树形状钉。
+/// NS 模式旗标：非 NS 面（名字原文直通 / xmlns 即普通属性 / 无前缀解析）
+/// 与 NS-on 面的树形状。
+/// 施工账：ctx.md §8（役N1）。
 
 ///|
 test "ns-off: colon names accepted (element, attribute, PI target)" {

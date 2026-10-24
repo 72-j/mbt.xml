@@ -8,8 +8,8 @@ priv struct ElementFrame {
 
 ///|
 /// 相邻 Text 事件拼接:底座按实体边界切分多段,消费方须自行拼(契约一)。
-/// 段列表惰性收口——单段零拷贝直通,多段一次 StringBuilder 会合
-/// (替代逐段 `previous + content` 的 O(n²) 重拼;结构事件/EOF 时 flush)。
+/// 段列表惰性合并——单段零拷贝直通，多段用一次 StringBuilder 合并
+/// （避免逐段 `previous + content` 的 O(n²) 重拼；结构事件/EOF 时 flush）。
 fn flush_pending_text(pending : Array[String], target : Array[Node]) -> Unit {
   if pending.length() == 1 {
     target.push(Text(pending[0]))
@@ -234,10 +234,10 @@ fn parse_into(source : String) -> Document raise XmlError {
 }
 
 ///|
-/// 非 NS 面折叠(役N1):raw Reader 事件 → 文档树。名字按原文直通
-/// (qualified_name = 原文,prefix/local_name/namespace_uri = None——
-/// 非 NS 面无命名空间语义可记);xmlns 即普通属性,保持原位。
-/// 事件序/根槽/拼接与 NS 面共用同一套助手(同一良构层语义)。
+/// 非 NS 面折叠：raw Reader 事件 → 文档树；名字按原文直通
+/// （qualified_name = 原文，prefix/local_name/namespace_uri = None——非 NS 面
+/// 没有命名空间语义可记）；xmlns 即普通属性，保持原位。
+/// 事件序/根槽/拼接与 NS 面共用同一套助手（同一良构层语义）。
 fn parse_into_ns_off(source : String) -> Document raise XmlError {
   let reader = @xml.Reader::from_string(source)
   let mut declaration : XmlDecl? = None
@@ -376,12 +376,14 @@ pub fn parse(source : String) -> Result[Document, XmlError] {
 }
 
 ///|
-/// 命名空间模式(役N1,R-N1a):XML 1.0 基础规范与 Namespaces 是两个
-/// 规范面——非 NS 消费(RDF/XML 旧系、嵌入式)合法地接受首/尾冒号名、
-/// 组合字符衔接段等 NCName 规则外的名字。On = NS-aware(缺省,现状:
-/// 前缀解析/xmlns 收集/NCName 规则,底座 NamespaceReader 承担);
-/// Off = 非 NS 面(名字按 Name 原文直通,xmlns 即普通属性,不解析
-/// 前缀——底座 raw Reader 承担)。
+/// 命名空间模式：XML 1.0 基础规范与 Namespaces 是两个规范面——非 NS 消费
+/// （RDF/XML 旧系、嵌入式）合法地接受首/尾冒号名、组合字符衔接段等 NCName
+/// 规则外的名字。
+/// · On（缺省）：命名空间感知——前缀解析 / xmlns 收集 / NCName 规则，由底座
+///   NamespaceReader 承担；
+/// · Off：非 NS 面——名字按 Name 原文直通，xmlns 即普通属性，不解析前缀，
+///   由底座 raw Reader 承担。
+/// 施工账：ctx.md §8（役N1，R-N1a）。
 pub(all) enum NsMode {
   On
   Off
@@ -391,8 +393,9 @@ pub(all) enum NsMode {
 pub extend NsMode with Eq::{equal, not_equal}
 
 ///|
-/// 按版本面解析:树建后走名字段门(役E1,R-E1c)。version="1.1" 文档
-/// 不受版本面选择影响(恒 1.1 紧凑表);版本面只分棄 1.0 文档。
+/// 按版本面解析：树建后走名字段门。version="1.1" 文档恒走 1.1 紧凑表，
+/// 不受版本面选择影响；版本面只区分 1.0 文档。
+/// 施工账：ctx.md §6（役E1，R-E1c）。
 pub fn parse_edition(
   source : String,
   edition~ : XmlEdition,
@@ -400,8 +403,8 @@ pub fn parse_edition(
   resolver~ : &EntityResolver? = None,
 ) -> Result[Document, XmlError] {
   Ok(
-    // 外挂面预组合(役B2):None = 缺省拒(NoExternal 面),原文直通
-    // 零漂移;Some(face) = 取件/装载/预展开,错误重定位账本随行。
+    // 外挂面预组合：None = 缺省拒绝取件（原文直通，零漂移）；
+    // Some(face) = 取件/装载/预展开，错误重定位账本随行。
     {
       let (effective, patches) = match resolver {
         None => (source, [])

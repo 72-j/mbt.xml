@@ -35,7 +35,7 @@ test "doctype scan public and subset" {
 }
 
 ///|
-/// 序区扫描单元:子集内引号值与注释中的 ']' 不误判收口。
+/// 序区扫描单元：子集内引号值与注释中的 ']' 不误判为结束。
 test "doctype scan subset bracket awareness" {
   let text = "<!DOCTYPE r SYSTEM \"s\" [ <!-- ] --> <!ENTITY e \"]>\"> ]><a/>"
   match scan_doctype(text) {

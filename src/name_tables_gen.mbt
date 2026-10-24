@@ -5,7 +5,7 @@
 // 目标包:moonxml/src。面:XML 名字产生式区间表 + 谓词。拼装语义(Name/Letter/版本键控)手写于消费包 namecheck.mbt。
 
 ///|
-/// 区间表二分查找(各 production 谓词共用;表序由 validate 钉)。
+/// 区间表二分查找（各 production 谓词共用；表序由 validate 断言）。
 fn xmlname_range_contains(
   table : Array[(Int32, Int32)],
   code_point : Int32,

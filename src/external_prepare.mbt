@@ -37,10 +37,10 @@ fn write_unit(buffer : ComposeBuffer, text : String, i : Int32) -> Unit {
 }
 
 ///|
-/// 预组合入口(役B2,R-B1b 单径定案:无标记/含标记外取实体统一走我层
-/// 预组合——底座注入径废弃,缘由见 spec 卷二 B2 增补):doctype 扫描
-/// → 内部子集外取形收编(内部优先)→ 外取子集装载 → 内容预展开。
-/// 实体表空 = 无外挂实体,原文直通(逐字节零漂移)。
+/// 预组合入口：无标记 / 含标记的外取实体统一走本层预组合（底座注入径已弃用）：
+/// doctype 扫描 → 内部子集外取形收编（内部优先）→ 外取子集装载 → 内容预展开。
+/// 实体表为空 = 无外挂实体，原文直通（逐字节零漂移）。
+/// 施工账：ctx.md §11（役B2，R-B1b）。
 fn prepare_external(
   source : String,
   resolver : &EntityResolver,
@@ -350,7 +350,7 @@ fn copy_tag(
 }
 
 ///|
-/// CDATA 照抄(]]> 收口;未闭合 = 文末,底座判)。
+/// CDATA 照抄（以 `]]>` 结束；未闭合 = 到文末，由底座判）。
 fn copy_cdata(buffer : ComposeBuffer, text : String, start : Int32) -> Int32 {
   let limit = text.length()
   let mut j : Int32 = start + 9
@@ -429,7 +429,7 @@ fn remap_position(offset : Int32, patches : Array[SpanPatch]) -> Int32 {
 
 ///|
 /// 错误重定位:补丁非空时组合文坐标 → 原文坐标(行列按原文重算,
-/// char_span 口径);补丁空 = 原样透传(零漂移保底)。
+/// char_span 规则）；补丁为空 = 原样透传（零漂移保底）。
 fn relocate_error(
   error : XmlError,
   patches : Array[SpanPatch],
@@ -450,11 +450,11 @@ fn relocate_error(
 }
 
 ///|
-/// 链所有权闭合(役B2):内部子集字面量实体若(传递地)引用到本层
-/// 收编的实体,须一并收归本表展开——否则底座展开内部链到半路撞上
-/// 本层取走的外取名即 InvEnt(ext-sa/012 族)。收归后底座再不会在
-/// 内容里见到该名(组合面已整链替换);不动链的内部字面量留底座,
-/// 内部优先语义不变。不动点迭代(账序无关)。
+/// 链所有权闭合：内部子集的字面量实体若（传递地）引用到本层收编的实体，
+/// 须整链收归本表展开——否则底座展开内部链时撞上本层取走的外取名即 InvEnt。
+/// 收归后底座在内容里再也见不到该名（组合面已整链替换）；不动链的内部字面量
+/// 留给底座，内部优先语义不变。不动点迭代（与账序无关）。
+/// 施工账：ctx.md §11（役B2）。
 fn claim_internal_chains(load : ExternalLoad) -> Unit {
   let mut changed = true
   while changed {

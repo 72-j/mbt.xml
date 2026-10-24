@@ -1,9 +1,10 @@
 ///|
-/// 役J1 白盒机制门:JIS 三码解码器直调(私有 fn,黑盒不可见)。
-/// 期望码位全部自锁版表 .encodings/index-*.txt 机械核定
-/// (93 FA→日 U+65E5 / 82 A0→あ U+3042 / A1 A1→U+3000 /
-/// iso-2022 30 21→亜 U+4E9C;jis0212[0] 未定义 = 现成负例)。
-/// 套件级读数在 xmlconf_suite_test;集成面经 decode_source 在 decode_test。
+/// 白盒机制门：JIS 三码解码器直调（私有 fn，黑盒不可见）。
+/// 期望码位全部自固定版本表 `.encodings/index-*.txt` 机械核定
+/// （93 FA→日 U+65E5 / 82 A0→あ U+3042 / A1 A1→U+3000 /
+/// iso-2022 30 21→亜 U+4E9C；jis0212[0] 未定义 = 现成负例）。
+/// 套件级读数在 xmlconf_suite_test；集成面经 decode_source 在 decode_test。
+/// 施工账：ctx.md §9（役J1）。
 
 ///|
 fn byte_sequence_of(items : Array[Int32]) -> Bytes {

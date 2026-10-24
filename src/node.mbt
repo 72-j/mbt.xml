@@ -1,5 +1,5 @@
 ///|
-/// moonxml 数据模型(spec R-G2 依赖面):底座事件/树 → 本包自有规范型。
+/// moonxml 数据模型（依赖面）：底座事件/树 → 本包自有规范型。
 /// 底座(Milky2018/xml)的型一律不进本包公开面——换底座只改适配层,gen 面零改。
 /// 纪律:解析错误的位置信息经 [XmlError] 透传(ctx §1 契约三);树节点不带 span
 /// (往返等价比较才成立;子节点定位 span 随消费端需要再立)。
@@ -82,10 +82,10 @@ pub extend Document with Eq::{equal, not_equal}
 ///|
 /// 解析错误面:词表对位底座 kind(规范拼写保留),结构自有。
 /// [Structure] 为适配层新增——事件序/树结构错(底座已保 WF,此臂为防御纵深)。
-/// [IllegalName] 为役E1 新增——版本面键控名字段门(树不带 span,零位报)。
-/// [External] 为役B2 新增——外取面错误(取件被拒/取件失败/声明解析拒),
-/// 与编解码错误语义分立(R-B1a 禁止污染编解码——此处即编/解码之外的
-/// 第三面:外取政策面)。
+/// [IllegalName]：名字段门用（树不带 span，零位报）。
+/// [External]：外取面错误（取件被拒 / 取件失败 / 声明解析拒），与编解码
+/// 错误语义分立——它是编/解码之外的第三面：外取政策面。
+/// 施工账：ctx.md §6（役E1）· §11（役B2，R-B1a/R-G2）。
 pub(all) suberror XmlErrorKind {
   UnexpectedEof
   InvalidSyntax(String)

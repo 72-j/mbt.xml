@@ -1,5 +1,5 @@
 ///|
-/// ctx §1 三条消费方契约钉(M0 探针移交的注意点,各有用例咬死)。
+/// 三条消费方契约（M0 探针移交的注意点，各有用例覆盖）。
 
 ///|
 /// 契约一:相邻 Text 事件按实体边界切分——适配层必须拼回单节点。
@@ -31,7 +31,7 @@ test "contract/empty-root-arm" {
 ///|
 /// 契约三:错误面透传位置(kind + 行/列)。
 /// 底座把错配闭标报 InvalidSyntax(实报定谳:UnmatchedTag 词表在,
-/// 但此形走 InvalidSyntax)——钉实报形。
+/// 但此形走 InvalidSyntax）——以实测形为准。
 test "contract/error-span-passthrough" {
   let error = match @moonxml.parse("<d><a></b></d>") {
     Err(error) => error
