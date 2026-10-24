@@ -18,7 +18,6 @@ source = "src"
 readme = "README.md"
 
 import {
-  "moonbit-community/XMLParser@0.2.6",
   "Milky2018/xml@0.6.0",
   "moonbitlang/async@0.22.4",
 }

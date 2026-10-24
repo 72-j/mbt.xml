@@ -1,7 +1,0 @@
-import {
-  "Milky2018/xml",
-  "moonbit-community/XMLParser",
-  "moonbitlang/async",
-}
-
-pkgtype(kind: "executable")
