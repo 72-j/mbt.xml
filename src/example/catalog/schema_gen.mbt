@@ -10,7 +10,7 @@ pub(all) struct Doc {
   version : String
   lang : String?
   book : Array[Book]
-  meta : @moonxml.Node?
+  meta : @base.Node?
 } derive(Eq)
 
 ///|
@@ -34,17 +34,17 @@ pub extend Book with Eq::{not_equal, equal}
 ///|
 /// doc 元素 → Doc(机械骨架;标签按原文匹配,未知子元素 = 错;
 /// 值域/业务规则经 stub_validate_doc 挂点,stubs.mbt 手写)。
-pub fn doc_from_tree(element : @moonxml.Element) -> Result[Doc, String] {
+pub fn doc_from_tree(element : @base.Element) -> Result[Doc, String] {
   let version = match xmlschema_attr_find(element, "version") {
     Some(value) => value
     None => return Err("doc: missing required attribute \"version\"")
   }
   let lang = xmlschema_attr_find(element, "xml:lang")
   let book : Array[Book] = []
-  let mut meta : @moonxml.Node? = None
+  let mut meta : @base.Node? = None
   for child in element.children {
     match child {
-      @moonxml.Node::Element(child_element) => {
+      @base.Node::Element(child_element) => {
         let tag = child_element.name.qualified_name
         if tag == "book" {
           match book_from_tree(child_element) {
@@ -55,18 +55,18 @@ pub fn doc_from_tree(element : @moonxml.Element) -> Result[Doc, String] {
           if meta is Some(_) {
             return Err("doc: repeated child \"meta\"")
           }
-          meta = Some(@moonxml.Node::Element(child_element))
+          meta = Some(@base.Node::Element(child_element))
         } else {
           return Err("doc: unexpected element \"\{tag}\"")
         }
       }
       _ =>
         match child {
-          @moonxml.Node::Text(text) =>
+          @base.Node::Text(text) =>
             if xmlschema_is_blank(text) == false {
               return Err("doc: stray text \"\{text}\"")
             }
-          @moonxml.Node::CData(text) =>
+          @base.Node::CData(text) =>
             if xmlschema_is_blank(text) == false {
               return Err("doc: stray text \"\{text}\"")
             }
@@ -84,7 +84,7 @@ pub fn doc_from_tree(element : @moonxml.Element) -> Result[Doc, String] {
 ///|
 /// book 元素 → Book(机械骨架;标签按原文匹配,未知子元素 = 错;
 /// 值域/业务规则经 stub_validate_book 挂点,stubs.mbt 手写)。
-pub fn book_from_tree(element : @moonxml.Element) -> Result[Book, String] {
+pub fn book_from_tree(element : @base.Element) -> Result[Book, String] {
   let isbn = match xmlschema_attr_find(element, "isbn") {
     Some(value) => value
     None => return Err("book: missing required attribute \"isbn\"")
@@ -118,7 +118,7 @@ pub fn book_from_tree(element : @moonxml.Element) -> Result[Book, String] {
   let mut pages : Int32? = None
   for child in element.children {
     match child {
-      @moonxml.Node::Element(child_element) => {
+      @base.Node::Element(child_element) => {
         let tag = child_element.name.qualified_name
         if tag == "title" {
           if title is Some(_) {
@@ -151,11 +151,11 @@ pub fn book_from_tree(element : @moonxml.Element) -> Result[Book, String] {
       }
       _ =>
         match child {
-          @moonxml.Node::Text(text) =>
+          @base.Node::Text(text) =>
             if xmlschema_is_blank(text) == false {
               return Err("book: stray text \"\{text}\"")
             }
-          @moonxml.Node::CData(text) =>
+          @base.Node::CData(text) =>
             if xmlschema_is_blank(text) == false {
               return Err("book: stray text \"\{text}\"")
             }
@@ -188,16 +188,16 @@ pub fn book_from_tree(element : @moonxml.Element) -> Result[Book, String] {
 
 ///|
 /// Doc → catalog 元素(canonical 序 = 表序;any 子树原样透传)。
-pub fn Doc::to_tree(self : Doc) -> @moonxml.Element {
-  let attributes : Array[@moonxml.Attribute] = []
+pub fn Doc::to_tree(self : Doc) -> @base.Element {
+  let attributes : Array[@base.Attribute] = []
   attributes.push(xmlschema_make_attribute("version", self.version))
   match self.lang {
     Some(value) => attributes.push(xmlschema_make_attribute("xml:lang", value))
     None => ()
   }
-  let children : Array[@moonxml.Node] = []
+  let children : Array[@base.Node] = []
   for value in self.book {
-    children.push(@moonxml.Node::Element(value.to_tree()))
+    children.push(@base.Node::Element(value.to_tree()))
   }
   match self.meta {
     Some(value) => children.push(value)
@@ -208,8 +208,8 @@ pub fn Doc::to_tree(self : Doc) -> @moonxml.Element {
 
 ///|
 /// Book → book 元素(canonical 序 = 表序;any 子树原样透传)。
-pub fn Book::to_tree(self : Book) -> @moonxml.Element {
-  let attributes : Array[@moonxml.Attribute] = []
+pub fn Book::to_tree(self : Book) -> @base.Element {
+  let attributes : Array[@base.Attribute] = []
   attributes.push(xmlschema_make_attribute("isbn", self.isbn))
   attributes.push(xmlschema_make_attribute("year", self.year.to_string()))
   match self.price {
@@ -220,15 +220,13 @@ pub fn Book::to_tree(self : Book) -> @moonxml.Element {
   attributes.push(
     xmlschema_make_attribute("in_print", self.in_print.to_string()),
   )
-  let children : Array[@moonxml.Node] = []
-  children.push(
-    @moonxml.Node::Element(xmlschema_make_leaf("title", self.title)),
-  )
+  let children : Array[@base.Node] = []
+  children.push(@base.Node::Element(xmlschema_make_leaf("title", self.title)))
   for value in self.author {
-    children.push(@moonxml.Node::Element(xmlschema_make_leaf("author", value)))
+    children.push(@base.Node::Element(xmlschema_make_leaf("author", value)))
   }
   children.push(
-    @moonxml.Node::Element(xmlschema_make_leaf("pages", self.pages.to_string())),
+    @base.Node::Element(xmlschema_make_leaf("pages", self.pages.to_string())),
   )
   xmlschema_make_element("book", attributes, children)
 }
@@ -237,10 +235,10 @@ pub fn Book::to_tree(self : Book) -> @moonxml.Element {
 /// 元素构造(机械形;名字/属性/子节点三件装配)。
 fn xmlschema_make_element(
   tag : String,
-  attributes : Array[@moonxml.Attribute],
-  children : Array[@moonxml.Node],
-) -> @moonxml.Element {
-  let element : @moonxml.Element = {
+  attributes : Array[@base.Attribute],
+  children : Array[@base.Node],
+) -> @base.Element {
+  let element : @base.Element = {
     name: xmlschema_xml_name(tag),
     attributes,
     children,
@@ -251,7 +249,7 @@ fn xmlschema_make_element(
 ///|
 /// 标签名 → XmlName（`xml:` 前缀固定为规范 URI，与解析面对齐；其余前缀不解析
 /// URI，表按原文匹配）。
-fn xmlschema_xml_name(name : String) -> @moonxml.XmlName {
+fn xmlschema_xml_name(name : String) -> @base.XmlName {
   let colon : (String, String)? = match name.split_once(":") {
     Some(pair) => Some((pair.0.to_owned(), pair.1.to_owned()))
     None => None
@@ -263,7 +261,7 @@ fn xmlschema_xml_name(name : String) -> @moonxml.XmlName {
       } else {
         None
       }
-      let named : @moonxml.XmlName = {
+      let named : @base.XmlName = {
         qualified_name: name,
         prefix: Some(prefix),
         local_name: local_part,
@@ -272,7 +270,7 @@ fn xmlschema_xml_name(name : String) -> @moonxml.XmlName {
       named
     }
     None => {
-      let plain : @moonxml.XmlName = {
+      let plain : @base.XmlName = {
         qualified_name: name,
         prefix: None,
         local_name: name,
@@ -297,7 +295,7 @@ fn xmlschema_is_blank(text : String) -> Bool {
 
 ///|
 /// 按标签原文找属性(命中 = 原文值;机械形)。
-fn xmlschema_attr_find(element : @moonxml.Element, wanted : String) -> String? {
+fn xmlschema_attr_find(element : @base.Element, wanted : String) -> String? {
   for attribute in element.attributes {
     if attribute.name.qualified_name == wanted {
       return Some(attribute.value)
@@ -308,14 +306,8 @@ fn xmlschema_attr_find(element : @moonxml.Element, wanted : String) -> String? {
 
 ///|
 /// 属性构造(机械形;绑定后返回,躲块首字面歧义)。
-fn xmlschema_make_attribute(
-  name : String,
-  value : String,
-) -> @moonxml.Attribute {
-  let attribute : @moonxml.Attribute = {
-    name: xmlschema_xml_name(name),
-    value,
-  }
+fn xmlschema_make_attribute(name : String, value : String) -> @base.Attribute {
+  let attribute : @base.Attribute = { name: xmlschema_xml_name(name), value, }
   attribute
 }
 
@@ -323,12 +315,12 @@ fn xmlschema_make_attribute(
 /// 叶取文本:Text 与 CDATA 同为载荷(卷面裁定 2026-10-22 拍2:XML infoset
 /// 等价;旧拒绝形 = 机械骨架最小面,非 infoset 立场)按序拼接;夹非文本子
 /// = 红;零载荷 = 红。
-fn xmlschema_leaf_text(element : @moonxml.Element) -> Result[String, String] {
+fn xmlschema_leaf_text(element : @base.Element) -> Result[String, String] {
   let parts : Array[String] = []
   for child in element.children {
     match child {
-      @moonxml.Node::Text(text) => parts.push(text)
-      @moonxml.Node::CData(text) => parts.push(text)
+      @base.Node::Text(text) => parts.push(text)
+      @base.Node::CData(text) => parts.push(text)
       _ =>
         return Err(
           "xmlschema: leaf \"\{element.name.qualified_name}\" has a non-text child",
@@ -349,9 +341,9 @@ fn xmlschema_leaf_text(element : @moonxml.Element) -> Result[String, String] {
 
 ///|
 /// 叶构造:恰一 Text 子(机械形)。
-fn xmlschema_make_leaf(tag : String, text : String) -> @moonxml.Element {
-  let children : Array[@moonxml.Node] = [@moonxml.Node::Text(text)]
-  let element : @moonxml.Element = {
+fn xmlschema_make_leaf(tag : String, text : String) -> @base.Element {
+  let children : Array[@base.Node] = [@base.Node::Text(text)]
+  let element : @base.Element = {
     name: xmlschema_xml_name(tag),
     attributes: [],
     children,

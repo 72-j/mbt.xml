@@ -11,6 +11,9 @@ XML 1.0 版次面 / 1.1 键控、外部实体解析端口与 billion-laughs 防�
 
 ## 特性
 
+包结构：`thy1016/moonxml/base`（XML 底座：模型 / 解析 / 序列化 / 编码 /
+名字表）+ `thy1016/moonxml/rdf`（RDF/XML 映射层）。
+
 - 规范型文档模型：`Document` / `Element` / `Node` 强类型树，`to_xml`
   规范化序列化，解析–序列化往返稳定。
 - 解析入口分层：`parse` 一行入口（命名空间已解析、实体已展开）；
@@ -38,8 +41,8 @@ XML 1.0 版次面 / 1.1 键控、外部实体解析端口与 billion-laughs 防�
 moon add thy1016/moonxml
 ```
 
-再在用到它的包的 `moon.pkg` `import` 块中添加 `"thy1016/moonxml"`，
-代码内以 `@moonxml` 前缀使用。RDF/XML 面（`@rdf` 前缀）另加
+再在用到它的包的 `moon.pkg` `import` 块中添加 `"thy1016/moonxml/base"`，
+代码内以 `@base` 前缀使用。RDF/XML 面（`@rdf` 前缀）另加
 `"thy1016/moonxml/rdf"`。
 
 ## 快速上手
@@ -47,7 +50,7 @@ moon add thy1016/moonxml
 ### 解析与序列化
 
 ```moonbit
-match @moonxml.parse("<r><a>1</a><b x=\"2\"/></r>") {
+match @base.parse("<r><a>1</a><b x=\"2\"/></r>") {
   Ok(doc) => println(doc.to_xml())
   Err(_) => println("parse failed")
 }
@@ -62,15 +65,15 @@ match @moonxml.parse("<r><a>1</a><b x=\"2\"/></r>") {
 
 ```moonbit
 // XML 1.0 四版次全表名字面（Edition5 为现行第五版紧凑面）
-let opts_edition = @moonxml.parse_edition(
+let opts_edition = @base.parse_edition(
   source,
-  edition: @moonxml.XmlEdition::Editions1to4,
+  edition: @base.XmlEdition::Editions1to4,
 )
 // 非 NS 面：名字原文直通，xmlns 即普通属性
-let ns_off = @moonxml.parse_edition(
+let ns_off = @base.parse_edition(
   source,
-  edition: @moonxml.XmlEdition::Edition5,
-  ns: @moonxml.NsMode::Off,
+  edition: @base.XmlEdition::Edition5,
+  ns: @base.NsMode::Off,
 )
 ```
 
@@ -78,7 +81,7 @@ let ns_off = @moonxml.parse_edition(
 
 ```moonbit
 // BOM 嗅探 + 声明面编码决策；不支持面返回 Encoding 错
-match @moonxml.decode_source(bytes) {
+match @base.decode_source(bytes) {
   Ok(text) => println("decoded \{text.length()} chars")
   Err(_) => println("unsupported encoding")
 }

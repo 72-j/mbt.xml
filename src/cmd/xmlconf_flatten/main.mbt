@@ -35,7 +35,7 @@ let manifest_table : Array[(String, String)] = [
 
 ///|
 /// 属性按限定名原文取(清单无命名空间)。
-fn attribute_of(element : @moonxml.Element, wanted : String) -> String {
+fn attribute_of(element : @base.Element, wanted : String) -> String {
   for attribute in element.attributes {
     if attribute.name.qualified_name == wanted {
       return attribute.value
@@ -47,13 +47,13 @@ fn attribute_of(element : @moonxml.Element, wanted : String) -> String {
 ///|
 /// 递归收 TEST 素(分册顶层或 TESTCASES 包裹两形)。
 fn collect_tests(
-  element : @moonxml.Element,
+  element : @base.Element,
   base : String,
   rows : Array[String],
 ) -> Unit {
   for node in element.children {
     match node {
-      @moonxml.Node::Element(sub) => {
+      @base.Node::Element(sub) => {
         if sub.name.local_name == "TEST" {
           let uri = attribute_of(sub, "URI")
           let ty = attribute_of(sub, "TYPE")
@@ -91,7 +91,7 @@ fn strip_declaration(text : String) -> String {
 
 ///|
 /// XmlError → 可读面(套件工具无 Show/Debug,手格式化;行/列 = 起点值)。
-fn xmlconf_error_hint(err : @moonxml.XmlError) -> String {
+fn xmlconf_error_hint(err : @base.XmlError) -> String {
   match err {
     At(error~, span~) => {
       let kind_text = match error {
@@ -120,8 +120,7 @@ async fn main {
     let text = @fs.read_file("./.xmlconf/xmlconf/\{manifest}").text()
     // sun/ibm 分册是裸 TEST/TESTCASES 片段(多顶层素)——剥声明+包合成根再解析
     let body = strip_declaration(text)
-    let document = match
-      @moonxml.parse("<flatten-root>\{body}</flatten-root>") {
+    let document = match @base.parse("<flatten-root>\{body}</flatten-root>") {
       Ok(value) => value
       Err(err) => abort("flatten: \{manifest}: \{xmlconf_error_hint(err)}")
     }

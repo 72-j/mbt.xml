@@ -3,7 +3,7 @@
 /// 值级等价 + 字符串定点（生成骨架的正确性由消费端真链路验证；spec 卷一完成门）。
 test "catalog roundtrip via generated skeleton" {
   let source = "<?xml version=\"1.0\"?><catalog version=\"2.1\" xml:lang=\"en\"><book isbn=\"i1\" year=\"2020\" in_print=\"true\"><title>t1</title><author>a1</author><author>a2</author><pages>320</pages></book><book isbn=\"i2\" year=\"1999\" price=\"42.8\" in_print=\"false\"><title>t2</title><author>a3</author><pages>288</pages></book><meta><marker/></meta></catalog>"
-  let document = match @moonxml.parse(source) {
+  let document = match @base.parse(source) {
     Ok(value) => value
     Err(_) => abort("parse failed")
   }
@@ -27,14 +27,14 @@ test "catalog roundtrip via generated skeleton" {
   assert_eq(doc.book[1].in_print, false)
   assert_true(doc.meta is Some(_))
   // 值级往返:to_tree 产物 → to_xml → 再 parse → 再 from_tree ≡ 原值(Eq)
-  let second_source = @moonxml.Document::{
+  let second_source = @base.Document::{
     decl: None,
     doctype: None,
     prologue: [],
     root: doc.to_tree(),
     epilogue: [],
   }.to_xml()
-  let second_document = match @moonxml.parse(second_source) {
+  let second_document = match @base.parse(second_source) {
     Ok(value) => value
     Err(_) => abort("re-parse failed")
   }
@@ -51,7 +51,7 @@ test "catalog roundtrip via generated skeleton" {
 /// 拍1(2026-10-22):node 内非空白散文本 = 红;空白文本(排版)容忍。
 test "catalog stray text in node is rejected, blank tolerated" {
   let with_stray = match
-    @moonxml.parse(
+    @base.parse(
       "<?xml version=\"1.0\"?><catalog version=\"2.1\">stray<book isbn=\"i1\" year=\"2020\" in_print=\"true\"><title>t1</title><pages>1</pages></book></catalog>",
     ) {
     Ok(value) => value
@@ -62,7 +62,7 @@ test "catalog stray text in node is rejected, blank tolerated" {
     Ok(_) => fail("stray text must be rejected")
   }
   let with_blank = match
-    @moonxml.parse(
+    @base.parse(
       "<?xml version=\"1.0\"?><catalog version=\"2.1\"> <book isbn=\"i1\" year=\"2020\" in_print=\"true\"><title>t1</title><pages>1</pages></book> </catalog>",
     ) {
     Ok(value) => value
@@ -75,7 +75,7 @@ test "catalog stray text in node is rejected, blank tolerated" {
 /// 拍2(2026-10-22):CDATA 叶 = 载荷(infoset 等价;Text/CData 按序拼合)。
 test "catalog CDATA leaf is text payload" {
   let source = "<?xml version=\"1.0\"?><catalog version=\"2.1\"><book isbn=\"i1\" year=\"2020\" in_print=\"true\"><title>a<![CDATA[b]]>c</title><pages>3</pages></book></catalog>"
-  let document = match @moonxml.parse(source) {
+  let document = match @base.parse(source) {
     Ok(value) => value
     Err(_) => abort("parse failed")
   }
@@ -92,7 +92,7 @@ test "catalog CDATA leaf is text payload" {
 test "catalog typed conversion failures are red" {
   // int 词法域外:year="abc"
   let bad_int = match
-    @moonxml.parse(
+    @base.parse(
       "<catalog version=\"2.1\"><book isbn=\"i1\" year=\"abc\" in_print=\"true\"><title>t</title><pages>1</pages></book></catalog>",
     ) {
     Ok(value) => value
@@ -104,7 +104,7 @@ test "catalog typed conversion failures are red" {
   }
   // double 词法域外:price="x"
   let bad_double = match
-    @moonxml.parse(
+    @base.parse(
       "<catalog version=\"2.1\"><book isbn=\"i1\" year=\"2020\" price=\"x\" in_print=\"true\"><title>t</title><pages>1</pages></book></catalog>",
     ) {
     Ok(value) => value
@@ -116,7 +116,7 @@ test "catalog typed conversion failures are red" {
   }
   // bool 词法域外:in_print="yes"(xsd:boolean 域 = true/false/1/0)
   let bad_bool = match
-    @moonxml.parse(
+    @base.parse(
       "<catalog version=\"2.1\"><book isbn=\"i1\" year=\"2020\" in_print=\"yes\"><title>t</title><pages>1</pages></book></catalog>",
     ) {
     Ok(value) => value
@@ -133,7 +133,7 @@ test "catalog typed conversion failures are red" {
 /// 的 isbn 非空形校验。骨架捕获挂点 Err 后加 "book: " 前缀透出。
 test "catalog hook semantic: empty isbn rejected via stub" {
   let source = "<catalog version=\"2.1\"><book isbn=\"\" year=\"2020\" in_print=\"true\"><title>t</title><pages>1</pages></book></catalog>"
-  let document = match @moonxml.parse(source) {
+  let document = match @base.parse(source) {
     Ok(value) => value
     Err(_) => abort("parse failed")
   }

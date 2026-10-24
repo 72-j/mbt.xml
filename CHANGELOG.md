@@ -5,10 +5,16 @@
 
 ## 0.2.0（2026-10-24）
 
-新增 RDF/XML 映射层子包：RDF 1.1 全语法面 + RDF 1.2 扩展，以 W3C
-RDF/XML 一致性套件（rdf11/rdf12 分册，197 案）作判词真源。
+**结构重排（破坏性）+ 新增 RDF/XML 映射层子包**：XML 底座迁至
+`thy1016/moonxml/base` 子包；RDF 1.1 全语法面 + RDF 1.2 扩展落
+`thy1016/moonxml/rdf`，以 W3C RDF/XML 一致性套件（rdf11/rdf12 分册，
+197 案）作判词真源。
 
 ### 对外 API
+
+- **破坏性：底座包径变更** `thy1016/moonxml` → `thy1016/moonxml/base`
+  （代码前缀 `@moonxml` → `@base`）；底座 API 面本体零变更。
+- **新子包 `thy1016/moonxml/rdf`**（`@rdf` 前缀）：
 
 - **新子包 `thy1016/moonxml/rdf`**（`@rdf` 前缀）：
   - `parse_rdf_xml` / `parse_rdf_xml_with_base`（基准 IRI 锚定相对
@@ -35,7 +41,9 @@ RDF/XML 一致性套件（rdf11/rdf12 分册，197 案）作判词真源。
 
 ### 兼容性
 
-- 0.1.0 消费面零变更：底座 API 未动，rdf 为纯新增子包。
+- **破坏**：0.1.0 消费者须把 `import "thy1016/moonxml"` 拨为
+  `"thy1016/moonxml/base"`、前缀 `@moonxml` 拨为 `@base`（机械替换）；
+  底座 API 形状（类型 / 函数签名）零变更。
 
 ## 0.1.0（2026-10-24）
 

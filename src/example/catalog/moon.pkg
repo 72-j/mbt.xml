@@ -1,5 +1,5 @@
 import {
-  "thy1016/moonxml",
+  "thy1016/moonxml/base",
   "moonbitlang/core/string",
 }
 

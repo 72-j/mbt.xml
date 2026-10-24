@@ -65,7 +65,7 @@ gen 层解决的问题是：**XML 方言的"树形状"一旦定型，其类型�
 
 ### 1.1 与 M0 底座探针的解耦（R-G2 [定案]）
 
-emitter 的唯一依赖面 = `@moonxml.Node`（底座树接口）+ `XmlError`。
+emitter 的唯一依赖面 = `@base.Node`（底座树接口）+ `XmlError`。
 M0 换底座只改**树适配层**（底座事件/树 → `Node`），gen 面零改。
 因此本卷设计与 M0 探针可并行施工——gen 层不押注任何具体底座。
 
@@ -155,12 +155,12 @@ pub(all) struct Doc {
   book : Array[Book]      // 字段名 = children[].ref（id 原文），非复数自创
   meta : Option[Meta]
 } derive(Eq)
-// 递归下降解析骨架：按表逐 attr/child 消费 @moonxml.Element
+// 递归下降解析骨架：按表逐 attr/child 消费 @base.Element
 //（G1 勘误：入参 = Element 非 Node；错型 = String 锚点非 XmlError——
 //   R-M1 无 span 语义,先收 String 锚点,span 化是后续战役）
-pub fn doc_from_tree(element : @moonxml.Element) -> Result[Doc, String]
+pub fn doc_from_tree(element : @base.Element) -> Result[Doc, String]
 // 递归上升序列化骨架（canonical 序 = 表序）
-pub fn Doc::to_tree(self : Doc) -> @moonxml.Element
+pub fn Doc::to_tree(self : Doc) -> @base.Element
 ```
 
 **双门**（G1 落地勘误：门随生成器走不随产物走——

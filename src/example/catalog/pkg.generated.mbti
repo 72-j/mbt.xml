@@ -2,13 +2,13 @@
 package "thy1016/moonxml/example/catalog"
 
 import {
-  "thy1016/moonxml",
+  "thy1016/moonxml/base",
 }
 
 // Values
-pub fn book_from_tree(@moonxml.Element) -> Result[Book, String]
+pub fn book_from_tree(@base.Element) -> Result[Book, String]
 
-pub fn doc_from_tree(@moonxml.Element) -> Result[Doc, String]
+pub fn doc_from_tree(@base.Element) -> Result[Doc, String]
 
 pub fn xmlschema_hook_names() -> Array[String]
 
@@ -26,17 +26,17 @@ pub(all) struct Book {
 } derive(Eq)
 pub fn Book::equal(Self, Self) -> Bool
 pub fn Book::not_equal(Self, Self) -> Bool
-pub fn Book::to_tree(Self) -> @moonxml.Element
+pub fn Book::to_tree(Self) -> @base.Element
 
 pub(all) struct Doc {
   version : String
   lang : String?
   book : Array[Book]
-  meta : @moonxml.Node?
+  meta : @base.Node?
 } derive(Eq)
 pub fn Doc::equal(Self, Self) -> Bool
 pub fn Doc::not_equal(Self, Self) -> Bool
-pub fn Doc::to_tree(Self) -> @moonxml.Element
+pub fn Doc::to_tree(Self) -> @base.Element
 
 // Type aliases
 

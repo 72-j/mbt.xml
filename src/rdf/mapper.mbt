@@ -232,7 +232,7 @@ pub fn resolve_reference(base : String, reference : String) -> String {
 
 ///|
 /// XmlName → IRI 词形（名域 URI + 本名；NsMode::On 已解析名域）。
-fn expand_element_iri(name : @moonxml.XmlName) -> String {
+fn expand_element_iri(name : @base.XmlName) -> String {
   match name.namespace_uri {
     Some(ns) => ns + name.local_name
     None => name.qualified_name
@@ -308,7 +308,7 @@ fn WalkState::emit(
 
 ///|
 /// 元素上 xml:base / xml:lang 覆盖帧（xml:lang="" 清语言）。
-fn frame_of(el : @moonxml.Element, frame : Frame) -> Frame {
+fn frame_of(el : @base.Element, frame : Frame) -> Frame {
   let base = match find_attr(el, xml_namespace, "base") {
     Some(b) => resolve_reference(frame.base, b)
     None => frame.base
@@ -337,7 +337,7 @@ fn frame_of(el : @moonxml.Element, frame : Frame) -> Frame {
 
 ///|
 fn find_attr(
-  el : @moonxml.Element,
+  el : @base.Element,
   ns_uri : String,
   local_name : String,
 ) -> String? {
@@ -377,12 +377,12 @@ fn is_all_whitespace(text : String) -> Bool {
 
 ///|
 /// 元素直下文本（Text + CData 拼接）。
-fn text_content(el : @moonxml.Element) -> String {
+fn text_content(el : @base.Element) -> String {
   let mut text = ""
   for child in el.children {
     match child {
-      @moonxml.Text(t) => text = text + t
-      @moonxml.CData(t) => text = text + t
+      @base.Text(t) => text = text + t
+      @base.CData(t) => text = text + t
       _ => ()
     }
   }
@@ -391,11 +391,11 @@ fn text_content(el : @moonxml.Element) -> String {
 
 ///|
 /// 元素直下子元素。
-fn child_elements(el : @moonxml.Element) -> Array[@moonxml.Element] {
-  let out : Array[@moonxml.Element] = []
+fn child_elements(el : @base.Element) -> Array[@base.Element] {
+  let out : Array[@base.Element] = []
   for child in el.children {
     match child {
-      @moonxml.Element(c) => out.push(c)
+      @base.Element(c) => out.push(c)
       _ => ()
     }
   }
@@ -414,9 +414,9 @@ pub fn parse_rdf_xml_with_base(
   text : String,
   base~ : String,
 ) -> Result[Dataset, String] {
-  let edition = @moonxml.XmlEdition::Editions1to4
-  let ns = @moonxml.NsMode::On
-  let doc = match @moonxml.parse_edition(text, edition~, ns~) {
+  let edition = @base.XmlEdition::Editions1to4
+  let ns = @base.NsMode::On
+  let doc = match @base.parse_edition(text, edition~, ns~) {
     Ok(doc) => doc
     Err(_) => return Err("xml ill-formed")
   }
@@ -462,14 +462,14 @@ pub fn parse_rdf_xml_with_base(
 
 ///|
 /// 元素直下文本门：非空白字符数据 = 错（§6.1.1）。
-fn gate_children_text(el : @moonxml.Element) -> Result[Unit, String] {
+fn gate_children_text(el : @base.Element) -> Result[Unit, String] {
   for child in el.children {
     match child {
-      @moonxml.Text(t) =>
+      @base.Text(t) =>
         if !is_all_whitespace(t) {
           return Err("元素内容含非空白字符数据")
         }
-      @moonxml.CData(t) =>
+      @base.CData(t) =>
         if !is_all_whitespace(t) {
           return Err("元素内容含非空白字符数据")
         }
@@ -483,7 +483,7 @@ fn gate_children_text(el : @moonxml.Element) -> Result[Unit, String] {
 /// 节点元素游走（§7.2.4–§7.2.11）：定位 + 类型词 + 属性属性 + 子属性元素。
 fn walk_node_element(
   state : WalkState,
-  el : @moonxml.Element,
+  el : @base.Element,
   frame : Frame,
 ) -> Result[Term, String] {
   let frame = frame_of(el, frame)
@@ -589,53 +589,21 @@ fn walk_node_element(
 }
 
 ///|
-/// rdf:ID / rdf:nodeID 词形门：NCName 近似（XML NCName 产物式裁段——
-/// 起始位禁数字/组合符，全程禁冒号；套件 rdfms-rdf-id / syntax-incomplete 钉）。
+/// NCName 形判定（RDF/XML 的 rdf:ID/rdf:nodeID 名值；XML NS：Name 全禁 ':'）。
+/// 字符类 = base 名字产生式谓词（5e 与 1.1 同表；组合符段 [#x0300-#x036F]
+/// 由 base 表覆盖——自搓表漏段已修，_suite NCName 负例族兜底）。
 fn is_ncname_shape(value : String) -> Bool {
   let len = value.length()
   if len == 0 {
     return false
   }
-  let c0 = value[0].to_int()
-  let start_ok = (c0 >= 65 && c0 <= 90) ||
-    (c0 >= 97 && c0 <= 122) ||
-    c0 == 95 ||
-    (c0 >= 0xC0 && c0 <= 0xD6) ||
-    (c0 >= 0xD8 && c0 <= 0xF6) ||
-    (c0 >= 0xF8 && c0 <= 0x2FF) ||
-    (c0 >= 0x370 && c0 <= 0x37D) ||
-    (c0 >= 0x37F && c0 <= 0x1FFF) ||
-    (c0 >= 0x200C && c0 <= 0x200D) ||
-    (c0 >= 0x2070 && c0 <= 0x218F) ||
-    (c0 >= 0x2C00 && c0 <= 0x2FEF) ||
-    (c0 >= 0x3001 && c0 <= 0xD7FF) ||
-    (c0 >= 0xF900 && c0 <= 0xFDCF) ||
-    (c0 >= 0xFDF0 && c0 <= 0xFFFD)
-  if !start_ok {
+  let first = value[0].to_int()
+  if first == 58 || !@base.is_name_start_char_11(first) {
     return false
   }
   for i in 1..<len {
     let ch = value[i].to_int()
-    let ok = (ch >= 65 && ch <= 90) ||
-      (ch >= 97 && ch <= 122) ||
-      (ch >= 48 && ch <= 57) ||
-      ch == 95 ||
-      ch == 45 ||
-      ch == 46 ||
-      ch == 0xB7 ||
-      (ch >= 0xC0 && ch <= 0xD6) ||
-      (ch >= 0xD8 && ch <= 0xF6) ||
-      (ch >= 0xF8 && ch <= 0x2FF) ||
-      (ch >= 0x370 && ch <= 0x37D) ||
-      (ch >= 0x37F && ch <= 0x1FFF) ||
-      (ch >= 0x200C && ch <= 0x200D) ||
-      (ch >= 0x203F && ch <= 0x2040) ||
-      (ch >= 0x2070 && ch <= 0x218F) ||
-      (ch >= 0x2C00 && ch <= 0x2FEF) ||
-      (ch >= 0x3001 && ch <= 0xD7FF) ||
-      (ch >= 0xF900 && ch <= 0xFDCF) ||
-      (ch >= 0xFDF0 && ch <= 0xFFFD)
-    if !ok {
+    if ch == 58 || !@base.is_name_char_11(ch) {
       return false
     }
   }
@@ -657,7 +625,7 @@ fn is_xml_reserved_attr(qualified_name : String) -> Bool {
 fn emit_property_attr(
   state : WalkState,
   attach_to : Term,
-  attr : @moonxml.Attribute,
+  attr : @base.Attribute,
   frame : Frame,
 ) -> Result[Unit, String] {
   match attr.name.namespace_uri {
@@ -708,7 +676,7 @@ fn emit_property_attr(
 /// resource / nodeID / 空形的属性属性附挂（§7.2.8）——形定核心词先滤除。
 fn attach_property_attrs(
   state : WalkState,
-  el : @moonxml.Element,
+  el : @base.Element,
   attach_to : Term,
   frame : Frame,
 ) -> Result[Unit, String] {
@@ -774,7 +742,7 @@ fn dir_opt(frame : Frame) -> String? {
 
 ///|
 /// 元素是否带属性属性（resource/nodeID/空形附挂判据）。
-fn has_property_attrs(el : @moonxml.Element) -> Bool {
+fn has_property_attrs(el : @base.Element) -> Bool {
   for attr in el.attributes {
     match attr.name.namespace_uri {
       Some(ns) =>
@@ -831,9 +799,9 @@ fn xml_literal_escape(text : String) -> String {
 ///|
 /// XMLLiteral 节点序列化（exclusive C14N 近似：空元素展开形 `<x></x>`、
 /// 属性文档序、文本转义；名域声明不加——套件 xml-canon 两案全裸元素）。
-fn serialize_xml_literal_node(node : @moonxml.Node) -> String {
+fn serialize_xml_literal_node(node : @base.Node) -> String {
   match node {
-    @moonxml.Element(element) => {
+    @base.Element(element) => {
       let qname = element.name.qualified_name
       let mut out = "<" + qname
       for attr in element.attributes {
@@ -850,8 +818,8 @@ fn serialize_xml_literal_node(node : @moonxml.Node) -> String {
       }
       out + "</" + qname + ">"
     }
-    @moonxml.Text(text) => xml_literal_escape(text)
-    @moonxml.CData(text) => xml_literal_escape(text)
+    @base.Text(text) => xml_literal_escape(text)
+    @base.CData(text) => xml_literal_escape(text)
     _ => ""
   }
 }
@@ -903,7 +871,7 @@ fn WalkState::emit_reification(
 fn walk_property_element(
   state : WalkState,
   parent : Term,
-  el : @moonxml.Element,
+  el : @base.Element,
   frame : Frame,
 ) -> Result[Unit, String] {
   let frame = frame_of(el, frame)

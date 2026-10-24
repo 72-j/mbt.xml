@@ -1,7 +1,7 @@
 import {
   "moonbitlang/async",
   "moonbitlang/async/fs",
-  "thy1016/moonxml",
+  "thy1016/moonxml/base",
 }
 
 pkgtype(kind: "executable")

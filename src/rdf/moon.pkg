@@ -4,7 +4,7 @@
 // opself/rdfxml_casegen，黄金门逐字节对拍）。
 
 import {
-  "thy1016/moonxml",
+  "thy1016/moonxml/base",
 }
 
 import {
