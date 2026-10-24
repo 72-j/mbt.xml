@@ -121,7 +121,122 @@ fn nt_unescape(text : String) -> String {
 }
 
 ///|
-/// .nt 行 → 三词项规范串表（注释/空行返空表；规约 = 反转义后重壳）。
+/// .nt 词项扫描器（start 起）：返 (规范串, 下一位置)。
+/// IRI / bnode / 字面量（@lang 与 @lang--dir / ^^<dt>）/ 三元词
+/// <<(s p o)>>（递归，嵌套允许；<< 后空白与括号容忍——an-reif 钉）。
+fn nt_next_term(text : String, start : Int32) -> (String, Int32)? {
+  let len = text.length()
+  let mut i = start
+  while i < len && (text[i].to_int() == 32 || text[i].to_int() == 9) {
+    i = i + 1
+  }
+  if i >= len {
+    return None
+  }
+  let ch = text[i].to_int()
+  // 三元词 <<(...)>>（先于单 < 判）
+  if ch == 60 && i + 1 < len && text[i + 1].to_int() == 60 {
+    let mut j = i + 2
+    while j < len &&
+          (
+            text[j].to_int() == 32 ||
+            text[j].to_int() == 9 ||
+            text[j].to_int() == 40
+          ) {
+      j = j + 1
+    }
+    let parts : Array[String] = []
+    for _k in 0..<3 {
+      match nt_next_term(text, j) {
+        Some((canonical, next)) => {
+          parts.push(canonical)
+          j = next
+        }
+        None => return None
+      }
+    }
+    while j < len &&
+          (
+            text[j].to_int() == 32 ||
+            text[j].to_int() == 9 ||
+            text[j].to_int() == 41
+          ) {
+      j = j + 1
+    }
+    if j + 1 < len && text[j].to_int() == 62 && text[j + 1].to_int() == 62 {
+      return Some(
+        ("<<(" + parts[0] + " " + parts[1] + " " + parts[2] + ")>>", j + 2),
+      )
+    }
+    return None
+  }
+  // IRI <...>
+  if ch == 60 {
+    let mut j = i + 1
+    while j < len && text[j].to_int() != 62 {
+      j = j + 1
+    }
+    if j >= len {
+      return None
+    }
+    return Some(("<" + nt_unescape(text[i + 1:j].to_owned()) + ">", j + 1))
+  }
+  // bnode _:label
+  if ch == 95 {
+    let mut j = i + 2
+    while j < len &&
+          text[j].to_int() != 32 &&
+          text[j].to_int() != 9 &&
+          text[j].to_int() != 46 &&
+          text[j].to_int() != 41 {
+      j = j + 1
+    }
+    return Some(("_:" + text[i + 2:j].to_owned(), j))
+  }
+  // 字面量 "..."（带转义跳越）+ 后缀 @lang[--dir] / ^^<dt>
+  if ch == 34 {
+    let mut j = i + 1
+    while j < len {
+      if text[j].to_int() == 92 {
+        j = j + 2
+        continue
+      }
+      if text[j].to_int() == 34 {
+        break
+      }
+      j = j + 1
+    }
+    if j >= len {
+      return None
+    }
+    let literal = "\"" + nt_unescape(text[i + 1:j].to_owned()) + "\""
+    let mut end = j + 1
+    let mut term = literal
+    if end < len && text[end].to_int() == 64 {
+      let mut k = end + 1
+      while k < len && text[k].to_int() != 32 && text[k].to_int() != 9 {
+        k = k + 1
+      }
+      term = literal + "@" + text[end + 1:k].to_owned()
+      end = k
+    } else if end + 2 < len &&
+      text[end].to_int() == 94 &&
+      text[end + 1].to_int() == 94 &&
+      text[end + 2].to_int() == 60 {
+      let mut k = end + 3
+      while k < len && text[k].to_int() != 62 {
+        k = k + 1
+      }
+      term = literal + "^^<" + text[end + 3:k].to_owned() + ">"
+      end = k + 1
+    }
+    return Some((term, end))
+  }
+  None
+}
+
+///|
+/// .nt 行 → 词项规范串表（注释/空行返空表；三元词整体一词项）。
 fn parse_nt_line(line : String) -> Array[String] {
   let trimmed = line.trim().to_owned()
   if trimmed == "" || trimmed.has_prefix("#") {
@@ -136,75 +251,16 @@ fn parse_nt_line(line : String) -> Array[String] {
       i = i + 1
       continue
     }
-    if ch == 46 && i == len - 1 {
+    if ch == 46 {
       break
     }
-    if ch == 60 {
-      let mut close = i
-      let mut j = i + 1
-      while j < len {
-        if trimmed[j].to_int() == 62 {
-          close = j
-          break
-        }
-        j = j + 1
+    match nt_next_term(trimmed, i) {
+      Some((canonical, next)) => {
+        terms.push(canonical)
+        i = next
       }
-      terms.push("<" + nt_unescape(trimmed[i + 1:close].to_owned()) + ">")
-      i = close + 1
-      continue
+      None => break
     }
-    if ch == 95 {
-      let mut end = i + 1
-      let mut j = i + 2
-      while j < len {
-        if trimmed[j].to_int() == 32 || trimmed[j].to_int() == 9 {
-          break
-        }
-        end = j
-        j = j + 1
-      }
-      terms.push("_:" + trimmed[i + 2:end + 1].to_owned())
-      i = end + 1
-      continue
-    }
-    if ch == 34 {
-      let mut j = i + 1
-      while j < len {
-        if trimmed[j].to_int() == 92 {
-          j = j + 2
-          continue
-        }
-        if trimmed[j].to_int() == 34 {
-          break
-        }
-        j = j + 1
-      }
-      let literal = "\"" + nt_unescape(trimmed[i + 1:j].to_owned()) + "\""
-      let mut end = j + 1
-      let mut term = literal
-      if end < len && trimmed[end].to_int() == 64 {
-        let mut k = end + 1
-        while k < len && trimmed[k].to_int() != 32 && trimmed[k].to_int() != 9 {
-          k = k + 1
-        }
-        term = literal + "@" + trimmed[end + 1:k].to_owned()
-        end = k
-      } else if end + 2 < len &&
-        trimmed[end].to_int() == 94 &&
-        trimmed[end + 1].to_int() == 94 &&
-        trimmed[end + 2].to_int() == 60 {
-        let mut k = end + 3
-        while k < len && trimmed[k].to_int() != 62 {
-          k = k + 1
-        }
-        term = literal + "^^<" + trimmed[end + 3:k].to_owned() + ">"
-        end = k + 1
-      }
-      terms.push(term)
-      i = end
-      continue
-    }
-    i = i + 1
   }
   terms
 }
@@ -223,15 +279,19 @@ fn parse_nt_document(text : String) -> Array[(String, String, String)] {
 }
 
 ///|
-/// 我方词项 → 规范串（与 .nt 解壳形同构）。
+/// 我方词项 → 规范串（与 .nt 解壳形同构；方向 = @lang 后缀 --dir）。
 fn suite_term_canonical(term : @rdf.Term) -> String {
   match term {
     @rdf.Iri(iri) => "<" + iri + ">"
     @rdf.BNode(label) => "_:" + label
-    @rdf.Literal(value, lang, datatype) => {
+    @rdf.Literal(value, lang, datatype, direction) => {
       let mut out = "\"" + value + "\""
       match lang {
         Some(l) => out = out + "@" + l
+        None => ()
+      }
+      match direction {
+        Some(d) => out = out + "--" + d
         None => ()
       }
       match datatype {
@@ -240,12 +300,38 @@ fn suite_term_canonical(term : @rdf.Term) -> String {
       }
       out
     }
+    @rdf.TripleTerm(sub, pred, obj) =>
+      "<<(" +
+      suite_term_canonical(sub) +
+      " " +
+      suite_term_canonical(pred) +
+      " " +
+      suite_term_canonical(obj) +
+      ")>>"
   }
 }
 
 ///|
-/// 规范串 → 词项（双射器内部桥）。
+/// 规范串 → 词项（双射器内部桥；方向 @lang--dir 拆槽、三元词递归）。
 fn suite_canonical_to_term(canonical : String) -> @rdf.Term {
+  if canonical.has_prefix("<<(") && canonical.has_suffix(")>>") {
+    let inner = canonical[3:canonical.length() - 3].to_owned()
+    let parsed : Array[@rdf.Term] = []
+    let mut i = 0
+    while i < inner.length() && parsed.length() < 3 {
+      match nt_next_term(inner, i) {
+        Some((token, next)) => {
+          parsed.push(suite_canonical_to_term(token))
+          i = next
+        }
+        None => return @rdf.Iri("")
+      }
+    }
+    if parsed.length() == 3 {
+      return @rdf.TripleTerm(parsed[0], parsed[1], parsed[2])
+    }
+    return @rdf.Iri("")
+  }
   if canonical.has_prefix("<") && canonical.has_suffix(">") {
     return @rdf.Iri(canonical[1:canonical.length() - 1].to_owned())
   }
@@ -268,30 +354,74 @@ fn suite_canonical_to_term(canonical : String) -> @rdf.Term {
   let rest_start = i + 1
   let mut lang : String? = None
   let mut datatype : String? = None
+  let mut direction : String? = None
   if rest_start < len {
     let rest = canonical[rest_start:].to_owned()
     if rest.has_prefix("@") {
-      lang = Some(rest[1:].to_owned())
+      // @lang[--dir]：首 "--" 拆槽（BCP47 无连写双连字符，切点唯一）
+      let mut k = 1
+      while k < rest.length() && rest[k].to_int() != 32 && rest[k].to_int() != 9 {
+        k = k + 1
+      }
+      let tag = rest[1:k].to_owned()
+      let mut cut = -1
+      let mut t = 0
+      while t + 1 < tag.length() {
+        if tag[t].to_int() == 45 && tag[t + 1].to_int() == 45 {
+          cut = t
+          break
+        }
+        t = t + 1
+      }
+      if cut > 0 {
+        lang = Some(tag[:cut].to_owned())
+        direction = Some(tag[cut + 2:].to_owned())
+      } else {
+        lang = Some(tag)
+      }
     } else if rest.has_prefix("^^<") {
       datatype = Some(rest[3:rest.length() - 1].to_owned())
     }
   }
-  @rdf.Literal(literal_value, lang, datatype)
+  @rdf.Literal(literal_value, lang, datatype, direction)
 }
 
 ///|
-/// 词项等（IRI/字面量精确；bnode 由双射器统管）。
-fn suite_term_equal(left : @rdf.Term, right : @rdf.Term) -> Bool {
+/// 词项级绑定（TripleTerm 递归下潜；字面量精确；bnode 双射记账）。
+/// 在调用方的副本表上记账，失败即整表弃（回溯无害）。
+fn suite_terms_bind(
+  left : @rdf.Term,
+  right : @rdf.Term,
+  l2r : Map[String, String],
+  r2l : Map[String, String],
+) -> Bool {
   match (left, right) {
     (@rdf.Iri(a), @rdf.Iri(b)) => a == b
-    (@rdf.Literal(v1, l1, d1), @rdf.Literal(v2, l2, d2)) =>
-      v1 == v2 && l1 == l2 && d1 == d2
+    (@rdf.Literal(v1, l1, d1, r1), @rdf.Literal(v2, l2, d2, r2)) =>
+      v1 == v2 && l1 == l2 && d1 == d2 && r1 == r2
+    (@rdf.BNode(a), @rdf.BNode(b)) => {
+      match l2r.get(a) {
+        Some(existing) => return existing == b
+        None => ()
+      }
+      match r2l.get(b) {
+        Some(existing) => return existing == a
+        None => ()
+      }
+      l2r[a] = b
+      r2l[b] = a
+      true
+    }
+    (@rdf.TripleTerm(a1, a2, a3), @rdf.TripleTerm(b1, b2, b3)) =>
+      suite_terms_bind(a1, b1, l2r, r2l) &&
+      suite_terms_bind(a2, b2, l2r, r2l) &&
+      suite_terms_bind(a3, b3, l2r, r2l)
     _ => false
   }
 }
 
 ///|
-/// 双射绑定一致性（副本上绑定，冲突返 None）。
+/// 语句级绑定：副本表上三位（含 TripleTerm 下潜）依序试绑。
 fn suite_bind(
   left : (@rdf.Term, @rdf.Term, @rdf.Term),
   right : (@rdf.Term, @rdf.Term, @rdf.Term),
@@ -304,58 +434,15 @@ fn suite_bind(
     next_l2r[key] = value
   }
   for key, value in r2l {
-    next_r2l[key] = value
+    next_r2l[value] = key
   }
-  for pos in 0..<3 {
-    let left_term = if pos == 0 {
-      left.0
-    } else if pos == 1 {
-      left.1
-    } else {
-      left.2
-    }
-    let right_term = if pos == 0 {
-      right.0
-    } else if pos == 1 {
-      right.1
-    } else {
-      right.2
-    }
-    let left_label = match left_term {
-      @rdf.BNode(label) => Some(label)
-      _ => None
-    }
-    let right_label = match right_term {
-      @rdf.BNode(label) => Some(label)
-      _ => None
-    }
-    match (left_label, right_label) {
-      (Some(a), Some(b)) => {
-        match next_l2r.get(a) {
-          Some(existing) => if existing != b { return None }
-          None => ()
-        }
-        match next_r2l.get(b) {
-          Some(existing) => if existing != a { return None }
-          None => ()
-        }
-        match next_l2r.get(a) {
-          Some(_) => ()
-          None => next_l2r[a] = b
-        }
-        match next_r2l.get(b) {
-          Some(_) => ()
-          None => next_r2l[b] = a
-        }
-      }
-      (None, None) =>
-        if !suite_term_equal(left_term, right_term) {
-          return None
-        }
-      _ => return None
-    }
+  if suite_terms_bind(left.0, right.0, next_l2r, next_r2l) &&
+    suite_terms_bind(left.1, right.1, next_l2r, next_r2l) &&
+    suite_terms_bind(left.2, right.2, next_l2r, next_r2l) {
+    Some(next_l2r)
+  } else {
+    None
   }
-  Some(next_l2r)
 }
 
 ///|
@@ -475,18 +562,22 @@ async test "rdf/xml suite harness: 组桶判定" {
      "rdf-containers-syntax-vs-schema",
     // 空属性元素五形（真空形=空字面量；resource/属性属性形）
      "rdfms-empty-property-elements",
+    // li 链（parseType=Collection 已实现，含 rdf:ID 具化）
+     "rdfms-seq-representation",
+    // XMLLiteral 规范序列化（exclusive C14N 近似 + 具化）
+     "xml-canon",
+    // RDF 1.2 rdf:annotation → reifies 三元词（非版本门）
+     "an",
+    // RDF 1.2 annotation + rdf:ID 双发（reifies + 经典具化并存）
+     "an-reif",
+    // RDF 1.2 ITS its:dir 方向字面量（版本门 + lang 缺席不挂方向）
+     "dir",
+    // RDF 1.2 parseType=Triple 三元词（版本门/嵌套/病形空输出）
+     "tt",
   ]
   // 逐案缓名单（组桶内个案，逐案注记；X3 面回收时逐案拨回）
   // 组级缓注：rdfms-seq-representation 双案全用 parseType="Collection" → X3
-  let per_case_deferred : Array[String] = [
-    // parseType="Literal"（X3）
-    "rdf-ns-prefix-confusion-test0005",
-    // parseType="Resource"（X3）
-     "rdf-containers-syntax-vs-schema-test004",
-    // parseType="Resource"（X3）
-     "rdfms-empty-property-elements-test004", "rdfms-empty-property-elements-test006",
-    "rdfms-empty-property-elements-test010", "rdfms-empty-property-elements-test012",
-  ]
+  let per_case_deferred : Array[String] = []
   let mut judged = 0
   let mut failed = 0
   let deferred_groups : Array[String] = []
@@ -521,10 +612,13 @@ async test "rdf/xml suite harness: 组桶判定" {
                 Some(r) => r
                 None => fail("\{suite_case.name}: eval 无 result")
               }
+              let expect_file = if suite_case.family == "rdf11" {
+                "./src/rdf/.rdf-tests/rdf11/rdf-xml/" + expect_path
+              } else {
+                "./src/rdf/.rdf-tests/rdf12/rdf-xml/eval/" + expect_path
+              }
               let expect_text = @utf8.decode(
-                @fs.read_file(
-                  "./src/rdf/.rdf-tests/rdf11/rdf-xml/" + expect_path,
-                ).binary(),
+                @fs.read_file(expect_file).binary(),
               )
               let ours : Array[(@rdf.Term, @rdf.Term, @rdf.Term)] = []
               for quad in dataset.quads {
@@ -567,8 +661,8 @@ async test "rdf/xml suite harness: 组桶判定" {
   // ---- pin（绝对计数 + 闭包）----
   assert_eq(cases.length(), 197)
   assert_eq(judged + deferred, 197)
-  assert_eq(judged, 156)
-  assert_eq(deferred, 41)
+  assert_eq(judged, 197)
+  assert_eq(deferred, 0)
   assert_eq(failed, 0)
   println(
     "[rdf-xml] entries=\{cases.length()} judged=\{judged} deferred=\{deferred} groups=\{deferred_groups.length()}",

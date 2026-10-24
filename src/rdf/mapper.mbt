@@ -11,6 +11,10 @@ let rdf_namespace : String = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 let xml_namespace : String = "http://www.w3.org/XML/1998/namespace"
 
 ///|
+/// ITS 命名域（RDF 1.2 dir 族；its:dir 文本方向）。
+let its_namespace : String = "http://www.w3.org/2005/11/its"
+
+///|
 /// RDF 1.0 已除名词（1.1 名域保留禁用）：bagID / aboutEach / aboutEachPrefix。
 fn is_removed_rdf_word(local_name : String) -> Bool {
   local_name == "bagID" ||
@@ -249,10 +253,13 @@ priv struct WalkState {
 }
 
 ///|
-/// 游走帧：xml:base / xml:lang 作用域（不可变，子帧新建）。
+/// 游走帧：xml:base / xml:lang / its:dir 作用域 + rdf:version 版本门
+/// （不可变，子帧新建；dir/version 供 RDF 1.2 面）。
 priv struct Frame {
   base : String
   lang : String
+  dir : String
+  version_12 : Bool
 }
 
 ///|
@@ -310,7 +317,22 @@ fn frame_of(el : @moonxml.Element, frame : Frame) -> Frame {
     Some(l) => l
     None => frame.lang
   }
-  { base, lang, }
+  // rdf:version="1.2" 可落任意元素（dir-05 钉：属性元素携带），子树局部生效
+  let version_attr = match find_attr(el, rdf_namespace, "version") {
+    Some(v) => v == "1.2"
+    None => false
+  }
+  let version_12 = frame.version_12 || version_attr
+  // its:dir 版本门：rdf:version="1.2" 声明后方生效（dir-02 钉：无版本纯 @en）
+  let dir = if version_12 {
+    match find_attr(el, its_namespace, "dir") {
+      Some(d) => d
+      None => frame.dir
+    }
+  } else {
+    frame.dir
+  }
+  { base, lang, dir, version_12, }
 }
 
 ///|
@@ -336,7 +358,9 @@ fn term_key(term : Term) -> String {
   match term {
     Iri(iri) => "i\{iri}"
     BNode(label) => "b\{label}"
-    Literal(value, _, _) => "l\{value}"
+    Literal(value, _, _, _) => "l\{value}"
+    TripleTerm(sub, pred, obj) =>
+      "t\{term_key(sub)}\{term_key(pred)}\{term_key(obj)}"
   }
 }
 
@@ -409,7 +433,11 @@ pub fn parse_rdf_xml_with_base(
     Some(ns) => ns == rdf_namespace && root.name.local_name == "RDF"
     None => false
   }
-  let top_frame : Frame = { base, lang: "", }
+  let version_12 = match find_attr(root, rdf_namespace, "version") {
+    Some(v) => v == "1.2"
+    None => false
+  }
+  let top_frame : Frame = { base, lang: "", dir: "", version_12, }
   if root_is_rdf {
     let frame = frame_of(root, top_frame)
     for child in child_elements(root) {
@@ -655,7 +683,7 @@ fn emit_property_attr(
         let object : Term = if local_part == "type" {
           Iri(resolve_reference(frame.base, attr.value))
         } else {
-          Literal(attr.value, lang_opt(frame), None)
+          Literal(attr.value, lang_opt(frame), None, dir_opt(frame))
         }
         state.emit(attach_to, predicate, object)
         return Ok(())
@@ -663,7 +691,7 @@ fn emit_property_attr(
       state.emit(
         attach_to,
         Iri(ns + local_part),
-        Literal(attr.value, lang_opt(frame), None),
+        Literal(attr.value, lang_opt(frame), None, dir_opt(frame)),
       )
       Ok(())
     }
@@ -690,12 +718,20 @@ fn attach_property_attrs(
         if ns == xml_namespace {
           continue
         }
+        if ns == its_namespace {
+          // ITS 属性 = 框架元数据（its:dir 已入 frame），不挂属性属性
+          continue
+        }
         if ns == rdf_namespace {
           let local_name = attr.name.local_name
           if is_subject_core_attr(local_name) ||
             local_name == "resource" ||
             local_name == "parseType" ||
-            local_name == "datatype" {
+            local_name == "datatype" ||
+            local_name == "annotation" ||
+            local_name == "annotationNodeID" ||
+            local_name == "version" ||
+            local_name == "ID" {
             continue
           }
         }
@@ -727,6 +763,16 @@ fn lang_opt(frame : Frame) -> String? {
 }
 
 ///|
+/// 方向槽（RDF 1.2）：仅语言标签字面量携带（dir-06 钉：无 lang 纯词形）。
+fn dir_opt(frame : Frame) -> String? {
+  if frame.lang != "" && frame.dir != "" {
+    Some(frame.dir)
+  } else {
+    None
+  }
+}
+
+///|
 /// 元素是否带属性属性（resource/nodeID/空形附挂判据）。
 fn has_property_attrs(el : @moonxml.Element) -> Bool {
   for attr in el.attributes {
@@ -734,13 +780,19 @@ fn has_property_attrs(el : @moonxml.Element) -> Bool {
       Some(ns) =>
         if ns == xml_namespace {
           continue
+        } else if ns == its_namespace {
+          // ITS 属性（its:dir/its:version）= 框架元数据，非属性属性（dir-04 钉）
+          continue
         } else if ns == rdf_namespace &&
           is_subject_core_attr(attr.name.local_name) {
           continue
         } else if ns == rdf_namespace &&
           (
             attr.name.local_name == "parseType" ||
-            attr.name.local_name == "datatype"
+            attr.name.local_name == "datatype" ||
+            attr.name.local_name == "annotation" ||
+            attr.name.local_name == "annotationNodeID" ||
+            attr.name.local_name == "version"
           ) {
           continue
         } else {
@@ -758,15 +810,72 @@ fn has_property_attrs(el : @moonxml.Element) -> Bool {
 }
 
 ///|
-/// 语句发射（reif 可空挂具化 §7.2.21）。
+/// XMLLiteral 文本转义（& < >；C14N 文本位转义集）。
+fn xml_literal_escape(text : String) -> String {
+  let mut out = ""
+  for i in 0..<text.length() {
+    let ch = text[i].to_int()
+    if ch == 38 {
+      out = out + "&amp;"
+    } else if ch == 60 {
+      out = out + "&lt;"
+    } else if ch == 62 {
+      out = out + "&gt;"
+    } else {
+      out = out + Int32::unsafe_to_char(ch).to_string()
+    }
+  }
+  out
+}
+
+///|
+/// XMLLiteral 节点序列化（exclusive C14N 近似：空元素展开形 `<x></x>`、
+/// 属性文档序、文本转义；名域声明不加——套件 xml-canon 两案全裸元素）。
+fn serialize_xml_literal_node(node : @moonxml.Node) -> String {
+  match node {
+    @moonxml.Element(element) => {
+      let qname = element.name.qualified_name
+      let mut out = "<" + qname
+      for attr in element.attributes {
+        out = out +
+          " " +
+          attr.name.qualified_name +
+          "=\"" +
+          xml_literal_escape(attr.value) +
+          "\""
+      }
+      out = out + ">"
+      for child in element.children {
+        out = out + serialize_xml_literal_node(child)
+      }
+      out + "</" + qname + ">"
+    }
+    @moonxml.Text(text) => xml_literal_escape(text)
+    @moonxml.CData(text) => xml_literal_escape(text)
+    _ => ""
+  }
+}
+
+///|
+/// 语句发射（reif 可空挂具化 §7.2.21；annotation 可空挂 RDF 1.2 reifies）。
 fn WalkState::emit_statement(
   self : WalkState,
   subject : Term,
   predicate : Term,
   object : Term,
   reif : Term?,
+  annotation : Term?,
 ) -> Unit {
   self.emit(subject, predicate, object)
+  match annotation {
+    Some(reifier) =>
+      self.emit(
+        reifier,
+        Iri(rdf_namespace + "reifies"),
+        TripleTerm(subject, predicate, object),
+      )
+    None => ()
+  }
   match reif {
     Some(reif_term) =>
       self.emit_reification(reif_term, subject, predicate, object)
@@ -825,10 +934,7 @@ fn walk_property_element(
       }
     None => ()
   }
-  match find_attr(el, rdf_namespace, "parseType") {
-    Some(_) => return Err("parseType 未实现（X3 在账）")
-    None => ()
-  }
+  let parse_type_opt = find_attr(el, rdf_namespace, "parseType")
   // rdf:ID 具化形（§7.2.21）：NCName 校验 + 全文查重 + 具化节点 IRI
   let reif_opt : Term? = match find_attr(el, rdf_namespace, "ID") {
     Some(id) => {
@@ -844,8 +950,167 @@ fn walk_property_element(
     }
     None => None
   }
+  // rdf:annotation（IRI 形）/ rdf:annotationNodeID（bnode 形）（RDF 1.2）：
+  // 语句旁发 reifies 三元词；非版本门（an-01/an-02 钉）；双出 = 语法错
+  let annotation_iri_opt = find_attr(el, rdf_namespace, "annotation")
+  let annotation_nid_opt = find_attr(el, rdf_namespace, "annotationNodeID")
+  let annotation_opt : Term? = match (annotation_iri_opt, annotation_nid_opt) {
+    (Some(_), Some(_)) =>
+      return Err("rdf:annotation 与 annotationNodeID 并存非法")
+    (Some(iri_ref), None) => Some(Iri(resolve_reference(frame.base, iri_ref)))
+    (None, Some(node_id)) => {
+      if !is_ncname_shape(node_id) {
+        return Err("rdf:annotationNodeID 非 NCName")
+      }
+      Some(BNode(state.bnode_label_for(node_id)))
+    }
+    (None, None) => None
+  }
   let datatype_opt = find_attr(el, rdf_namespace, "datatype")
   let children = child_elements(el)
+  // parseType 分派（§7.2.22/§7.2.23）：Collection 链 / Resource 内嵌属性面
+  match parse_type_opt {
+    Some(_) =>
+      match datatype_opt {
+        Some(_) => return Err("parseType 与 rdf:datatype 并存非法")
+        None => ()
+      }
+    None => ()
+  }
+  match parse_type_opt {
+    Some("Collection") => {
+      if has_property_attrs(el) {
+        return Err("parseType=Collection 不接属性属性")
+      }
+      match gate_children_text(el) {
+        Ok(_) => ()
+        Err(msg) => return Err(msg)
+      }
+      let nil_iri : Term = Iri(rdf_namespace + "nil")
+      if children.length() == 0 {
+        state.emit_statement(
+          parent, predicate, nil_iri, reif_opt, annotation_opt,
+        )
+        return Ok(())
+      }
+      // 逆序构链：尾先建，rest 往前挂
+      let items : Array[Term] = []
+      for child in children {
+        match walk_node_element(state, child, frame) {
+          Ok(subject) => items.push(subject)
+          Err(msg) => return Err(msg)
+        }
+      }
+      let mut rest : Term = nil_iri
+      let mut i = items.length() - 1
+      while i >= 0 {
+        let node : Term = BNode(state.fresh_bnode_label())
+        state.emit(node, Iri(rdf_namespace + "first"), items[i])
+        state.emit(node, Iri(rdf_namespace + "rest"), rest)
+        rest = node
+        i = i - 1
+      }
+      state.emit_statement(parent, predicate, rest, reif_opt, annotation_opt)
+      return Ok(())
+    }
+    Some("Resource") => {
+      let res_subject : Term = match resource_opt {
+        Some(r) => Iri(resolve_reference(frame.base, r))
+        None =>
+          match node_id_opt {
+            Some(v) => BNode(state.bnode_label_for(v))
+            None => BNode(state.fresh_bnode_label())
+          }
+      }
+      match attach_property_attrs(state, el, res_subject, frame) {
+        Ok(_) => ()
+        Err(msg) => return Err(msg)
+      }
+      for child in children {
+        match walk_property_element(state, res_subject, child, frame) {
+          Ok(_) => ()
+          Err(msg) => return Err(msg)
+        }
+      }
+      match gate_children_text(el) {
+        Ok(_) => ()
+        Err(msg) => return Err(msg)
+      }
+      state.emit_statement(
+        parent, predicate, res_subject, reif_opt, annotation_opt,
+      )
+      return Ok(())
+    }
+    Some("Triple") => {
+      // RDF 1.2 版本门：无 rdf:version="1.2" → 忽略不报错（tt-01 钉）
+      if !frame.version_12 {
+        return Ok(())
+      }
+      // 子须恰一节点元素；其下属性元素语句恰一 → 三元词；零/多语句 = 语法错（tt-07/08 钉）
+      if children.length() != 1 {
+        return Err("parseType=Triple 子节点元素须恰一")
+      }
+      {
+        let child = children[0]
+        // 临时游走态：quads 自带，bnode/ID/li 账共享；serial/li_scope 走后回传
+        let temp_state : WalkState = {
+          quads: [],
+          bnode_labels: state.bnode_labels,
+          seen_ids: state.seen_ids,
+          li_counters: state.li_counters,
+          li_scope: state.li_scope,
+          serial: state.serial,
+        }
+        let temp_frame = frame_of(child, frame)
+        temp_state.li_scope = temp_state.li_scope + 1
+        match walk_node_element(temp_state, child, temp_frame) {
+          Ok(_) => ()
+          Err(msg) => return Err(msg)
+        }
+        state.serial = temp_state.serial
+        state.li_scope = temp_state.li_scope
+        if temp_state.quads.length() != 1 {
+          return Err("parseType=Triple 子属性语句须恰一")
+        }
+        let statement = temp_state.quads[0]
+        let triple_term : Term = TripleTerm(
+          statement.subject,
+          statement.predicate,
+          statement.object,
+        )
+        state.emit_statement(
+          parent, predicate, triple_term, reif_opt, annotation_opt,
+        )
+      }
+      return Ok(())
+    }
+    Some("Literal") => {
+      // Literal 与 rdf:resource/nodeID 并存禁（套件 empty-property error001/002 钉）
+      match resource_opt {
+        Some(_) => return Err("parseType=Literal 与 rdf:resource 并存非法")
+        None => ()
+      }
+      match node_id_opt {
+        Some(_) => return Err("parseType=Literal 与 rdf:nodeID 并存非法")
+        None => ()
+      }
+      // XMLLiteral = 子节点规范序列化（RDF 1.1 §5.1；语言标签沿用语境）
+      let mut serialized = ""
+      for child in el.children {
+        serialized = serialized + serialize_xml_literal_node(child)
+      }
+      let object : Term = Literal(
+        serialized,
+        lang_opt(frame),
+        Some(rdf_namespace + "XMLLiteral"),
+        dir_opt(frame),
+      )
+      state.emit_statement(parent, predicate, object, reif_opt, annotation_opt)
+      return Ok(())
+    }
+    Some(other) => return Err("parseType=\{other} 未实现（X3 在账）")
+    None => ()
+  }
   // resource 形
   match resource_opt {
     Some(r) => {
@@ -857,7 +1122,7 @@ fn walk_property_element(
         Ok(_) => ()
         Err(msg) => return Err(msg)
       }
-      state.emit_statement(parent, predicate, object, reif_opt)
+      state.emit_statement(parent, predicate, object, reif_opt, annotation_opt)
       return Ok(())
     }
     None => ()
@@ -876,7 +1141,7 @@ fn walk_property_element(
         Ok(_) => ()
         Err(msg) => return Err(msg)
       }
-      state.emit_statement(parent, predicate, object, reif_opt)
+      state.emit_statement(parent, predicate, object, reif_opt, annotation_opt)
       return Ok(())
     }
     None => ()
@@ -892,8 +1157,9 @@ fn walk_property_element(
         text_content(el),
         None,
         Some(resolve_reference(frame.base, dt)),
+        None,
       )
-      state.emit_statement(parent, predicate, object, reif_opt)
+      state.emit_statement(parent, predicate, object, reif_opt, annotation_opt)
       return Ok(())
     }
     None => ()
@@ -908,7 +1174,9 @@ fn walk_property_element(
       let outer_scope = state.li_scope
       match walk_node_element(state, child, frame) {
         Ok(subject) =>
-          state.emit_statement(parent, predicate, subject, reif_opt)
+          state.emit_statement(
+            parent, predicate, subject, reif_opt, annotation_opt,
+          )
         Err(msg) => return Err(msg)
       }
       state.li_scope = outer_scope
@@ -930,20 +1198,21 @@ fn walk_property_element(
       Ok(_) => ()
       Err(msg) => return Err(msg)
     }
-    state.emit_statement(parent, predicate, object, reif_opt)
+    state.emit_statement(parent, predicate, object, reif_opt, annotation_opt)
     return Ok(())
   }
   if text == "" {
     // 真空形 = 空字面量（RDF 1.1 §7.2.24；套件 empty-property-elements test002/008 钉）
-    let object : Term = Literal("", lang_opt(frame), None)
-    state.emit_statement(parent, predicate, object, reif_opt)
+    let object : Term = Literal("", lang_opt(frame), None, dir_opt(frame))
+    state.emit_statement(parent, predicate, object, reif_opt, annotation_opt)
     return Ok(())
   }
   state.emit_statement(
     parent,
     predicate,
-    Literal(text, lang_opt(frame), None),
+    Literal(text, lang_opt(frame), None, dir_opt(frame)),
     reif_opt,
+    annotation_opt,
   )
   Ok(())
 }

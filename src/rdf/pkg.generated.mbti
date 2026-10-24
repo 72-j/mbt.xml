@@ -75,7 +75,8 @@ pub(all) struct SuiteCase {
 pub(all) enum Term {
   Iri(String)
   BNode(String)
-  Literal(String, String?, String?)
+  Literal(String, String?, String?, String?)
+  TripleTerm(Term, Term, Term)
 }
 
 // Type aliases

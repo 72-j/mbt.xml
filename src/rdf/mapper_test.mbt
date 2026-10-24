@@ -6,10 +6,14 @@ fn smoke_term_str(term : @rdf.Term) -> String {
   match term {
     Iri(iri) => "<\{iri}>"
     BNode(label) => "_:\{label}"
-    Literal(value, lang, datatype) => {
+    Literal(value, lang, datatype, direction) => {
       let mut out = "\"\{value}\""
       match lang {
         Some(l) => out = out + "@\{l}"
+        None => ()
+      }
+      match direction {
+        Some(dir) => out = out + "--\{dir}"
         None => ()
       }
       match datatype {
@@ -18,6 +22,14 @@ fn smoke_term_str(term : @rdf.Term) -> String {
       }
       out
     }
+    TripleTerm(subject, predicate, object) =>
+      "<<(" +
+      smoke_term_str(subject) +
+      " " +
+      smoke_term_str(predicate) +
+      " " +
+      smoke_term_str(object) +
+      ")>>"
   }
 }
 
