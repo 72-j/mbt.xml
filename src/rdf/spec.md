@@ -27,7 +27,7 @@ jsonld（JSON-LD 1.1，官套 1437）、moonxml（XML 1.0/1.1 基座，xmlts
 - G2 W3C rdf-tests 官套全案入账：**manifest 落账 = 197 案**（rdf11
   166 = 126 TestXMLEval + 40 TestXMLNegativeSyntax；rdf12 31 全
   TestXMLEval，dir/tt/an 三族）——用例表生成件
-  `case_table_gen.mbt`（opself/rdfxml_casegen 自吃狗粮 regen，黄金门
+  `case_table_gen.mbt`（bitbang rdf/rdfxml_casegen 自吃狗粮 regen，黄金门
   regen ≡ 盘上；rdfxml 模块零 moonttl 依赖），
   plain / deferred 双桶 pin 闭包（家族套件宪法）；
 - G3 数据集级对拍门：正例解析结果与套件期望输出按**四元组多重集**

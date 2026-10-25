@@ -1,7 +1,7 @@
 // ===== GENERATED FILE — DO NOT EDIT（生成物禁手写，const.md §7）=====
-// 源表：skelgen/rdfxml_gen/rdfxml_gen.toml（schema 1.0）
-// 再生：moon run skelgen/rdfxml_gen/cmd（改表 → 重跑 → 黄金门对拍）
-// 绑定器：skelschema/rdfxml_toml_gen.mbt（parse / validate / emit）
+// 源表：rdf/rdfxml_gen/rdfxml_gen.toml（schema 1.0）
+// 再生：moon run rdf/rdfxml_gen/cmd（改表 → 重跑 → 黄金门对拍）
+// 绑定器：rdf/rdfxml_gen/rdfxml_toml_gen.mbt（parse / validate / emit）
 
 ///|
 /// 步骤表全量枚举（[[steps]]）

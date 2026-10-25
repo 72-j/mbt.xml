@@ -1,7 +1,7 @@
 // ===== GENERATED FILE — DO NOT EDIT（生成物禁手写）=====
-// 源表：rdfxml/.rdf-tests/rdf11/rdf-xml/manifest.ttl + rdf12/rdf-xml/eval/manifest.ttl
-// 再生：moon run opself/rdfxml_casegen/cmd（语料变更 → 重跑 → 黄金门对拍）
-// 生成器：opself/rdfxml_casegen（gen_n3v2 自吃狗粮；rdfxml 模块零 moonttl 依赖）
+// 源表：moonxml/src/rdf/.rdf-tests/rdf11/rdf-xml/manifest.ttl + rdf12/rdf-xml/eval/manifest.ttl
+// 再生：moon run rdf/rdfxml_casegen/cmd（语料变更 → 重跑 → 黄金门对拍）
+// 生成器：rdf/rdfxml_casegen（gen_n3v2 自吃狗粮；rdfxml 模块零 moonttl 依赖）
 
 ///|
 /// W3C rdf-tests 用例行（manifest 落账口径）
