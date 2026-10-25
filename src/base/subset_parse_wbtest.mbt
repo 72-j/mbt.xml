@@ -34,10 +34,24 @@ fn subset_load_with(resolver : &EntityResolver) -> ExternalLoad {
 }
 
 ///|
-/// 白盒 test 块 = raise 语境:收成 Result 再 match(断言在 catch 外)。
-fn subset_outcome(load : () -> Unit raise XmlError) -> Result[Unit, XmlError] {
-  Ok(load()) catch {
-    why => Err(why)
+/// 白盒 test 块 = raise 语境:收成判位枚举再 match(断言在 catch 外)。
+/// [0078] result_error_return:此处成功/失败是测试判位数据而非 API 结果,
+/// Result 面收敛为局部枚举;ExternalDenied 钉「外取件被拒」这一被断言的
+/// 错误种类,其余失败归 Failed。
+enum SubsetRun {
+  Ran
+  ExternalDenied
+  Failed
+}
+
+///|
+fn subset_outcome(load : () -> Unit raise XmlError) -> SubsetRun {
+  try {
+    load()
+    SubsetRun::Ran
+  } catch {
+    At(error=XmlErrorKind::External(_), ..) => SubsetRun::ExternalDenied
+    _ => SubsetRun::Failed
   }
 }
 
@@ -48,14 +62,14 @@ test "external subset literal entity loads" {
   let load = subset_load_with(DenyAll::{ })
   let subset = "<!ENTITY open \"A\"><!ENTITY % pe \"p\"><!ELEMENT r ANY><!ATTLIST r a CDATA \"x\">"
   match subset_outcome(() => load_external_subset(subset, None, load)) {
-    Ok(_) => {
+    Ran => {
       match load.table.get("open") {
         Some(InternalText(value)) => assert_eq(value, "A")
         _ => fail("literal entity must load as internal text")
       }
       assert_true(load.table.get("pe") is None)
     }
-    Err(_) => fail("well-formed subset must load")
+    _ => fail("well-formed subset must load")
   }
 }
 
@@ -65,8 +79,8 @@ test "internal subset literal entity skipped" {
   let load = subset_load_with(DenyAll::{ })
   let subset = "<!ENTITY internal \"I\">"
   match subset_outcome(() => collect_internal_external_entities(subset, load)) {
-    Ok(_) => assert_true(load.table.get("internal") is None)
-    Err(_) => fail("internal subset scan must pass")
+    Ran => assert_true(load.table.get("internal") is None)
+    _ => fail("internal subset scan must pass")
   }
 }
 
@@ -76,9 +90,9 @@ test "subset junk rejected" {
   let load = subset_load_with(DenyAll::{ })
   let subset = "<!ENTITY open \"A\"> junk >"
   match subset_outcome(() => load_external_subset(subset, None, load)) {
-    Ok(_) => fail("subset junk must reject")
-    Err(At(error=XmlErrorKind::External(_), ..)) => ()
-    Err(_) => fail("unexpected error kind")
+    Ran => fail("subset junk must reject")
+    ExternalDenied => ()
+    _ => fail("unexpected error kind")
   }
 }
 
@@ -88,14 +102,14 @@ test "conditional sections gate declarations" {
   let load = subset_load_with(DenyAll::{ })
   let subset = "<![INCLUDE[<!ENTITY inc \"I\">]]><![IGNORE[<!ENTITY ign \"X\">]]>"
   match subset_outcome(() => load_external_subset(subset, None, load)) {
-    Ok(_) => {
+    Ran => {
       match load.table.get("inc") {
         Some(InternalText(value)) => assert_eq(value, "I")
         _ => fail("included entity must load")
       }
       assert_true(load.table.get("ign") is None)
     }
-    Err(_) => fail("conditional subset must load")
+    _ => fail("conditional subset must load")
   }
 }
 
@@ -105,9 +119,9 @@ test "unterminated entity value rejects" {
   let load = subset_load_with(DenyAll::{ })
   let subset = "<!ENTITY open \"unclosed>"
   match subset_outcome(() => load_external_subset(subset, None, load)) {
-    Ok(_) => fail("unterminated value must reject")
-    Err(At(error=XmlErrorKind::External(_), ..)) => ()
-    Err(_) => fail("unexpected error kind")
+    Ran => fail("unterminated value must reject")
+    ExternalDenied => ()
+    _ => fail("unexpected error kind")
   }
 }
 
@@ -119,20 +133,20 @@ test "conditional PE keyword gates body" {
   load.pe_values.set("e", "INCLUDE")
   let subset = "<![ %e; [\n<!ENTITY inc \"I\">\n]]>"
   match subset_outcome(() => load_external_subset(subset, None, load)) {
-    Ok(_) =>
+    Ran =>
       match load.table.get("inc") {
         Some(InternalText(value)) => assert_eq(value, "I")
         _ => fail("PE-keyword INCLUDE must parse body")
       }
-    Err(_) => fail("conditional PE INCLUDE must pass")
+    _ => fail("conditional PE INCLUDE must pass")
   }
   let ignore_load = subset_load_with(DenyAll::{ })
   ignore_load.pe_values.set("e", "IGNORE")
   let ignore_subset = "<![ %e; [\n<!ENTITY ign \"X\">\n]]>"
   match
     subset_outcome(() => load_external_subset(ignore_subset, None, ignore_load)) {
-    Ok(_) => assert_true(ignore_load.table.get("ign") is None)
-    Err(_) => fail("conditional PE IGNORE must skip body")
+    Ran => assert_true(ignore_load.table.get("ign") is None)
+    _ => fail("conditional PE IGNORE must skip body")
   }
   let bracket_load = subset_load_with(DenyAll::{ })
   bracket_load.pe_values.set("e", "INCLUDE[")
@@ -141,8 +155,8 @@ test "conditional PE keyword gates body" {
     subset_outcome(() => {
       load_external_subset(bracket_subset, None, bracket_load)
     }) {
-    Ok(_) => assert_true(bracket_load.table.get("r") is None)
-    Err(_) => fail("bracket-in-value conditional must pass")
+    Ran => assert_true(bracket_load.table.get("r") is None)
+    _ => fail("bracket-in-value conditional must pass")
   }
 }
 
@@ -154,8 +168,8 @@ test "PE value top-level gt closes declaration" {
   load.pe_values.set("e", "(#PCDATA)>")
   let subset = "<!ELEMENT doc (#PCDATA) %e;\n<!ELEMENT after ANY>"
   match subset_outcome(() => load_external_subset(subset, None, load)) {
-    Ok(_) => assert_true(load.table.get("after") is None)
-    Err(_) => fail("PE-closed declaration must pass")
+    Ran => assert_true(load.table.get("after") is None)
+    _ => fail("PE-closed declaration must pass")
   }
 }
 
@@ -218,12 +232,12 @@ test "external PE chain resolves child base" {
   let load = subset_load_with(resolver)
   let subset = "<!ENTITY % pe SYSTEM \"subdir1/E18-pe\">%pe;\n%intpe;\n"
   match subset_outcome(() => collect_internal_external_entities(subset, load)) {
-    Ok(_) =>
+    Ran =>
       match load.table.get("ent") {
         Some(ExternalPiece(content)) => assert_eq(content, "CONTENT")
         _ => fail("chain-resolved entity must land in table")
       }
-    Err(_) => fail("E18 chain must pass")
+    _ => fail("E18 chain must pass")
   }
 }
 
@@ -250,22 +264,22 @@ test "entity value reference syntax gate" {
   let load = subset_load_with(DenyAll::{ })
   let bad = "<!ENTITY e \"100%\">"
   match subset_outcome(() => load_external_subset(bad, None, load)) {
-    Ok(_) => fail("lone percent in value must reject")
-    Err(At(error=XmlErrorKind::External(_), ..)) => ()
-    Err(_) => fail("unexpected error kind")
+    Ran => fail("lone percent in value must reject")
+    ExternalDenied => ()
+    _ => fail("unexpected error kind")
   }
   let load2 = subset_load_with(DenyAll::{ })
   let bad2 = "<!ENTITY % e \"asdf&\">"
   match subset_outcome(() => load_external_subset(bad2, None, load2)) {
-    Ok(_) => fail("lone ampersand in value must reject")
-    Err(At(error=XmlErrorKind::External(_), ..)) => ()
-    Err(_) => fail("unexpected error kind")
+    Ran => fail("lone ampersand in value must reject")
+    ExternalDenied => ()
+    _ => fail("unexpected error kind")
   }
   let load3 = subset_load_with(DenyAll::{ })
   let good = "<!ENTITY % e \"%pe;\">"
   match subset_outcome(() => load_external_subset(good, None, load3)) {
-    Ok(_) => ()
-    Err(_) => fail("well-formed value refs must load")
+    Ran => ()
+    _ => fail("well-formed value refs must load")
   }
 }
 
@@ -276,22 +290,22 @@ test "declaration name validity gate" {
   let load = subset_load_with(DenyAll::{ })
   let bad = "<!ELEMENT 0node EMPTY>"
   match subset_outcome(() => load_external_subset(bad, None, load)) {
-    Ok(_) => fail("digit-start element name must reject")
-    Err(At(error=XmlErrorKind::External(_), ..)) => ()
-    Err(_) => fail("unexpected error kind")
+    Ran => fail("digit-start element name must reject")
+    ExternalDenied => ()
+    _ => fail("unexpected error kind")
   }
   let load2 = subset_load_with(DenyAll::{ })
   let good = "<!ELEMENT _a-1 ANY><!NOTATION n2 SYSTEM \"x\">"
   match subset_outcome(() => load_external_subset(good, None, load2)) {
-    Ok(_) => ()
-    Err(_) => fail("legal declaration names must pass")
+    Ran => ()
+    _ => fail("legal declaration names must pass")
   }
   let load3 = subset_load_with(DenyAll::{ })
   load3.pe_values.set("e", "doc a1 CDATA")
   let pe_name = "<!ATTLIST %e; \"v1\">"
   match subset_outcome(() => load_external_subset(pe_name, None, load3)) {
-    Ok(_) => ()
-    Err(_) => fail("PE-carried ATTLIST name must pass")
+    Ran => ()
+    _ => fail("PE-carried ATTLIST name must pass")
   }
 }
 
@@ -306,9 +320,9 @@ test "standalone yes rejects table entity expansion" {
     expand_entry(buffer, [], "ext", "X", 0, 5, load, 0, false)
   })
   match outcome {
-    Ok(_) => fail("standalone expansion must reject")
-    Err(At(error=XmlErrorKind::External(_), ..)) => ()
-    Err(_) => fail("unexpected error kind")
+    Ran => fail("standalone expansion must reject")
+    ExternalDenied => ()
+    _ => fail("unexpected error kind")
   }
   let load2 = subset_load_with(DenyAll::{ })
   load2.table.set("ext", ExternalPiece("X"))
@@ -317,8 +331,8 @@ test "standalone yes rejects table entity expansion" {
     subset_outcome(() => {
       expand_entry(buffer2, [], "ext", "X", 0, 5, load2, 0, false)
     }) {
-    Ok(_) => ()
-    Err(_) => fail("non-standalone expansion must pass")
+    Ran => ()
+    _ => fail("non-standalone expansion must pass")
   }
 }
 
@@ -331,12 +345,12 @@ test "pe-carried entity claims table" {
     "<!ENTITY % zz '&#60;!ENTITY tricky \"error-prone\" >' >" +
     "%xx;"
   match subset_outcome(() => collect_internal_external_entities(subset, load)) {
-    Ok(_) =>
+    Ran =>
       match load.table.get("tricky") {
         Some(InternalText(value)) => assert_eq(value, "error-prone")
         _ => fail("PE-carried entity must claim table")
       }
-    Err(_) => fail("pe02 shape must load")
+    _ => fail("pe02 shape must load")
   }
 }
 
@@ -352,8 +366,8 @@ test "pe value char refs decode" {
       results.push(pe_value_char_refs("plain"))
       results.push(pe_value_char_refs("a&amp;b"))
     }) {
-    Ok(_) => ()
-    Err(_) => fail("decode must not raise")
+    Ran => ()
+    _ => fail("decode must not raise")
   }
   assert_eq(results[0], "%zz;")
   assert_eq(results[1], "<!E>")
@@ -367,25 +381,25 @@ test "subset PI gate" {
   let load = subset_load_with(DenyAll::{ })
   let bad = "<?[INCLUDE[<!ELEMENT r ANY>]]>"
   match subset_outcome(() => load_external_subset(bad, None, load)) {
-    Ok(_) => fail("PI with bracket target must reject")
-    Err(At(error=XmlErrorKind::External(_), ..)) => ()
-    Err(_) => fail("unexpected error kind")
+    Ran => fail("PI with bracket target must reject")
+    ExternalDenied => ()
+    _ => fail("unexpected error kind")
   }
   let load2 = subset_load_with(DenyAll::{ })
   let good = "<?t this is content ?><!ENTITY e \"v\">"
   match subset_outcome(() => load_external_subset(good, None, load2)) {
-    Ok(_) =>
+    Ran =>
       match load2.table.get("e") {
         Some(InternalText(value)) => assert_eq(value, "v")
         _ => fail("PI must not eat following declaration")
       }
-    Err(_) => fail("PI with content must pass")
+    _ => fail("PI with content must pass")
   }
   let load3 = subset_load_with(DenyAll::{ })
   let unterminated = "<?target <!ELEMENT r ANY>"
   match subset_outcome(() => load_external_subset(unterminated, None, load3)) {
-    Ok(_) => fail("unterminated PI must reject")
-    Err(At(error=XmlErrorKind::External(_), ..)) => ()
-    Err(_) => fail("unexpected error kind")
+    Ran => fail("unterminated PI must reject")
+    ExternalDenied => ()
+    _ => fail("unexpected error kind")
   }
 }
