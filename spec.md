@@ -224,7 +224,7 @@ DTD/实体——引擎不取外挂,判据外」。本卷记论证与裁定;实�
 - **C 误挂 1**:xmltest/not-wf/not-sa/002.xml 无外挂引用,真身 =
   内部子集 PE(%e; 展开出 text decl)——役B2 时纯桶迁移 B→C。
 
-### 2. 底座事实(Milky2018/xml@0.6.0,探针实证 + 接面解剖)
+### 2. 底座事实(Milky2018/xml@0.6.1 基；F1–F5 为 0.6.0 选型探针实证，0.6.1 差量 = Int→Int32 正典迁移波，零语义变化，事实沿用)
 
 - **F1 无外挂钩子**:无 resolver trait/回调;`DocType(String)` 事件只带
   根名,SYSTEM/PUBLIC id 不出线;`&x;` 由底座 entities map 内联展开,
