@@ -50,10 +50,11 @@ moon add thy1016/moonxml
 ### 解析与序列化
 
 ```moonbit
-match @base.parse("<r><a>1</a><b x=\"2\"/></r>") {
-  Ok(doc) => println(doc.to_xml())
-  Err(_) => println("parse failed")
+// parse 以 raise 风格报错(XmlError 携行/列/字节偏移)
+let doc = try @base.parse("<r><a>1</a><b x=\"2\"/></r>") catch {
+  _ => abort("parse failed")
 }
+println(doc.to_xml())
 ```
 
 `Document` 含 `decl` / `doctype` / `prologue` / `root` / `epilogue`；
@@ -67,24 +68,24 @@ match @base.parse("<r><a>1</a><b x=\"2\"/></r>") {
 // XML 1.0 四版次全表名字面（Edition5 为现行第五版紧凑面）
 let opts_edition = @base.parse_edition(
   source,
-  edition: @base.XmlEdition::Editions1to4,
+  edition=@base.XmlEdition::Editions1to4,
 )
 // 非 NS 面：名字原文直通，xmlns 即普通属性
 let ns_off = @base.parse_edition(
   source,
-  edition: @base.XmlEdition::Edition5,
-  ns: @base.NsMode::Off,
+  edition=@base.XmlEdition::Edition5,
+  ns=@base.NsMode::Off,
 )
 ```
 
 ### 字节输入与编码
 
 ```moonbit
-// BOM 嗅探 + 声明面编码决策；不支持面返回 Encoding 错
-match @base.decode_source(bytes) {
-  Ok(text) => println("decoded \{text.length()} chars")
-  Err(_) => println("unsupported encoding")
+// BOM 嗅探 + 声明面编码决策；不支持面报 Encoding 错(raise 风格)
+let text = try @base.decode_source(bytes) catch {
+  _ => abort("unsupported encoding")
 }
+println("decoded \{text.length()} chars")
 ```
 
 ### 外部实体解析
@@ -147,6 +148,16 @@ match @rdf.parse_rdf_xml_with_base(xml, base="https://example.org/doc") {
 - 底座隔离：解析引擎型不跨入公开 API 面。
 
 定位与边界的完整说明见 `spec.md`。
+
+## 命令行工具
+
+`src/cmd/xmlconf_flatten` 把 W3C XML Conformance 聚合清单按「组→分册」
+映射逐册自解析(dogfood),产出再生逐字节稳定的 TSV 清单
+(`TYPE / base+URI / ID / EDITION / NS` 五列,尾行带分型计数):
+
+```bash
+moon run src/cmd/xmlconf_flatten
+```
 
 ## 测试与验证
 

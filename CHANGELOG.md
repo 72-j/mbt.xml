@@ -3,6 +3,35 @@
 本文件面向**使用者**，记录每版对外可见的变化（API / 行为 / 兼容性 / 工程）。
 判据与规范细节见 `spec.md`（本仓规范卷）。
 
+## 0.3.0（2026-10-30）
+
+**破坏性：底座三支 failable API 迁 raise 风格**（工具链 [0078]
+result_error_return 收口，CI `moon check --deny-warn` 门恢复绿）。
+
+### 对外 API
+
+- **破坏性**：`base` 子包 `parse` / `parse_edition` 返回型
+  `Result[Document, XmlError]` → `Document raise XmlError`；
+  `decode_source` 同（→ `String raise XmlError`）。调用方从
+  `match f(x) { Ok(..) .. Err(..) }` 改为 `try f(x) catch { .. }`
+  （或在 raise 语境直接透传）。`rdf` 子包入口保持 `Result` 不变
+  （错误面为 String，非 Error 型，不在 [0078] 射程）。
+- 其余对外面零变更；README 快速上手示例同步换形（版次面示例标签
+  实参顺手勘正为 `=` 形）。
+
+### 工程与文档
+
+- `.mbti` 随签名变更同笔重生成（含 Int→Int32 工具链规范形）。
+- `src/cmd/xmlconf_flatten` 运行径勘正为
+  `moon run src/cmd/xmlconf_flatten`（0.2.1 布局迁移后的旧径失准），
+  README 补「命令行工具」节。
+
+### 测试
+
+- 双档读数与 0.2.1 逐字一致（native + wasm）：XML Conformance
+  2572 passed / 13 deferred / 2585 total；RDF/XML 197 judged /
+  0 deferred；单元与契约门 126 / 126。
+
 ## 0.2.1（2026-10-25）
 
 结构重排的实质上架版：registry 的 0.2.0 为重排**前**布局（根包
