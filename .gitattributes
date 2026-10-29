@@ -1,0 +1,28 @@
+# ===== 行尾归一（jsonld 仓 CI-2 同款）=====
+# 为什么补：本仓无属性文件时，Windows（runner 缺省 core.autocrlf=true）检出把
+# 文本件转 CRLF——`.xmlconf/`（SHA256SUMS 锁版）/ `.xmlnames/` / `.encodings/` /
+# `src/rdf/.rdf-tests/` 四套语料是**字节级判据输入**，被归一化即等于偷偷改判据，
+# CI Windows 腿实测红（九连 failure，2026-10-24 起）。
+# 口径：判据面文本件一律 **LF 检出**——判据是字节，必须跨 OS 同形。
+* text=auto eol=lf
+
+# 判据直接依赖字节的几族：点名钉死（防将来 `* text=auto` 被改动）
+*.mbt text eol=lf
+*.mbti text eol=lf
+*.toml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.tsv text eol=lf
+
+# ---- 冻结：W3C / WHATWG 语料原样（**判据输入，不得改字节**）----
+# 语料随上游逐字节复制 + 目录内 SHA256SUMS 锁版；标 `-text` 冻结字节，
+# 检出/提交都不转换，三平台读到同一份字节。
+.xmlconf/** -text
+.xmlnames/** -text
+.encodings/** -text
+src/rdf/.rdf-tests/** -text
