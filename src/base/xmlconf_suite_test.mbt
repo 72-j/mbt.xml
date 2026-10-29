@@ -119,27 +119,28 @@ async test "xmlconf suite gate" {
     let bytes = @fs.read_file("./.xmlconf/xmlconf/\{path}").binary()
     let doc_dir = suite_dirname(path)
     let resolver : &@base.EntityResolver = SuiteResolver::{ store, doc_dir, }
-    let outcome_ok = match @base.decode_source(bytes) {
-      Err(_) => two_way_ok || expected_ok == false
-      Ok(text) => {
-        let mut all_faces_match = true
-        for face in faces {
-          let face_ok = match
-            @base.parse_edition(
-              text,
-              edition=face,
-              ns=ns_mode,
-              resolver=Some(resolver),
-            ) {
-            Ok(_) => expected_ok
-            Err(_) => two_way_ok || expected_ok == false
-          }
-          if face_ok == false {
-            all_faces_match = false
-          }
+    let outcome_ok = try {
+      let text = @base.decode_source(bytes)
+      let mut all_faces_match = true
+      for face in faces {
+        let face_ok = try {
+          let _ = @base.parse_edition(
+            text,
+            edition=face,
+            ns=ns_mode,
+            resolver=Some(resolver),
+          )
+          expected_ok
+        } catch {
+          _ => two_way_ok || expected_ok == false
         }
-        all_faces_match
+        if face_ok == false {
+          all_faces_match = false
+        }
       }
+      all_faces_match
+    } catch {
+      _ => two_way_ok || expected_ok == false
     }
     if outcome_ok {
       passed += 1

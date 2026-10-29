@@ -4,9 +4,8 @@
 ///|
 /// 契约一:相邻 Text 事件按实体边界切分——适配层必须拼回单节点。
 test "contract/text-concatenation" {
-  let document = match @base.parse("<doc>a&amp;b&#65;c</doc>") {
-    Ok(document) => document
-    Err(_) => fail("entity corpus must parse")
+  let document = @base.parse("<doc>a&amp;b&#65;c</doc>") catch {
+    _ => fail("entity corpus must parse")
   }
   assert_eq(document.root.children.length(), 1)
   match document.root.children[0] {
@@ -18,9 +17,8 @@ test "contract/text-concatenation" {
 ///|
 /// 契约二:自闭合根的事件是 Empty 不是 Start+End——根槽臂必须接。
 test "contract/empty-root-arm" {
-  let document = match @base.parse("<leaf attr=\"v\"/>") {
-    Ok(document) => document
-    Err(_) => fail("empty root must parse")
+  let document = @base.parse("<leaf attr=\"v\"/>") catch {
+    _ => fail("empty root must parse")
   }
   assert_eq(document.root.name.qualified_name, "leaf")
   assert_eq(document.root.children.length(), 0)
@@ -33,7 +31,8 @@ test "contract/empty-root-arm" {
 /// 底座把错配闭标报 InvalidSyntax(实报定谳:UnmatchedTag 词表在,
 /// 但此形走 InvalidSyntax）——以实测形为准。
 test "contract/error-span-passthrough" {
-  let error = match @base.parse("<d><a></b></d>") {
+  let outcome = Ok(@base.parse("<d><a></b></d>")) catch { why => Err(why) }
+  let error = match outcome {
     Err(error) => error
     Ok(_) => fail("mismatched tag must fail")
   }
@@ -49,12 +48,10 @@ test "contract/error-span-passthrough" {
 ///|
 /// 命名空间解析语义落在树里(适配层职责,spec §1.4)。
 test "model/namespace-resolution" {
-  let document = match
-    @base.parse(
-      "<r xmlns:p=\"http://e/x\" xmlns=\"http://e/d\"><p:a p:k=\"1\"><b/></p:a></r>",
-    ) {
-    Ok(document) => document
-    Err(_) => fail("namespace corpus must parse")
+  let document = @base.parse(
+    "<r xmlns:p=\"http://e/x\" xmlns=\"http://e/d\"><p:a p:k=\"1\"><b/></p:a></r>",
+  ) catch {
+    _ => fail("namespace corpus must parse")
   }
   let child = match document.root.children[0] {
     @base.Node::Element(element) => element
@@ -78,10 +75,8 @@ test "model/namespace-resolution" {
 ///|
 /// xmlns 并回属性面(序列化面统一按属性发;前缀/缺省两形)。
 test "model/xmlns-merged-back" {
-  let document = match
-    @base.parse("<r xmlns:p=\"http://e/x\" xmlns=\"http://e/d\"/>") {
-    Ok(document) => document
-    Err(_) => fail("xmlns corpus must parse")
+  let document = @base.parse("<r xmlns:p=\"http://e/x\" xmlns=\"http://e/d\"/>") catch {
+    _ => fail("xmlns corpus must parse")
   }
   assert_eq(document.root.attributes.length(), 2)
   assert_eq(document.root.attributes[0].name.qualified_name, "xmlns:p")
@@ -96,9 +91,8 @@ test "model/xmlns-merged-back" {
 /// 文档骨架落位:decl/doctype/前杂项/根/后杂项各就各位。
 test "model/document-zones" {
   let source = "<?xml version=\"1.0\"?><!-- front --><?lead x?><!DOCTYPE r><r/><!-- back -->"
-  let document = match @base.parse(source) {
-    Ok(document) => document
-    Err(_) => fail("zone corpus must parse")
+  let document = @base.parse(source) catch {
+    _ => fail("zone corpus must parse")
   }
   let declaration = match document.decl {
     Some(declaration) => declaration
@@ -116,9 +110,8 @@ test "model/document-zones" {
 ///|
 /// CDATA 与相邻文本分型保留(不并节点;序列化原形往返)。
 test "model/cdata-kept-distinct" {
-  let document = match @base.parse("<d>a<![CDATA[<raw>&]]>b</d>") {
-    Ok(document) => document
-    Err(_) => fail("cdata corpus must parse")
+  let document = @base.parse("<d>a<![CDATA[<raw>&]]>b</d>") catch {
+    _ => fail("cdata corpus must parse")
   }
   assert_eq(document.root.children.length(), 3)
   assert_true(document.root.children[0] is @base.Node::Text("a"))
@@ -130,7 +123,25 @@ test "model/cdata-kept-distinct" {
 ///|
 /// 畸形输入拒绝面:未知实体/标签错配/空文档,均 Err。
 test "error/malformed-rejections" {
-  assert_true(@base.parse("<d>&nope;</d>") is Err(_))
-  assert_true(@base.parse("") is Err(_))
-  assert_true(@base.parse("<d><a></b></d>") is Err(_))
+  let unknown_entity = try {
+    let _ = @base.parse("<d>&nope;</d>")
+    false
+  } catch {
+    _ => true
+  }
+  let empty_source = try {
+    let _ = @base.parse("")
+    false
+  } catch {
+    _ => true
+  }
+  let mismatched = try {
+    let _ = @base.parse("<d><a></b></d>")
+    false
+  } catch {
+    _ => true
+  }
+  assert_true(unknown_entity)
+  assert_true(empty_source)
+  assert_true(mismatched)
 }

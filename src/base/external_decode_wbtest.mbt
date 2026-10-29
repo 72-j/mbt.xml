@@ -9,20 +9,10 @@ fn ext_bytes(items : Array[Int32]) -> Bytes {
 }
 
 ///|
-/// 准入结果包装(raise 归 Result,断言面用)。
-fn admit_outcome(
-  text : String,
-  doc_version : String?,
-) -> Result[String, XmlError] {
-  Ok(admit_external_text(text, doc_version)) catch {
-    why => Err(why)
-  }
-}
-
-///|
 /// 准入单元:无 decl 纯 UTF-8 原样通过(零漂移保底)。
 test "admit plain utf-8 passes" {
-  match admit_outcome("ab", None) {
+  let outcome = Ok(admit_external_text("ab", None)) catch { why => Err(why) }
+  match outcome {
     Ok(body) => assert_eq(body, "ab")
     Err(_) => fail("plain UTF-8 external piece must pass")
   }
@@ -41,13 +31,13 @@ test "admit strips BOM and text decl" {
      0x3F, 0x3E, // "?>"
      0x61, // "a"
   ])
-  match decode_source(bytes) {
-    Ok(raw) =>
-      match admit_outcome(raw, None) {
-        Ok(body) => assert_eq(body, "a")
-        Err(_) => fail("BOM + text decl piece must pass")
-      }
-    Err(_) => fail("BOM + UTF-8 piece must decode")
+  let raw = decode_source(bytes) catch {
+    _ => fail("BOM + UTF-8 piece must decode")
+  }
+  let outcome = Ok(admit_external_text(raw, None)) catch { why => Err(why) }
+  match outcome {
+    Ok(body) => assert_eq(body, "a")
+    Err(_) => fail("BOM + text decl piece must pass")
   }
 }
 
@@ -62,20 +52,23 @@ test "admit honors text decl encoding" {
      0x3F, 0x3E, // "?>"
      0xA1, 0xA1, // 全角空格
   ])
-  match decode_source(bytes) {
-    Ok(raw) =>
-      match admit_outcome(raw, None) {
-        Ok(body) => assert_eq(body, "\u{3000}")
-        Err(_) => fail("euc-jp piece must decode via text decl")
-      }
-    Err(_) => fail("euc-jp piece must decode")
+  let raw = decode_source(bytes) catch { _ => fail("euc-jp piece must decode") }
+  let outcome = Ok(admit_external_text(raw, None)) catch { why => Err(why) }
+  match outcome {
+    Ok(body) => assert_eq(body, "\u{3000}")
+    Err(_) => fail("euc-jp piece must decode via text decl")
   }
 }
 
 ///|
 /// T 闸:缺 encoding = 拒(P77 encoding 必备;dtd07)。
 test "text decl without encoding rejects" {
-  match admit_outcome("<?xml version=\"1.0\"?><!ELEMENT r EMPTY>", None) {
+  let outcome = Ok(
+    admit_external_text("<?xml version=\"1.0\"?><!ELEMENT r EMPTY>", None),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(_) => fail("text decl without encoding must reject")
     Err(At(error=External(_), ..)) => ()
     Err(_) => fail("unexpected error kind")
@@ -85,7 +78,12 @@ test "text decl without encoding rejects" {
 ///|
 /// T 闸:standalone 越权 = 拒(P77 无 SDDecl 位;ext-sa/002)。
 test "standalone in text decl rejects" {
-  match admit_outcome("<?xml version=\"1.0\" standalone=\"yes\"?>data", None) {
+  let outcome = Ok(
+    admit_external_text("<?xml version=\"1.0\" standalone=\"yes\"?>data", None),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(_) => fail("standalone in text decl must reject")
     Err(At(error=External(_), ..)) => ()
     Err(_) => fail("unexpected error kind")
@@ -95,7 +93,12 @@ test "standalone in text decl rejects" {
 ///|
 /// T 闸:version 晚于 encoding(序位倒置)= 拒(P77 序位)。
 test "version after encoding rejects" {
-  match admit_outcome("<?xml encoding=\"UTF-8\" version=\"1.0\"?>", None) {
+  let outcome = Ok(
+    admit_external_text("<?xml encoding=\"UTF-8\" version=\"1.0\"?>", None),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(_) => fail("version after encoding must reject")
     Err(At(error=External(_), ..)) => ()
     Err(_) => fail("unexpected error kind")
@@ -105,7 +108,12 @@ test "version after encoding rejects" {
 ///|
 /// T 闸:版本词形越界 = 拒(VersionNum 只认 1.0/1.1;009.ent 42.88 形)。
 test "implausible version rejects" {
-  match admit_outcome("<?xml version=\"42.88\" encoding=\"utf-8\"?>", None) {
+  let outcome = Ok(
+    admit_external_text("<?xml version=\"42.88\" encoding=\"utf-8\"?>", None),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(_) => fail("implausible version must reject")
     Err(At(error=External(_), ..)) => ()
     Err(_) => fail("unexpected error kind")
@@ -115,8 +123,15 @@ test "implausible version rejects" {
 ///|
 /// V 闸:1.1 件在无声明(=1.0)文档 = 拒(only-later;E38/eduni 003)。
 test "entity version later than document rejects" {
-  match
-    admit_outcome("<?xml version=\"1.1\" encoding=\"utf-8\"?>some text", None) {
+  let outcome = Ok(
+    admit_external_text(
+      "<?xml version=\"1.1\" encoding=\"utf-8\"?>some text",
+      None,
+    ),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(_) => fail("1.1 entity under 1.0 document must reject")
     Err(At(error=External(_), ..)) => ()
     Err(_) => fail("unexpected error kind")
@@ -126,11 +141,15 @@ test "entity version later than document rejects" {
 ///|
 /// V 闸:1.0 件在 1.1 文档 = 合法(only-later 非相等;ibm77v01 校准)。
 test "entity version 1.0 under 1.1 document accepts" {
-  match
-    admit_outcome(
+  let outcome = Ok(
+    admit_external_text(
       "<?xml version='1.0' encoding='UTF-8'?><!ELEMENT r EMPTY>",
       Some("1.1"),
-    ) {
+    ),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(_) => ()
     Err(_) => fail("1.0 entity under 1.1 document must accept")
   }
@@ -139,7 +158,12 @@ test "entity version 1.0 under 1.1 document accepts" {
 ///|
 /// T 闸:NEL 分隔符在非 1.1 文档面 = 拒(S 1.0 无 #x85;n17)。
 test "nel separator under 1.0 document rejects" {
-  match admit_outcome("<?xml version=\"1.0\" \u{85} encoding='UTF-8'?>", None) {
+  let outcome = Ok(
+    admit_external_text("<?xml version=\"1.0\" \u{85} encoding='UTF-8'?>", None),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(_) => fail("NEL separator under 1.0 document must reject")
     Err(At(error=External(_), ..)) => ()
     Err(_) => fail("unexpected error kind")
@@ -149,8 +173,15 @@ test "nel separator under 1.0 document rejects" {
 ///|
 /// T 闸：NEL 分隔符在 1.1 文档面 = 合法（S 1.1 增 #x85/#x2028；校准例）。
 test "nel separator under 1.1 document accepts" {
-  match
-    admit_outcome("<?xml version='1.1' \u{85} encoding='UTF-8'?>", Some("1.1")) {
+  let outcome = Ok(
+    admit_external_text(
+      "<?xml version='1.1' \u{85} encoding='UTF-8'?>",
+      Some("1.1"),
+    ),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(_) => ()
     Err(_) => fail("NEL separator under 1.1 document must accept")
   }
@@ -159,8 +190,15 @@ test "nel separator under 1.1 document accepts" {
 ///|
 /// Char 门:件体字面控制字符 = 拒(1.1 restricted-literal;n04  形)。
 test "literal control char in body rejects" {
-  match
-    admit_outcome("<?xml version='1.0' encoding='UTF-8'?>\u{89}", Some("1.1")) {
+  let outcome = Ok(
+    admit_external_text(
+      "<?xml version='1.0' encoding='UTF-8'?>\u{89}",
+      Some("1.1"),
+    ),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(_) => fail("literal control char must reject")
     Err(At(error=IllegalChar(_), ..)) => ()
     Err(_) => fail("unexpected error kind")
@@ -170,11 +208,15 @@ test "literal control char in body rejects" {
 ///|
 /// Char 门：字符引用 = ASCII 文本，天然放行（ibm77v22-29 校准例）。
 test "char reference passes char gate" {
-  match
-    admit_outcome(
+  let outcome = Ok(
+    admit_external_text(
       "<?xml version='1.1' encoding='UTF-8'?>&#x007F;&#x0080;",
       Some("1.1"),
-    ) {
+    ),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(body) => assert_eq(body, "&#x007F;&#x0080;")
     Err(_) => fail("char reference must pass the char gate")
   }
@@ -183,7 +225,10 @@ test "char reference passes char gate" {
 ///|
 /// T 闸:未闭合 text decl(缺 ?>)= 拒(ibm 1.0 面 P77 n03/n04 形)。
 test "unterminated text decl rejects" {
-  match admit_outcome("<?xml version=\"1.0\"", None) {
+  let outcome = Ok(admit_external_text("<?xml version=\"1.0\"", None)) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(_) => fail("unterminated text decl must reject")
     Err(At(error=External(_), ..)) => ()
     Err(_) => fail("unexpected error kind")
@@ -193,7 +238,10 @@ test "unterminated text decl rejects" {
 ///|
 /// 触发面:PI 目标 xmlfoo 不是 text decl,不归本闸(原样过)。
 test "xml-prefixed pi target is not a text decl" {
-  match admit_outcome("<?xmlfoo data?>rest", None) {
+  let outcome = Ok(admit_external_text("<?xmlfoo data?>rest", None)) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(body) => assert_eq(body, "<?xmlfoo data?>rest")
     Err(_) => fail("xml-prefixed PI target must pass through")
   }

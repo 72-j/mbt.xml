@@ -7,28 +7,25 @@
 /// 字符串定点:canonical(parse(canonical(parse(s)))) ≡ canonical(parse(s))。
 /// 树等价另测(定点抓不住系统性丢节点,如全量吞注释)。
 fn round_trips(source : String) -> Bool {
-  match @base.parse(source) {
-    Ok(document) => {
-      let first_pass = document.to_xml()
-      match @base.parse(first_pass) {
-        Ok(reparsed) => reparsed.to_xml() == first_pass
-        Err(_) => false
-      }
-    }
-    Err(_) => false
+  try {
+    let document = @base.parse(source)
+    let first_pass = document.to_xml()
+    let reparsed = @base.parse(first_pass)
+    reparsed.to_xml() == first_pass
+  } catch {
+    _ => false
   }
 }
 
 ///|
 /// 树等价:parse(s) ≡ parse(to_xml(parse(s)))。
 fn trees_survive(source : String) -> Bool {
-  match @base.parse(source) {
-    Ok(document) =>
-      match @base.parse(document.to_xml()) {
-        Ok(reparsed) => document == reparsed
-        Err(_) => false
-      }
-    Err(_) => false
+  try {
+    let document = @base.parse(source)
+    let reparsed = @base.parse(document.to_xml())
+    document == reparsed
+  } catch {
+    _ => false
   }
 }
 
@@ -42,9 +39,8 @@ test "roundtrip/nested" {
 ///|
 test "roundtrip/decl+doctype+entities" {
   let source = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE doc [<!ENTITY greeting \"hello\">]><doc>&greeting; &amp; &lt;tag&gt;</doc>"
-  let document = match @base.parse(source) {
-    Ok(document) => document
-    Err(_) => fail("parse failed: entity corpus must be well-formed")
+  let document = @base.parse(source) catch {
+    _ => fail("parse failed: entity corpus must be well-formed")
   }
   assert_true(document.doctype == Some("doc"))
   assert_true(round_trips(source))

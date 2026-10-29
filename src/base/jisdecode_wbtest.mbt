@@ -16,16 +16,6 @@ fn byte_sequence_of(items : Array[Int32]) -> Bytes {
 }
 
 ///|
-/// 错误路探针:raise 收成 Result,断言放 catch 外(「catch 吞断言」纪律)。
-fn jis_outcome_of(
-  decode : () -> String raise XmlError,
-) -> Result[String, XmlError] {
-  Ok(decode()) catch {
-    err => Err(err)
-  }
-}
-
-///|
 test "shift_jis two-byte pair decodes via table" {
   let text = decode_shift_jis(byte_sequence_of([0x93, 0xFA])[:])
   assert_eq(text, "日")
@@ -50,25 +40,25 @@ test "shift_jis EUDC range outranks index table" {
 
 ///|
 test "shift_jis rejects 0x7F trail and 0xA0 lead" {
-  let bad_trail = jis_outcome_of(() => {
-    decode_shift_jis(byte_sequence_of([0x81, 0x7F])[:])
-  })
+  let bad_trail = Ok(decode_shift_jis(byte_sequence_of([0x81, 0x7F])[:])) catch {
+    err => Err(err)
+  }
   assert_true(bad_trail is Err(_))
-  let bad_lead = jis_outcome_of(() => {
-    decode_shift_jis(byte_sequence_of([0xA0])[:])
-  })
+  let bad_lead = Ok(decode_shift_jis(byte_sequence_of([0xA0])[:])) catch {
+    err => Err(err)
+  }
   assert_true(bad_lead is Err(_))
-  let bad_single = jis_outcome_of(() => {
-    decode_shift_jis(byte_sequence_of([0xFD])[:])
-  })
+  let bad_single = Ok(decode_shift_jis(byte_sequence_of([0xFD])[:])) catch {
+    err => Err(err)
+  }
   assert_true(bad_single is Err(_))
 }
 
 ///|
 test "shift_jis truncated lead at end of queue is rejected" {
-  let outcome = jis_outcome_of(() => {
-    decode_shift_jis(byte_sequence_of([0x81])[:])
-  })
+  let outcome = Ok(decode_shift_jis(byte_sequence_of([0x81])[:])) catch {
+    err => Err(err)
+  }
   assert_true(outcome is Err(_))
 }
 
@@ -80,9 +70,9 @@ test "euc_jp jis0208 pair and halfwidth escape" {
 
 ///|
 test "euc_jp jis0212 escape uses supplementary table" {
-  let outcome = jis_outcome_of(() => {
-    decode_euc_jp(byte_sequence_of([0x8F, 0xA1, 0xA1])[:])
-  })
+  let outcome = Ok(decode_euc_jp(byte_sequence_of([0x8F, 0xA1, 0xA1])[:])) catch {
+    err => Err(err)
+  }
   assert_true(outcome is Err(_))
   match outcome {
     Err(XmlError::At(error~, span~)) => {
@@ -95,13 +85,17 @@ test "euc_jp jis0212 escape uses supplementary table" {
 
 ///|
 test "euc_jp rejects 0x80 0xFF and truncated lead" {
-  let high = jis_outcome_of(() => decode_euc_jp(byte_sequence_of([0x80])[:]))
+  let high = Ok(decode_euc_jp(byte_sequence_of([0x80])[:])) catch {
+    err => Err(err)
+  }
   assert_true(high is Err(_))
-  let lead = jis_outcome_of(() => decode_euc_jp(byte_sequence_of([0xFE])[:]))
+  let lead = Ok(decode_euc_jp(byte_sequence_of([0xFE])[:])) catch {
+    err => Err(err)
+  }
   assert_true(lead is Err(_))
-  let truncated = jis_outcome_of(() => {
-    decode_euc_jp(byte_sequence_of([0x8F, 0xA1])[:])
-  })
+  let truncated = Ok(decode_euc_jp(byte_sequence_of([0x8F, 0xA1])[:])) catch {
+    err => Err(err)
+  }
   assert_true(truncated is Err(_))
 }
 
@@ -129,27 +123,35 @@ test "iso_2022_jp katakana state maps halfwidth range" {
 
 ///|
 test "iso_2022_jp redundant escape and bad escape are rejected" {
-  let redundant = jis_outcome_of(() => {
+  let redundant = Ok(
     decode_iso_2022_jp(
       byte_sequence_of([0x1B, 0x24, 0x42, 0x1B, 0x24, 0x42, 0x30, 0x21])[:],
-    )
-  })
+    ),
+  ) catch {
+    err => Err(err)
+  }
   assert_true(redundant is Err(_))
-  let bogus = jis_outcome_of(() => {
-    decode_iso_2022_jp(byte_sequence_of([0x1B, 0x28, 0x58])[:])
-  })
+  let bogus = Ok(decode_iso_2022_jp(byte_sequence_of([0x1B, 0x28, 0x58])[:])) catch {
+    err => Err(err)
+  }
   assert_true(bogus is Err(_))
-  let truncated = jis_outcome_of(() => {
-    decode_iso_2022_jp(byte_sequence_of([0x1B, 0x24, 0x42, 0x30])[:])
-  })
+  let truncated = Ok(
+    decode_iso_2022_jp(byte_sequence_of([0x1B, 0x24, 0x42, 0x30])[:]),
+  ) catch {
+    err => Err(err)
+  }
   assert_true(truncated is Err(_))
 }
 
 ///|
 test "jis_2022 ascii state rejects SI/SO shift bytes" {
-  let so = jis_outcome_of(() => decode_iso_2022_jp(byte_sequence_of([0x0E])[:]))
+  let so = Ok(decode_iso_2022_jp(byte_sequence_of([0x0E])[:])) catch {
+    err => Err(err)
+  }
   assert_true(so is Err(_))
-  let si = jis_outcome_of(() => decode_iso_2022_jp(byte_sequence_of([0x0F])[:]))
+  let si = Ok(decode_iso_2022_jp(byte_sequence_of([0x0F])[:])) catch {
+    err => Err(err)
+  }
   assert_true(si is Err(_))
 }
 

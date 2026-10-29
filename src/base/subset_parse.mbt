@@ -361,9 +361,12 @@ fn parse_entity_declaration(
         if !is_pe {
           match load.resolver.resolve(base_uri, sysid, public_id) {
             Some(bytes) => {
-              let content = match decode_source(bytes) {
-                Ok(raw) => admit_external_text(raw, load.doc_version)
-                Err(_) =>
+              // 语义保留:解码失败重贴 External 标签(原文报法,账本见 ctx.md)
+              let content = admit_external_text(
+                decode_source(bytes),
+                load.doc_version,
+              ) catch {
+                _ =>
                   raise XmlError::At(
                     error=XmlErrorKind::External(
                       "external entity '\{entity_name}' decode failed",
@@ -826,10 +829,10 @@ fn reference_pe(
       load.pe_depth = load.pe_depth + 1
       match load.resolver.resolve(id.base, id.system_id, id.public_id) {
         Some(bytes) => {
-          let content = match decode_source(bytes) {
-            Ok(raw) => admit_external_text(raw, load.doc_version)
-            Err(why) => raise why
-          }
+          let content = admit_external_text(
+            decode_source(bytes),
+            load.doc_version,
+          )
           load_external_subset(
             content,
             Some(merge_base_reference(id.base, id.system_id)),

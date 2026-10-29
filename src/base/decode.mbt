@@ -13,10 +13,8 @@
 ///    (1.1 的 [#x1-#x8]…[#x86-#x9F] 区须走字符引用,字面 = 拒;NEL 字面合法)。
 /// 错误面 = [XmlError](新词 [XmlErrorKind::Encoding] / [XmlErrorKind::IllegalChar]);
 /// offset 精确,行列尽力(byte 面按 0x0A 计,text 面按字符计)。
-pub fn decode_source(bytes : Bytes) -> Result[String, XmlError] {
-  Ok(decode_from(bytes[:])) catch {
-    error => Err(error)
-  }
+pub fn decode_source(bytes : Bytes) -> String raise XmlError {
+  decode_from(bytes[:])
 }
 
 ///|

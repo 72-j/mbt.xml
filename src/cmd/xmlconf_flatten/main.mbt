@@ -4,7 +4,7 @@
 /// 面超出 @moonxml 解析层),本命令按「组→分册」映射逐册用 @moonxml 自解析
 /// (dogfood)，产出带校验和的 TSV：TYPE \t base+URI \t ID \t EDITION \t NS（保持
 /// 册序,再生逐字节稳定;EDITION/NS 缺省 = 空串 = 全版本适用/非 NS 面)。
-/// 运行：moon run cmd/xmlconf_flatten（cwd = moonxml 仓根）。
+/// 运行：moon run src/cmd/xmlconf_flatten（cwd = moonxml 仓根）。
 /// 施工账：ctx.md §4（役M2）· §6（役E1）· §8（役N1）。
 
 ///|
@@ -120,9 +120,8 @@ async fn main {
     let text = @fs.read_file("./.xmlconf/xmlconf/\{manifest}").text()
     // sun/ibm 分册是裸 TEST/TESTCASES 片段(多顶层素)——剥声明+包合成根再解析
     let body = strip_declaration(text)
-    let document = match @base.parse("<flatten-root>\{body}</flatten-root>") {
-      Ok(value) => value
-      Err(err) => abort("flatten: \{manifest}: \{xmlconf_error_hint(err)}")
+    let document = @base.parse("<flatten-root>\{body}</flatten-root>") catch {
+      err => abort("flatten: \{manifest}: \{xmlconf_error_hint(err)}")
     }
     collect_tests(document.root, base, rows)
   }

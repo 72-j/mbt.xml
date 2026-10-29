@@ -71,10 +71,10 @@ fn prepare_external(
           // (fetch-fail = reject,B1 事实 F2 同款)
           match resolver.resolve(None, sysid, doctype.public_id) {
             Some(bytes) => {
-              let subset_text = match decode_source(bytes) {
-                Ok(raw) => admit_external_text(raw, load.doc_version)
-                Err(why) => raise why
-              }
+              let subset_text = admit_external_text(
+                decode_source(bytes),
+                load.doc_version,
+              )
               load_external_subset(subset_text, Some(sysid), load)
             }
             None => ()

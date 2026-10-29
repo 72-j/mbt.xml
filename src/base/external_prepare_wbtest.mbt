@@ -39,13 +39,17 @@ fn map_resolver_of(entries : Array[(String, String)]) -> &EntityResolver {
 /// 集成单元:外取子集字面量实体 → 内容引用展开成树。
 test "external entity expands into tree" {
   let resolver = map_resolver_of([("s.dtd", "<!ENTITY e \"A\">")])
-  match
+  let outcome = Ok(
     parse_edition(
       "<!DOCTYPE d SYSTEM \"s.dtd\"><d>&e;</d>",
       edition=Edition5,
       ns=On,
       resolver=Some(resolver),
-    ) {
+    ),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(document) => assert_true(document.to_xml().contains("<d>A</d>"))
     Err(_) => fail("external entity expansion must parse")
   }
@@ -55,13 +59,17 @@ test "external entity expands into tree" {
 /// 集成单元:含标记外取实体 → 预组合成真元素(12 案标记面主径)。
 test "markup bearing entity composes markup" {
   let resolver = map_resolver_of([("s.dtd", "<!ENTITY m \"<x t='1'>B</x>\">")])
-  match
+  let outcome = Ok(
     parse_edition(
       "<!DOCTYPE d SYSTEM \"s.dtd\"><d>&m;</d>",
       edition=Edition5,
       ns=On,
       resolver=Some(resolver),
-    ) {
+    ),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(document) => assert_true(document.to_xml().contains("<x t=\"1\">B</x>"))
     Err(_) => fail("markup entity must compose as markup")
   }
@@ -71,13 +79,17 @@ test "markup bearing entity composes markup" {
 /// 集成单元:内部优先——内部子集同名实体我表不收,底座自展开。
 test "internal subset wins" {
   let resolver = map_resolver_of([("s.dtd", "<!ENTITY e \"E\">")])
-  match
+  let outcome = Ok(
     parse_edition(
       "<!DOCTYPE d SYSTEM \"s.dtd\" [<!ENTITY e \"I\">]><d>&e;</d>",
       edition=Edition5,
       ns=On,
       resolver=Some(resolver),
-    ) {
+    ),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(document) => assert_true(document.to_xml().contains("<d>I</d>"))
     Err(_) => fail("internal-wins parse must succeed")
   }
@@ -90,13 +102,17 @@ test "external entity in attribute rejects" {
     ("s.dtd", "<!ENTITY m SYSTEM \"m.ent\">"),
     ("m.ent", "X"),
   ])
-  match
+  let outcome = Ok(
     parse_edition(
       "<!DOCTYPE d SYSTEM \"s.dtd\"><d a=\"&m;\"></d>",
       edition=Edition5,
       ns=On,
       resolver=Some(resolver),
-    ) {
+    ),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(_) => fail("external entity in attribute must reject")
     Err(At(error=External(_), ..)) => ()
     Err(_) => fail("unexpected error kind")
@@ -107,13 +123,17 @@ test "external entity in attribute rejects" {
 /// 集成单元:自引用实体 = 深度闸拒(billion-laughs 防御)。
 test "recursive entity hits depth gate" {
   let resolver = map_resolver_of([("s.dtd", "<!ENTITY a \"&a;\">")])
-  match
+  let outcome = Ok(
     parse_edition(
       "<!DOCTYPE d SYSTEM \"s.dtd\"><d>&a;</d>",
       edition=Edition5,
       ns=On,
       resolver=Some(resolver),
-    ) {
+    ),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(_) => fail("recursive entity must reject")
     Err(At(error=External(_), ..)) => ()
     Err(_) => fail("unexpected error kind")
@@ -124,8 +144,12 @@ test "recursive entity hits depth gate" {
 /// 缺省拒面:resolver 缺省(NoExternal 语义)——有外挂声明但取不到,
 /// 原文直通零漂移(引用处底座 InvalidEntity 拒)。
 test "default closed face unchanged" {
-  match
-    parse_edition("<!DOCTYPE d SYSTEM \"s.dtd\"><d>&e;</d>", edition=Edition5) {
+  let outcome = Ok(
+    parse_edition("<!DOCTYPE d SYSTEM \"s.dtd\"><d>&e;</d>", edition=Edition5),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(_) => fail("undeclared entity must reject without resolver")
     Err(At(error=InvalidEntity(_), ..)) => ()
     Err(_) => fail("unexpected error kind")
@@ -144,25 +168,14 @@ test "span patch remap" {
 }
 
 ///|
-fn prepare_outcome(
-  source : String,
-  resolver : &EntityResolver,
-) -> Result[(String, Array[SpanPatch]), XmlError] {
-  Ok(prepare_external(source, resolver, Editions1to4)) catch {
-    why => Err(why)
-  }
-}
-
-///|
 /// 链所有权闭合：内部字面量链 a→b（外取形）整链收归本层——组合面 &a;
 /// 展开到底，底座不再见 &b;（半路 InvEnt 的根因）。c 不动链，留给底座
 /// （内部优先不扩权）。施工账：ctx.md §11（役B2）。
 test "internal literal chain claims external entity" {
   let source = "<!DOCTYPE r [<!ENTITY a \"&b;\"><!ENTITY b SYSTEM \"b.ent\"><!ENTITY c \"(ic)\">]><r>&a;&c;</r>"
   let resolver = map_resolver_of([("b.ent", "(B)")])
-  let (composed, patches) = match prepare_outcome(source, resolver) {
-    Ok(pair) => pair
-    Err(_) => fail("chain doc must prepare")
+  let (composed, patches) = prepare_external(source, resolver, Editions1to4) catch {
+    _ => fail("chain doc must prepare")
   }
   // 内容区断言走后缀(声明区按零漂移设计原样保留,a 声明值里本就
   // 有字面 &b;——contains 全文探会误咬)
@@ -176,9 +189,8 @@ test "internal literal chain claims external entity" {
 test "unclaimed internal literal stays with base" {
   let source = "<!DOCTYPE r [<!ENTITY a \"&b;\"><!ENTITY b \"(ib)\"><!ENTITY x SYSTEM \"x.ent\">]><r>&a;&x;</r>"
   let resolver = map_resolver_of([("x.ent", "(X)")])
-  let (composed, patches) = match prepare_outcome(source, resolver) {
-    Ok(pair) => pair
-    Err(_) => fail("mixed doc must prepare")
+  let (composed, patches) = prepare_external(source, resolver, Editions1to4) catch {
+    _ => fail("mixed doc must prepare")
   }
   assert_true(composed.contains("&a;"))
   assert_true(composed.contains("(X)"))

@@ -416,9 +416,8 @@ pub fn parse_rdf_xml_with_base(
 ) -> Result[Dataset, String] {
   let edition = @base.XmlEdition::Editions1to4
   let ns = @base.NsMode::On
-  let doc = match @base.parse_edition(text, edition~, ns~) {
-    Ok(doc) => doc
-    Err(_) => return Err("xml ill-formed")
+  let doc = @base.parse_edition(text, edition~, ns~) catch {
+    _ => return Err("xml ill-formed")
   }
   let state : WalkState = {
     quads: [],

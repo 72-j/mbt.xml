@@ -3,10 +3,7 @@
 /// 值级等价 + 字符串定点（生成骨架的正确性由消费端真链路验证；spec 卷一完成门）。
 test "catalog roundtrip via generated skeleton" {
   let source = "<?xml version=\"1.0\"?><catalog version=\"2.1\" xml:lang=\"en\"><book isbn=\"i1\" year=\"2020\" in_print=\"true\"><title>t1</title><author>a1</author><author>a2</author><pages>320</pages></book><book isbn=\"i2\" year=\"1999\" price=\"42.8\" in_print=\"false\"><title>t2</title><author>a3</author><pages>288</pages></book><meta><marker/></meta></catalog>"
-  let document = match @base.parse(source) {
-    Ok(value) => value
-    Err(_) => abort("parse failed")
-  }
+  let document = @base.parse(source) catch { _ => abort("parse failed") }
   let doc = match @catalog.doc_from_tree(document.root) {
     Ok(value) => value
     Err(msg) => abort("from_tree failed: \{msg}")
@@ -34,9 +31,8 @@ test "catalog roundtrip via generated skeleton" {
     root: doc.to_tree(),
     epilogue: [],
   }.to_xml()
-  let second_document = match @base.parse(second_source) {
-    Ok(value) => value
-    Err(_) => abort("re-parse failed")
+  let second_document = @base.parse(second_source) catch {
+    _ => abort("re-parse failed")
   }
   let doc2 = match @catalog.doc_from_tree(second_document.root) {
     Ok(value) => value
@@ -50,23 +46,19 @@ test "catalog roundtrip via generated skeleton" {
 ///|
 /// 拍1(2026-10-22):node 内非空白散文本 = 红;空白文本(排版)容忍。
 test "catalog stray text in node is rejected, blank tolerated" {
-  let with_stray = match
-    @base.parse(
-      "<?xml version=\"1.0\"?><catalog version=\"2.1\">stray<book isbn=\"i1\" year=\"2020\" in_print=\"true\"><title>t1</title><pages>1</pages></book></catalog>",
-    ) {
-    Ok(value) => value
-    Err(_) => abort("parse failed")
+  let with_stray = @base.parse(
+    "<?xml version=\"1.0\"?><catalog version=\"2.1\">stray<book isbn=\"i1\" year=\"2020\" in_print=\"true\"><title>t1</title><pages>1</pages></book></catalog>",
+  ) catch {
+    _ => abort("parse failed")
   }
   match @catalog.doc_from_tree(with_stray.root) {
     Err(msg) => assert_true(msg.contains("stray text"))
     Ok(_) => fail("stray text must be rejected")
   }
-  let with_blank = match
-    @base.parse(
-      "<?xml version=\"1.0\"?><catalog version=\"2.1\"> <book isbn=\"i1\" year=\"2020\" in_print=\"true\"><title>t1</title><pages>1</pages></book> </catalog>",
-    ) {
-    Ok(value) => value
-    Err(_) => abort("parse failed")
+  let with_blank = @base.parse(
+    "<?xml version=\"1.0\"?><catalog version=\"2.1\"> <book isbn=\"i1\" year=\"2020\" in_print=\"true\"><title>t1</title><pages>1</pages></book> </catalog>",
+  ) catch {
+    _ => abort("parse failed")
   }
   assert_true(@catalog.doc_from_tree(with_blank.root) is Ok(_))
 }
@@ -75,10 +67,7 @@ test "catalog stray text in node is rejected, blank tolerated" {
 /// 拍2(2026-10-22):CDATA 叶 = 载荷(infoset 等价;Text/CData 按序拼合)。
 test "catalog CDATA leaf is text payload" {
   let source = "<?xml version=\"1.0\"?><catalog version=\"2.1\"><book isbn=\"i1\" year=\"2020\" in_print=\"true\"><title>a<![CDATA[b]]>c</title><pages>3</pages></book></catalog>"
-  let document = match @base.parse(source) {
-    Ok(value) => value
-    Err(_) => abort("parse failed")
-  }
+  let document = @base.parse(source) catch { _ => abort("parse failed") }
   let doc = match @catalog.doc_from_tree(document.root) {
     Ok(value) => value
     Err(msg) => abort("from_tree failed: \{msg}")
@@ -91,36 +80,30 @@ test "catalog CDATA leaf is text payload" {
 /// （xmlschema: not an int/double/bool）。
 test "catalog typed conversion failures are red" {
   // int 词法域外:year="abc"
-  let bad_int = match
-    @base.parse(
-      "<catalog version=\"2.1\"><book isbn=\"i1\" year=\"abc\" in_print=\"true\"><title>t</title><pages>1</pages></book></catalog>",
-    ) {
-    Ok(value) => value
-    Err(_) => abort("parse failed")
+  let bad_int = @base.parse(
+    "<catalog version=\"2.1\"><book isbn=\"i1\" year=\"abc\" in_print=\"true\"><title>t</title><pages>1</pages></book></catalog>",
+  ) catch {
+    _ => abort("parse failed")
   }
   match @catalog.doc_from_tree(bad_int.root) {
     Err(msg) => assert_true(msg.contains("not an int"))
     Ok(_) => fail("bad int must be red")
   }
   // double 词法域外:price="x"
-  let bad_double = match
-    @base.parse(
-      "<catalog version=\"2.1\"><book isbn=\"i1\" year=\"2020\" price=\"x\" in_print=\"true\"><title>t</title><pages>1</pages></book></catalog>",
-    ) {
-    Ok(value) => value
-    Err(_) => abort("parse failed")
+  let bad_double = @base.parse(
+    "<catalog version=\"2.1\"><book isbn=\"i1\" year=\"2020\" price=\"x\" in_print=\"true\"><title>t</title><pages>1</pages></book></catalog>",
+  ) catch {
+    _ => abort("parse failed")
   }
   match @catalog.doc_from_tree(bad_double.root) {
     Err(msg) => assert_true(msg.contains("not a double"))
     Ok(_) => fail("bad double must be red")
   }
   // bool 词法域外:in_print="yes"(xsd:boolean 域 = true/false/1/0)
-  let bad_bool = match
-    @base.parse(
-      "<catalog version=\"2.1\"><book isbn=\"i1\" year=\"2020\" in_print=\"yes\"><title>t</title><pages>1</pages></book></catalog>",
-    ) {
-    Ok(value) => value
-    Err(_) => abort("parse failed")
+  let bad_bool = @base.parse(
+    "<catalog version=\"2.1\"><book isbn=\"i1\" year=\"2020\" in_print=\"yes\"><title>t</title><pages>1</pages></book></catalog>",
+  ) catch {
+    _ => abort("parse failed")
   }
   match @catalog.doc_from_tree(bad_bool.root) {
     Err(msg) => assert_true(msg.contains("not a bool"))
@@ -133,10 +116,7 @@ test "catalog typed conversion failures are red" {
 /// 的 isbn 非空形校验。骨架捕获挂点 Err 后加 "book: " 前缀透出。
 test "catalog hook semantic: empty isbn rejected via stub" {
   let source = "<catalog version=\"2.1\"><book isbn=\"\" year=\"2020\" in_print=\"true\"><title>t</title><pages>1</pages></book></catalog>"
-  let document = match @base.parse(source) {
-    Ok(value) => value
-    Err(_) => abort("parse failed")
-  }
+  let document = @base.parse(source) catch { _ => abort("parse failed") }
   match @catalog.doc_from_tree(document.root) {
     Err(msg) => assert_true(msg.contains("book: isbn must not be empty"))
     Ok(_) => fail("empty isbn must be rejected by the stub hook")

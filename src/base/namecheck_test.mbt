@@ -5,7 +5,8 @@
 /// 施工账：ctx.md §6（役E1）。
 
 ///|
-fn kind_of(result : Result[@base.Document, @base.XmlError]) -> String {
+fn kind_of(parse : () -> @base.Document raise @base.XmlError) -> String {
+  let result = Ok(parse()) catch { why => Err(why) }
   match result {
     Ok(_) => "ok"
     Err(At(error=@base.IllegalName(message), ..)) => "IllegalName(\{message})"
@@ -34,31 +35,37 @@ fn error_to_text(error : @base.XmlErrorKind) -> String {
 test "PI target: U+0132 rejected on editions 1-4, accepted on edition 5" {
   // 套件对样:ibm/not-wf/P85/ibm85n03(2-4 版判词)vs errata-4e/ibm85n03(5 版判词)
   let source = "<?\u{0132} pi data?><doc/>"
-  let old_face = kind_of(
-    @base.parse_edition(source, edition=@base.Editions1to4),
-  )
+  let old_face = kind_of(() => {
+    @base.parse_edition(source, edition=@base.Editions1to4)
+  })
   assert_true(old_face.contains("IllegalName"))
   assert_true(old_face.contains("#x132"))
   assert_true(old_face.contains("start character"))
-  assert_eq(kind_of(@base.parse_edition(source, edition=@base.Edition5)), "ok")
+  assert_eq(
+    kind_of(() => @base.parse_edition(source, edition=@base.Edition5)),
+    "ok",
+  )
 }
 
 ///|
 test "element name: long s rejected on editions 1-4, accepted on edition 5" {
   let source = "<egg\u{017F}/>"
   assert_true(
-    kind_of(@base.parse_edition(source, edition=@base.Editions1to4)).contains(
+    kind_of(() => @base.parse_edition(source, edition=@base.Editions1to4)).contains(
       "IllegalName",
     ),
   )
-  assert_eq(kind_of(@base.parse_edition(source, edition=@base.Edition5)), "ok")
+  assert_eq(
+    kind_of(() => @base.parse_edition(source, edition=@base.Edition5)),
+    "ok",
+  )
 }
 
 ///|
 test "middle dot is a 1.0 NameChar (Extender) in editions 1-4" {
   let source = "<a\u{00B7}/>"
   assert_eq(
-    kind_of(@base.parse_edition(source, edition=@base.Editions1to4)),
+    kind_of(() => @base.parse_edition(source, edition=@base.Editions1to4)),
     "ok",
   )
 }
@@ -68,9 +75,14 @@ test "combining char start: rejected at base wordface before the gate" {
   // 5e/1.1 紧凑表首字不含组合字符——底座 split_qualified_name 先拒(InvalidSyntax),
   // 门不可达;门只在 ≤4e 面新增拒绝(5e 面门 ⊆ 底座,零新增)。
   let source = "<\u{0300}x/>"
-  match @base.parse_edition(source, edition=@base.Editions1to4) {
+  let outcome = Ok(@base.parse_edition(source, edition=@base.Editions1to4)) catch {
+    why => Err(why)
+  }
+  match outcome {
     Err(At(error=@base.InvalidSyntax(_), ..)) => ()
-    other => fail("expected base InvalidSyntax, got \{kind_of(other)}")
+    Err(At(error~, ..)) =>
+      fail("expected base InvalidSyntax, got \{error_to_text(error)}")
+    Ok(_) => fail("expected base InvalidSyntax, parsed ok")
   }
 }
 
@@ -78,17 +90,20 @@ test "combining char start: rejected at base wordface before the gate" {
 test "version 1.1 document ignores edition knob (compact tables always)" {
   let source = "<?xml version=\"1.1\"?><?\u{0132} pi?><egg\u{017F}/>"
   assert_eq(
-    kind_of(@base.parse_edition(source, edition=@base.Editions1to4)),
+    kind_of(() => @base.parse_edition(source, edition=@base.Editions1to4)),
     "ok",
   )
-  assert_eq(kind_of(@base.parse_edition(source, edition=@base.Edition5)), "ok")
+  assert_eq(
+    kind_of(() => @base.parse_edition(source, edition=@base.Edition5)),
+    "ok",
+  )
 }
 
 ///|
 test "no declaration defaults to 1.0 face" {
   let source = "<?\u{0132} pi?><doc/>"
   assert_true(
-    kind_of(@base.parse_edition(source, edition=@base.Editions1to4)).contains(
+    kind_of(() => @base.parse_edition(source, edition=@base.Editions1to4)).contains(
       "IllegalName",
     ),
   )
@@ -98,25 +113,33 @@ test "no declaration defaults to 1.0 face" {
 test "attribute name gated on both faces" {
   let source = "<doc a\u{0132}=\"v\"/>"
   assert_true(
-    kind_of(@base.parse_edition(source, edition=@base.Editions1to4)).contains(
+    kind_of(() => @base.parse_edition(source, edition=@base.Editions1to4)).contains(
       "IllegalName",
     ),
   )
-  assert_eq(kind_of(@base.parse_edition(source, edition=@base.Edition5)), "ok")
+  assert_eq(
+    kind_of(() => @base.parse_edition(source, edition=@base.Edition5)),
+    "ok",
+  )
 }
 
 ///|
 test "parse equals parse_edition at edition 5 (default face)" {
   let source = "<?xml version=\"1.0\"?><doc a=\"b\">text</doc>"
-  assert_true(
-    @base.parse(source) == @base.parse_edition(source, edition=@base.Edition5),
-  )
+  let direct = Ok(@base.parse(source)) catch { why => Err(why) }
+  let via_edition = Ok(@base.parse_edition(source, edition=@base.Edition5)) catch {
+    why => Err(why)
+  }
+  assert_true(direct == via_edition)
 }
 
 ///|
 test "wordface message pins the offending name text" {
   let source = "<?\u{0132}x?><doc/>"
-  match @base.parse_edition(source, edition=@base.Editions1to4) {
+  let outcome = Ok(@base.parse_edition(source, edition=@base.Editions1to4)) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(_) => fail("must reject")
     Err(At(error=@base.IllegalName(message), ..)) =>
       assert_true(message.contains("\"\u{0132}x\""))
@@ -131,10 +154,13 @@ test "wordface message pins the offending name text" {
 test "names legal in both faces pass (namespace-qualified forms)" {
   let source = "<a:b xmlns:a=\"urn:x\" xml:lang=\"en\"><c.d-e_f/></a:b>"
   assert_eq(
-    kind_of(@base.parse_edition(source, edition=@base.Editions1to4)),
+    kind_of(() => @base.parse_edition(source, edition=@base.Editions1to4)),
     "ok",
   )
-  assert_eq(kind_of(@base.parse_edition(source, edition=@base.Edition5)), "ok")
+  assert_eq(
+    kind_of(() => @base.parse_edition(source, edition=@base.Edition5)),
+    "ok",
+  )
 }
 
 ///|
@@ -146,9 +172,9 @@ test "names legal in both faces pass (namespace-qualified forms)" {
 test "ns-off: colon names accepted (element, attribute, PI target)" {
   let source = "<?PITarget: with colon?><:lead a:b=\"v\" tail:=\"w\"><x:y/></:lead>"
   assert_eq(
-    kind_of(
-      @base.parse_edition(source, edition=@base.Editions1to4, ns=@base.Off),
-    ),
+    kind_of(() => {
+      @base.parse_edition(source, edition=@base.Editions1to4, ns=@base.Off)
+    }),
     "ok",
   )
 }
@@ -158,9 +184,9 @@ test "ns-off: combining char after colon accepted on 4e face" {
   // 套件对样 oasis/p04pass1:NS-always-on 下必拒,非 NS 面 1.0 合法
   let source = "<A.-:\u{0300}\u{00B7}/>"
   assert_eq(
-    kind_of(
-      @base.parse_edition(source, edition=@base.Editions1to4, ns=@base.Off),
-    ),
+    kind_of(() => {
+      @base.parse_edition(source, edition=@base.Editions1to4, ns=@base.Off)
+    }),
     "ok",
   )
 }
@@ -168,7 +194,12 @@ test "ns-off: combining char after colon accepted on 4e face" {
 ///|
 test "ns-off: xmlns is an ordinary attribute kept in place" {
   let source = "<doc xmlns=\"urn:d\" a=\"1\" xmlns:p=\"urn:p\"/>"
-  match @base.parse_edition(source, edition=@base.Edition5, ns=@base.Off) {
+  let outcome = Ok(
+    @base.parse_edition(source, edition=@base.Edition5, ns=@base.Off),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Ok(document) => {
       let attributes = document.root.attributes
       assert_eq(attributes.length(), 3)
@@ -188,7 +219,9 @@ test "ns-off: xmlns is an ordinary attribute kept in place" {
 test "ns-off: unbound prefix accepted (no NS resolution)" {
   let source = "<p:doc p:attr=\"v\"/>"
   assert_eq(
-    kind_of(@base.parse_edition(source, edition=@base.Edition5, ns=@base.Off)),
+    kind_of(() => {
+      @base.parse_edition(source, edition=@base.Edition5, ns=@base.Off)
+    }),
     "ok",
   )
 }
@@ -196,17 +229,16 @@ test "ns-off: unbound prefix accepted (no NS resolution)" {
 ///|
 test "ns-on unchanged: unbound prefix still rejected" {
   let source = "<p:doc/>"
-  match @base.parse_edition(source, edition=@base.Edition5, ns=@base.On) {
+  let outcome = Ok(
+    @base.parse_edition(source, edition=@base.Edition5, ns=@base.On),
+  ) catch {
+    why => Err(why)
+  }
+  match outcome {
     Err(At(error=@base.InvalidSyntax(message), ..)) =>
       assert_true(message.contains("undeclared namespace prefix"))
-    other => fail("ns-on must reject unbound prefix: \{other_is_err(other)}")
-  }
-}
-
-///|
-fn other_is_err(result : Result[@base.Document, @base.XmlError]) -> String {
-  match result {
-    Ok(_) => "parsed ok"
-    Err(At(error~, ..)) => error_to_text(error)
+    Err(At(error~, ..)) =>
+      fail("ns-on must reject unbound prefix: \{error_to_text(error)}")
+    Ok(_) => fail("ns-on must reject unbound prefix: parsed ok")
   }
 }
