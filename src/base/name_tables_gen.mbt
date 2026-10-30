@@ -1,11 +1,11 @@
 // ===== GENERATED FILE — DO NOT EDIT（生成物禁手写，const.md §7）=====
-// 源表：moonxml/src/xml_name_tables.toml（schema 1.0）
+// 源表：moonxml/src/base/xml_name_tables.toml（schema 1.0）
 // 再生：moon run skelgen/xmlnameregen(仓根起跑;改表 → 再生 → 黄金门对拍)
 // 绑定器：skelschema/xmlname_toml_gen.mbt(parse/validate/emit 三件套)
-// 目标包:moonxml/src。面:XML 名字产生式区间表 + 谓词。拼装语义(Name/Letter/版本键控)手写于消费包 namecheck.mbt。
+// 目标包:moonxml/src/base。面:XML 名字产生式区间表 + 谓词。拼装语义(Name/Letter/版本键控)手写于消费包 namecheck.mbt。
 
 ///|
-/// 区间表二分查找（各 production 谓词共用；表序由 validate 断言）。
+/// 区间表二分查找(各 production 谓词共用;表序由 validate 钉)。
 fn xmlname_range_contains(
   table : Array[(Int32, Int32)],
   code_point : Int32,

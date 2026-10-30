@@ -4,7 +4,7 @@
 # 在 src/namecheck.mbt 手写,不进本表。
 schema_version = "1.0"
 generator = "xmlname_toml_gen"
-target_package = "moonxml/src"
+target_package = "moonxml/src/base"
 
 [[production]]
 id = "base_char_10"
