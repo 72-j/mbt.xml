@@ -383,7 +383,6 @@ pub fn parse(source : String) -> Document raise XmlError {
 ///   NamespaceReader 承担；
 /// · Off：非 NS 面——名字按 Name 原文直通，xmlns 即普通属性，不解析前缀，
 ///   由底座 raw Reader 承担。
-/// 施工账：ctx.md §8（役N1，R-N1a）。
 pub(all) enum NsMode {
   On
   Off
@@ -395,7 +394,6 @@ pub extend NsMode with Eq::{equal, not_equal}
 ///|
 /// 按版本面解析：树建后走名字段门。version="1.1" 文档恒走 1.1 紧凑表，
 /// 不受版本面选择影响；版本面只区分 1.0 文档。
-/// 施工账：ctx.md §6（役E1，R-E1c）。
 pub fn parse_edition(
   source : String,
   edition~ : XmlEdition,

@@ -40,7 +40,6 @@ fn write_unit(buffer : ComposeBuffer, text : String, i : Int32) -> Unit {
 /// 预组合入口：无标记 / 含标记的外取实体统一走本层预组合（底座注入径已弃用）：
 /// doctype 扫描 → 内部子集外取形收编（内部优先）→ 外取子集装载 → 内容预展开。
 /// 实体表为空 = 无外挂实体，原文直通（逐字节零漂移）。
-/// 施工账：ctx.md §11（役B2，R-B1b）。
 fn prepare_external(
   source : String,
   resolver : &EntityResolver,
@@ -245,7 +244,7 @@ fn expand_entry(
       "entity expansion too deep at '&\{name};'",
     )
   }
-  // 闸 S(闸补役,WFC 2.9 Entity Declared):standalone='yes' 时正文/
+  // 闸 S(WFC 2.9 Entity Declared):standalone='yes' 时正文/
   // 属性位出现本表实体引用即拒——本表实体皆外取件声明(内部子集字面量
   // 链闭合收归者亦传递含外取内容)。预定义/纯内部实体不入本表,底座
   // 自持,零误伤。
@@ -454,7 +453,6 @@ fn relocate_error(
 /// 须整链收归本表展开——否则底座展开内部链时撞上本层取走的外取名即 InvEnt。
 /// 收归后底座在内容里再也见不到该名（组合面已整链替换）；不动链的内部字面量
 /// 留给底座，内部优先语义不变。不动点迭代（与账序无关）。
-/// 施工账：ctx.md §11（役B2）。
 fn claim_internal_chains(load : ExternalLoad) -> Unit {
   let mut changed = true
   while changed {

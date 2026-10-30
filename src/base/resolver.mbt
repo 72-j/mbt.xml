@@ -4,7 +4,6 @@
 /// ——XXE 防线。策略对齐同门 D-18 消费端政策参数先例：取件失败走独立错误词
 /// [XmlErrorKind::External]，不污染编解码错误语义。网络访问由消费方实现，
 /// 本仓不内置网络 resolver。
-/// 施工账：ctx.md §11（役B2，R-B1a）。
 pub(open) trait EntityResolver {
   // base = 引用方的资源定位（文档自身 = None；外取子集内再引用 = 该子集的
   // system_id），供实现方拼相对路径；解析责任在实现侧，本仓无 URI 库。

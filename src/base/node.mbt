@@ -85,7 +85,6 @@ pub extend Document with Eq::{equal, not_equal}
 /// [IllegalName]：名字段门用（树不带 span，零位报）。
 /// [External]：外取面错误（取件被拒 / 取件失败 / 声明解析拒），与编解码
 /// 错误语义分立——它是编/解码之外的第三面：外取政策面。
-/// 施工账：ctx.md §6（役E1）· §11（役B2，R-B1a/R-G2）。
 pub(all) suberror XmlErrorKind {
   UnexpectedEof
   InvalidSyntax(String)

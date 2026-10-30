@@ -8,7 +8,6 @@
 /// 文本，天然放行）。
 /// text decl 不属于实体内容：残留会被底座按 PI 读，而 PI 目标 "xml" 保留，
 /// valid 族会被错拒。取件两步 = decode_source（编码面）+ admit（校验面）。
-/// 施工账：ctx.md §11–§12（役B2/役B3，R-B3a）。
 
 ///|
 /// 准入:解码后文本 → text decl 验证剥除 + Char 门 → 实体内容。

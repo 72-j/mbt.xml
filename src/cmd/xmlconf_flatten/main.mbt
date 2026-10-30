@@ -5,7 +5,6 @@
 /// (dogfood)，产出带校验和的 TSV：TYPE \t base+URI \t ID \t EDITION \t NS（保持
 /// 册序,再生逐字节稳定;EDITION/NS 缺省 = 空串 = 全版本适用/非 NS 面)。
 /// 运行：moon run src/cmd/xmlconf_flatten（cwd = moonxml 仓根）。
-/// 施工账：ctx.md §4（役M2）· §6（役E1）· §8（役N1）。
 
 ///|
 /// 分册→基准径映射（摘自 xmlconf.xml 聚合体；套件 2013 版固定后不再变动）。

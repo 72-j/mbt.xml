@@ -7,7 +7,6 @@
 /// 参数实体（PE）面：声明立账（字面量值 / 外取件址），声明间引用按账处理，
 /// 条件段关键词位展开（`<![ %e; [`），声明内部按值内顶层 `>` 补全。
 /// 尚未展开：PE 值直接注入内容区（内部子集展开面）。
-/// 施工账：ctx.md §11（役B2）· §12（役B3）· §14–§16（役PE 位形 / 闸补 / 组合）；
 /// R-B1d = 声明面拒因。
 const EXTERNAL_EXPANSION_DEPTH : Int32 = 32
 
@@ -60,7 +59,7 @@ priv struct ExternalLoad {
   mut pe_depth : Int32
   /// 文档版次基准（Char 门与名字表键控用；无 XMLDecl = None = 1.0）。
   doc_version : String?
-  /// standalone=='yes'(闸 S,闸补役):正文/属性位展开本表实体即拒
+  /// standalone=='yes'(闸 S):正文/属性位展开本表实体即拒
   /// (WFC 2.9 Entity Declared——外取件声明实体被引用,standalone 越权)。
   standalone_yes : Bool
   /// 版本面(闸 G 名字校验键控):外取子集声明名字按文档面选表。
@@ -153,7 +152,7 @@ fn parse_declarations(
         has_word(text, pos + 2, "ATTLIST") ||
         has_word(text, pos + 2, "NOTATION")
       ) {
-      // 闸 G(闸补役):声明名合法性(ELEMENT/ATTLIST/NOTATION 产生式
+      // 闸 G:声明名合法性(ELEMENT/ATTLIST/NOTATION 产生式
       // 面名核;外取子集不进底座,语法判官在本层)
       pos = gate_declaration_name(text, pos, load)
       continue
@@ -171,7 +170,7 @@ fn parse_declarations(
 }
 
 ///|
-/// 实体值引用语法闸(闸补役,P09/P67/P69 产生式面):值内 '%' 须起
+/// 实体值引用语法闸(P09/P67/P69 产生式面):值内 '%' 须起
 /// PEReference 形('%' 名 ';'),'&' 须起 Reference 形('&' 名 ';' 或字
 /// 符引用)。只核形不核表(声明面 = VC,不归良构层);非 ASCII 码元
 /// 概认名字符(超收侧保守——拒闸宁漏勿误,异体名归名字表闸)。
@@ -283,7 +282,7 @@ fn parse_entity_declaration(
   if pos < limit && (text[pos] == '\'' || text[pos] == '"') {
     match read_doctype_quoted(text, pos) {
       Some((value, next)) => {
-        // 闸 P(闸补役):值内引用形不备即拒(P09 产生式;p09fail/008 族)
+        // 闸 P:值内引用形不备即拒(P09 产生式;p09fail/008 族)
         if entity_value_refs_wellformed(value) == false {
           raise external_error(
             text,
@@ -352,7 +351,7 @@ fn parse_entity_declaration(
       Some((sysid, next)) => {
         pos = next
         // NDATA 尾巴(不可解析实体):不装表——内容引用拒 = 正判,
-        // 属性 ENTITY 型引用面随属性缺省役再议。
+        // 属性 ENTITY 型引用面待议。
         pos = skip_doctype_space(text, pos)
         if has_word(text, pos, "NDATA") {
           pos = skip_markup_declaration(text, pos, load)
@@ -361,7 +360,7 @@ fn parse_entity_declaration(
         if !is_pe {
           match load.resolver.resolve(base_uri, sysid, public_id) {
             Some(bytes) => {
-              // 语义保留:解码失败重贴 External 标签(原文报法,账本见 ctx.md)
+              // 语义保留:解码失败重贴 External 标签(原文报法)
               let content = admit_external_text(
                 decode_source(bytes),
                 load.doc_version,
@@ -619,7 +618,7 @@ fn scan_conditional_close(text : String, start : Int32) -> Int32? {
 }
 
 ///|
-/// 声明名合法性闸(闸补役,ibm77n14 形 `<!ELEMENT 0node>`):名字按
+/// 声明名合法性闸(ibm77n14 形 `<!ELEMENT 0node>`):名字按
 /// 文档版次面选表(4e/5e/1.1),非法即 External 错;合法则照旧过闸
 /// 跳过(体语法仍不深究——本闸只管名字面)。
 fn gate_declaration_name(

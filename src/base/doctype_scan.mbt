@@ -2,20 +2,19 @@
 /// DOCTYPE 序区扫描：底座的 DocType 事件只带根名，SYSTEM/PUBLIC id 与
 /// 内部子集边界由本扫描自行提取。返回 None = 无 doctype 或序区畸形
 /// （畸形留给底座报错——本扫描只取件，不做判官）。
-/// 施工账：ctx.md §11（役B2）。
 priv struct DoctypeScan {
   /// 声明结束（'>'）之后（预组合恢复内容扫描处）
   decl_end : Int32
   system_id : String?
   public_id : String?
   /// 文档 XMLDecl 的版次值（版次闸基准；无 XMLDecl = None = 1.0）。
-  /// 只取值不判官——XMLDecl 语法面归底座。施工账：ctx.md §12（役B3）。
+  /// 只取值不判官——XMLDecl 语法面归底座。
   doc_version : String?
   /// 内部子集起点('[' 之后);无子集 = -1
   subset_start : Int32
   /// 内部子集终点(']' 处);无子集 = -1
   subset_end : Int32
-  /// XMLDecl standalone=='yes'(闸 S 基准,闸补役);只取值不判官。
+  /// XMLDecl standalone=='yes'(闸 S 基准);只取值不判官。
   standalone_yes : Bool
 }
 
