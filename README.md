@@ -41,6 +41,10 @@ XML 1.0 版次面 / 1.1 键控、外部实体解析端口与 billion-laughs 防�
 moon add thy1016/moonxml
 ```
 
+模块源码正式地址：gitlink <https://gitlink.org.cn/thy7/mbt.xml> 与
+GitHub 镜像 <https://github.com/72-j/mbt.xml>；工作区多模块场景可
+直接以本地树路径引用。
+
 再在用到它的包的 `moon.pkg` `import` 块中添加 `"thy1016/moonxml/base"`，
 代码内以 `@base` 前缀使用。RDF/XML 面（`@rdf` 前缀）另加
 `"thy1016/moonxml/rdf"`。
@@ -165,7 +169,7 @@ moon run src/cmd/xmlconf_flatten
 moon test --target native
 ```
 
-运行时输出各测试面的计数行（下表实测于 2026-10-24）：
+运行时输出各测试面的计数行（下表实测于 2026-10-30）：
 
 | 面 | 读数 |
 |---|---|
