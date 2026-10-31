@@ -1,0 +1,74 @@
+# ==========================================================
+# QuickMachine **业务面**（纪律：与生成面分文件）
+# 管：业务分布 / 回归基线 / 覆盖率要求 —— [business] [random_check]
+#     [[assert_check]] [environment] [failure_detection] [report]
+# 生成面见同目录 quicktest_gen.toml
+#
+# ⚠ v1 守恒口径（系统侧 P0 落地，这里只声明分布与基线）：
+#   · 守恒律双口径——①树守恒：parse(to_xml(d)) 的 Document 结构等 == d
+#     （Document/Element/Node 全 derive(Eq)，结构等即树同构）；
+#     ②串稳定：to_xml(parse(to_xml(d))) == to_xml(d)（序列化是
+#     parse∘serialize 的不动点，串面二次渲染逐字节等）。
+#   · node 池 6 条（ref_id_range = 6，索引一对一）：元素带属带文 /
+#     纯文本 / 注释 / CDATA / PI / 空元素双属——Node 五变体全入池。
+#   · 与 jsonld 守恒机的分野：XML 子节点是**有序可重序列**——重复
+#     追加合法（无集合挡板，模型镜像序列含重）；池竭后 Roundtrip
+#     独活？不——AppendNode 永合法，无 Deadlock 面。
+# ==========================================================
+[business]
+ref_id_range = 6
+
+[business.weights]
+Seed = 3
+AppendNode = 5
+Roundtrip = 3
+
+[random_check]
+seed = 20261101
+cases = 60
+max_commands = 12
+max_tries = 20
+shrink = true
+max_shrinks = 60
+max_shrink_rounds = 16
+required_command_names = ["Seed", "AppendNode", "Roundtrip"]
+
+[environment]
+isolation_strategy = "per_test_case"
+before_each = []
+after_each = []
+timeout_seconds = 30
+
+[failure_detection]
+failure_if = [
+  "postcondition fails",
+  "model != system observable state",
+  "unexpected error code",
+]
+
+[report]
+include_trace = true
+include_model = true
+include_responses = true
+
+# ==========================================================
+# 固定脚本（回归基线）：Seed → 双追加（元素 / 注释）→ Roundtrip → 再追加
+#   （空元素双属）。序列语义无挡板——5 步全进引擎（commands_run = 5）。
+# ==========================================================
+[[assert_check]]
+event = "Seed"
+
+[[assert_check]]
+event = "AppendNode"
+id = 0
+
+[[assert_check]]
+event = "AppendNode"
+id = 2
+
+[[assert_check]]
+event = "Roundtrip"
+
+[[assert_check]]
+event = "AppendNode"
+id = 5

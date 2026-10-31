@@ -3,6 +3,32 @@
 本文件面向**使用者**，记录每版对外可见的变化（API / 行为 / 兼容性 / 工程）。
 判据与规范细节见 `spec.md`（本仓规范卷）。
 
+## 0.3.1（2026-10-31）
+
+工程面版本：新增 quicktest 随机状态机测试件（**文档台账守恒机**）——pbtgen
+QuickMachine 三面 TOML（`src/quicktest/`）生成骨架 + P0 接框架真面；对外 API
+零变化。
+
+### 新增（测试面）
+
+- **`src/quicktest/` 文档台账守恒机**：Fresh→Seed→Ledgered 状态机，Ledgered
+  环上 `AppendNode`（载荷选 node 池，Node 五变体全入池：元素带属带文 / 纯
+  文本 / 注释 / CDATA / PI / 空元素双属）+ `Roundtrip`；被测性质 = 守恒律
+  双口径——①树守恒：`parse(to_xml(d))` 的 Document 结构等 == d（CDATA 是
+  试金石：序列化降级即树面破）②串稳定：`to_xml(parse(to_xml(d))) ==
+  to_xml(d)`（序列化是 parse∘serialize 的不动点）。随机 60 例 + 固定脚本
+  回归基线 + 单例覆盖门 + 固定守恒罐四件（Seed 基线 / 全池逐条 / 序列语义
+  重复追加 / 模型-系统双执行同步）。
+- **与 jsonld 守恒机的分野**：XML 子节点是有序可重序列——重复追加合法，
+  无集合挡板；jsonld 数据集是集合语义（valid 挡重复）。
+- **模块依赖**：`moonbit-community/quickcheck_statemachine@0.0.1` +
+  `moonbitlang/quickcheck@0.15.1`（仅 quicktest 测试面消费，产品面零涟漪）。
+
+### 口径
+
+- 读数：quicktest 13 例 native/wasm 双绿；全仓 `moon test --deny-warn`
+  139/139（xmlconf 2572 在门内）；产品 `.mbti` 零漂移；fmt 零波及。
+
 ## 0.3.0（2026-10-30）
 
 **破坏性：底座三支 failable API 迁 raise 风格**（工具链 [0078]

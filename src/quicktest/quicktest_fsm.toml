@@ -1,0 +1,51 @@
+# ==========================================================
+# moonxml 文档台账 FSM（QuickMachine 机器数据；手写领域机）
+# 体式承 pbtgen（fsm TOML = states/events/transitions；P4.2d 最小形）。
+# v1 口径：文档台账位面（Fresh/Ledgered + Seed/AppendNode/Roundtrip）。
+#   守恒律是被测性质，不住转移表——系统侧每步过 parse∘to_xml 双验
+#   （树守恒 + 串稳定），违律即 Error(1)；模型侧只镜像子节点序列（索引级）。
+#   与 jsonld 守恒机的分野：XML 子节点是有序可重序列（无集合挡板，
+#   重复追加合法）；jsonld 数据集是集合语义（valid 挡重复）。
+# ==========================================================
+
+[meta]
+name = "moonxml_doc_ledger"
+version = "0.1.0"
+prefix = "Xq"
+trait_name = "DocLedger"
+style = "mutable"
+
+[[states]]
+name = "Fresh"
+is_initial = true
+
+[[states]]
+name = "Ledgered"
+
+[[events]]
+name = "Seed"
+
+[[events]]
+name = "AppendNode"
+payload = [{ name = "node", type = "Span" }]
+
+[[events]]
+name = "Roundtrip"
+
+[[transitions]]
+from = "Fresh"
+to = "Ledgered"
+on = "Seed"
+action = "do_seed"
+
+[[transitions]]
+from = "Ledgered"
+to = "Ledgered"
+on = "AppendNode"
+action = "do_append"
+
+[[transitions]]
+from = "Ledgered"
+to = "Ledgered"
+on = "Roundtrip"
+action = "do_roundtrip"

@@ -6,7 +6,7 @@
 
 name = "thy1016/moonxml"
 
-version = "0.3.0"
+version = "0.3.1"
 
 repository = "https://www.gitlink.org.cn/thy7/mbt.xml"
 
@@ -23,4 +23,8 @@ readme = "README.md"
 import {
   "Milky2018/xml@0.6.1",
   "moonbitlang/async@0.22.4",
+  // quicktest 随机状态机脚手架（仅 moonxml/quicktest 测试面消费）
+  "moonbit-community/quickcheck_statemachine@0.0.1",
+  // quickcheck 统一最新（0.14.0 注册表 tarball 是旧格式 moon.mod.json，新工具链拒装）
+  "moonbitlang/quickcheck@0.15.1",
 }
