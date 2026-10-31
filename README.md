@@ -169,19 +169,38 @@ moon run src/cmd/xmlconf_flatten
 moon test --target native
 ```
 
-运行时输出各测试面的计数行（下表实测于 2026-10-30）：
+运行时输出各测试面的计数行（下表实测于 2026-10-31）：
 
 | 面 | 读数 |
 |---|---|
 | W3C XML Conformance（xmlts20130923，2585 案） | 2572 passed / 13 deferred / 0 failed |
 | W3C RDF/XML 套件（rdf11+rdf12，197 案） | 197 judged / 0 deferred / 0 failed |
-| 单元与契约门 | 126 / 126 |
+| 单元与契约门（含 quicktest 守恒机 13 例） | 139 / 139 |
 
 测试语料锁版随仓：`.xmlconf/`（W3C XML Conformance Suite，由
 `SHA256SUMS` 锁定）、`.xmlnames/`（W3C XML 1.0 4e / 1.1 2e 推荐标准
 快照）、`.encodings/`（WHATWG Encoding Standard 索引表）、
 `src/rdf/.rdf-tests/`（W3C RDF/XML 套件 rdf11/rdf12 分册，出处注记
 见 `src/rdf/.rdf-tests/SOURCE.md`）。
+
+### quicktest 文档台账守恒机
+
+`src/quicktest/` 内置随机状态机测试件（pbtgen QuickMachine 脚手架生成），以
+文档守恒律为被测性质：
+
+- **树守恒**：`parse(to_xml(d))` 与 `d` 结构等值（`Document` / `Element` /
+  `Node` 逐型相等；CDATA 为试金石——序列化不得将其降级为转义文本）；
+- **串稳定**：`to_xml(parse(to_xml(d)))` 与 `to_xml(d)` 逐字节相等（序列化
+  是解析-渲染对的不动点）。
+
+状态机 `Fresh —Seed→ Ledgered`，环上 `AppendNode`（载荷选取六条节点池，覆盖
+`Node` 全部五变体：带属性元素、纯文本、注释、CDATA、处理指令）与
+`Roundtrip`；XML 子节点为有序可重序列，重复追加合法。随机 60 例 + 固定脚本
+回归基线 + 覆盖门，native 与 wasm 读数一致。
+
+```bash
+moon test -p thy1016/moonxml/quicktest
+```
 
 版本沿革见 `CHANGELOG.md`。
 
